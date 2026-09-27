@@ -33,4 +33,4 @@ if (_remaining <= 0.001) then {
 _clotted set [_bodyPart, _rows];
 _unit setVariable [VAR_CLOTTED_WOUNDS, _clotted, true];
 
-// Deliberately no GET_BANDAGED_WOUNDS / GET_WRAPPED_WOUNDS / GET_STITCHED_WOUNDS fallback.
+// Deliberately no physical-dressing fallback.
