@@ -92,16 +92,28 @@ if !([_medic, _classname] call ACME_fnc_procedureActionAllowed) exitWith {false}
 
 // Opening a shared workspace must not wait for a free kneeling/holster animation.
 // Each actual intervention inside the panel retains its own checks and animation.
-if (_classname in ["ACME_ApplyChestSeal", "ACME_PerformNARSPEAR", "ACME_VentOpenPatient"]) exitWith {
+if (_classname in [
+    "ACME_ApplyChestSeal", "ACME_PerformNARSPEAR", "ACME_VentOpenPatient",
+    "ACME_PerformThoracostomy", "ACME_AdjustThoracostomy", "ACME_InsertChestTube"
+]) exitWith {
     if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
     if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
     if !([_medic, _patient, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith) exitWith {false};
     if ((_medic distance _patient) > ace_medical_gui_maxDistance) exitWith {false};
+
+    // Modal procedure launchers are not ACE timed treatments. Their panel/preparation controller owns provider
+    // animation, cancellation and medical-menu return. Running thoracostomy through the generic treatment preflight
+    // left setUnitPos/weapon-away/native-rate state alive underneath the chest-access provider and let ACE reopen the
+    // medical menu over the preparation sequence.
     ace_medical_gui_pendingReopen = false;
     if (_classname == "ACME_VentOpenPatient") then {
         [_patient] call ACME_fnc_ventPanelOpen;
     } else {
-        [_medic, _patient, _bodyPart, ["seal", "spear"] select (_classname == "ACME_PerformNARSPEAR")] call ACME_fnc_chestSealOpen;
+        if (_classname in ["ACME_PerformThoracostomy", "ACME_AdjustThoracostomy", "ACME_InsertChestTube"]) then {
+            [_medic, _patient, _bodyPart] call ACME_fnc_thoraOpen;
+        } else {
+            [_medic, _patient, _bodyPart, ["seal", "spear"] select (_classname == "ACME_PerformNARSPEAR")] call ACME_fnc_chestSealOpen;
+        };
     };
     true
 };
