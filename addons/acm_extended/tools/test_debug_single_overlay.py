@@ -51,7 +51,7 @@ def test_measurement_uses_wrapped_content_height_without_changing_font(metric_he
 def test_common_base_font_is_safezone_relative_and_uniform_across_resolutions():
     source = read("debugMenuClinical")
     assert 'private _baseFontH = safeZoneH * 0.0092;' in source
-    assert 'private _totalW = (safeZoneWAbs * 0.160)' in source
+    assert 'private _totalW = (safeZoneH * 0.255)' in source
     assert 'private _measureNaturalWidth = {' in source
     assert '_fontH = _fontH * ((_totalW / _naturalW) min 1);' in source
     assert '_fontH = _fontH * ((_availableH / _neededH) * 0.992);' in source
