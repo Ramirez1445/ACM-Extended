@@ -32,6 +32,16 @@ if (_context == "chestseal" && {
     _workspaceToken == "" || {(_patient getVariable ["ACME_CS_ProcedureTokens", []]) isEqualTo []}
 }) exitWith {false};
 
+// Vehicle seats own the patient skeleton and worn gear. Chest access remains clinically available, but ACME must
+// not roll, lift, strip or park equipment from a seated casualty. Publish readiness immediately and let the
+// treatment/minigame proceed without theatre.
+if (!isNull objectParent _patient) exitWith {
+    _patient setVariable [_busyVar, "", false];
+    _patient setVariable [_frontBusyVar, "", false];
+    _patient setVariable [_readyVar, serverTime, true];
+    true
+};
+
 // Every chest procedure starts anterior-up. If the casualty is legitimately rollable and actually posterior-up,
 // perform the authored front/supine roll BEFORE any carrier-removal or auscultation/chest-seal start animation.
 // Do not use a nested exitWith here: nested SQF scopes would continue the outer function and start carrier theatre
