@@ -21,6 +21,7 @@ params ["_medic", "_patient", ["_manual", false]];
 
 if (_manual) then {
     _patient setVariable [QGVAR(AED_InUse), true, true];
+    _medic setVariable [QGVAR(AED_Medic_InUse), true, true];
 };
 
 playSound3D [QPATHTO_R(sound\aed_charging.wav), _patient, false, getPosASL _patient, 15, 1, 15]; // 4.002s
