@@ -320,13 +320,26 @@ private _siteRows = _patient getVariable ["ACME_IV_SiteState", []];
 if !(_siteRows isEqualType []) then {_siteRows = [];};
 private _parts = ["head","body","leftarm","rightarm","leftleg","rightleg"];
 for "_i" from 2 to 5 do {
-    private _flag = _patient getVariable [format ["ACME_IV_BandOnPart_%1", _i], false];
+    private _flagRaw = _patient getVariable [format ["ACME_IV_BandOnPart_%1", _i], false];
+    private _flag = (_flagRaw isEqualType true) && {_flagRaw};
+
     private _state = _patient getVariable [format ["ACME_IV_BandState_%1", _i], []];
-    private _stateOn = (_state isEqualType []) && {count _state == 4} && {_state param [1, false]};
+    private _stateFlag = if (_state isEqualType [] && {count _state == 4}) then {
+        _state param [1, false]
+    } else {
+        false
+    };
+    private _stateOn = (_stateFlag isEqualType true) && {_stateFlag};
+
     private _view = if (_stateOn) then {_state param [2, ""]} else {""};
+    if !(_view isEqualType "") then {_view = "";};
+
     private _band = if (_stateOn) then {_state param [3, []]} else {[]};
-    private _stateValid = _stateOn && {_view != ""} && {_band isEqualType []}
-        && {count _band == 6} && {_band param [0, false]};
+    if !(_band isEqualType []) then {_band = [];};
+
+    private _bandFlag = if (count _band == 6) then {_band param [0, false]} else {false};
+    private _bandOn = (_bandFlag isEqualType true) && {_bandFlag};
+    private _stateValid = _stateOn && {_view != ""} && {count _band == 6} && {_bandOn};
 
     private _rowValid = false;
     if (_stateValid) then {
@@ -339,8 +352,11 @@ for "_i" from 2 to 5 do {
             private _row = _x;
             if (_row isEqualType [] && {count _row == 4} && {(_row param [0, ""]) == _key}) then {
                 private _rb = _row param [1, []];
-                if (_rb isEqualType [] && {count _rb == 6} && {_rb param [0, false]}) exitWith {
-                    _rowValid = true;
+                if (_rb isEqualType [] && {count _rb == 6}) then {
+                    private _rbFlag = _rb param [0, false];
+                    if (_rbFlag isEqualType true && {_rbFlag}) exitWith {
+                        _rowValid = true;
+                    };
                 };
             };
         } forEach _siteRows;
