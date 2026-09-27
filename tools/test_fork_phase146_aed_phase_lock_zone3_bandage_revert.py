@@ -56,9 +56,11 @@ for name in (
 ):
     need(not (ROOT / "addons/damage/functions" / name).exists(), f"bandage: retired file remains: {name}")
 
-# Click path has a synchronous no-op preflight fast path instead of always scheduling the next frame.
-need('private _preflightReady' in treatment and '!_preflightReady' in treatment,
-     "treatment: empty-hand/crouch immediate fast path missing")
+# Provider presentation never delays the accepted clinical click.
+need('provider presentation NEVER gates clinical treatment start' in treatment,
+     "treatment: immediate clinical-start invariant missing")
+need('ACME_treatmentPreflightActive", false' in treatment,
+     "treatment: stale preflight retirement missing")
 
 # ECG is sampled by exact time against the selected audio RR. Integer-width beat tiling is forbidden here.
 need('private _sampleTime = _cursorEpoch + ((_i - _anchor) * _dt);' in gen, "AED: native exact-time sampler missing")
