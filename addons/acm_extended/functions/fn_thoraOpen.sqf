@@ -23,6 +23,11 @@ _medic setVariable ["ACME_nativeTreatmentRate", [], true];
 [_medic, [["treatmentEndInAnim"]]] call ACM_core_fnc_setAceMedicalState;
 [_medic, "", -1, true] call ACME_fnc_treatmentPoseStop;
 [_medic, true] call ACME_fnc_menuPoseStop;
+// No provider animation follows this handoff. Release temporary stance/speed ownership immediately and leave
+// the selected weapon alone; the thoracostomy workspace itself must never control the medic skeleton.
+_medic setUnitPos "AUTO";
+_medic setAnimSpeedCoef 1;
+["ace_common_setAnimSpeedCoef", [_medic, 1]] call CBA_fnc_globalEvent;
 
 private _ecgJostleKey = "ui:thora:" + str clientOwner;
 [_patient, _ecgJostleKey, true] call ACME_fnc_ecgJostleRequest;
