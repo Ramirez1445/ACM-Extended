@@ -187,7 +187,7 @@ def test_manual_carrier_auto_returns_on_wake_getup_transport_and_movement():
     assert '[_patient, true, _provider, "access", true] call ACME_fnc_chestAccessVestRestore;' in auto
     assert 'ACME_manualPlateCarrierLease' in auto
     assert 'ACME_chestAccess_vestBusy' in auto
-    assert 'ACME_patientAnimRelease' in auto
+    assert 'ACME_fnc_patientAnimRelease' in auto
 
 
 def test_automatic_chest_access_reuses_manual_custody_without_replaying_removal():
