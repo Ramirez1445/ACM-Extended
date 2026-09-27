@@ -55,8 +55,11 @@ if (_restore) exitWith {
         ["ACME_manualPlateCarrierAck", [_p, true, _success], _medic] call CBA_fnc_targetEvent;
     }, [_patient, _medic, _lease], 6, {
         params ["_p", "_medic"];
-        if (!isNull _p) then {[_p, "replace-timeout"] call ACME_fnc_manualPlateCarrierAutoReturn;};
-        ["ACME_manualPlateCarrierAck", [_p, true, false], _medic] call CBA_fnc_targetEvent;
+        if (!isNull _p) then {
+            [_p, "replace-timeout"] call ACME_fnc_manualPlateCarrierAutoReturn;
+        } else {
+            ["ACME_manualPlateCarrierAck", [_p, true, false], _medic] call CBA_fnc_targetEvent;
+        };
     }] call CBA_fnc_waitUntilAndExecute;
     true
 };
@@ -101,8 +104,11 @@ _patient setVariable ["ACME_manualPlateCarrierRemoved", false, true];
     ["ACME_manualPlateCarrierAck", [_p, false, true], _medic] call CBA_fnc_targetEvent;
 }, [_patient, _medic, _lease], 8, {
     params ["_p", "_medic"];
-    if (!isNull _p) then {[_p, "remove-timeout"] call ACME_fnc_manualPlateCarrierAutoReturn;};
-    ["ACME_manualPlateCarrierAck", [_p, false, false], _medic] call CBA_fnc_targetEvent;
+    if (!isNull _p) then {
+        [_p, "remove-timeout"] call ACME_fnc_manualPlateCarrierAutoReturn;
+    } else {
+        ["ACME_manualPlateCarrierAck", [_p, false, false], _medic] call CBA_fnc_targetEvent;
+    };
 }] call CBA_fnc_waitUntilAndExecute;
 
 true
