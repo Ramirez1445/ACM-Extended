@@ -10,6 +10,40 @@ def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
 
+def class_body(cfg: str, class_name: str) -> str:
+    """Return one Cfg class body using brace depth, not a brittle first-'};' split."""
+    marker = f"class {class_name}"
+    start = cfg.index(marker)
+    open_brace = cfg.index("{", start)
+    depth = 0
+    in_string = False
+    escape = False
+
+    for i in range(open_brace, len(cfg)):
+        ch = cfg[i]
+
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+
+        if ch == '"':
+            in_string = True
+            continue
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return cfg[open_brace + 1:i]
+
+    raise AssertionError(f"unterminated class {class_name}")
+
+
 def test_iv_ghost_band_reconcile_is_boolean_end_to_end():
     s = read("addons/acm_extended/functions/fn_transientStateReconcile.sqf")
     block = s.split("// Repair only ghost IV constriction-band state.", 1)[1].split(
@@ -60,8 +94,15 @@ def test_custom_modal_actions_are_allowed_to_have_no_native_animation():
     cfg = read("addons/acm_extended/config.cpp")
 
     for cls in ("ACME_ApplyChestSeal", "ACME_InspectChest", "ACME_IVMinigameStart"):
-        body = cfg.split(f"class {cls}", 1)[1].split("};", 1)[0]
+        body = class_body(cfg, cls)
         assert 'animationMedic = "";' in body
+
+    # These two explicitly blank all inherited provider variants because their own controller owns presentation.
+    for cls in ("ACME_ApplyChestSeal", "ACME_InspectChest"):
+        body = class_body(cfg, cls)
+        assert 'animationMedicProne = "";' in body
+        assert 'animationMedicSelf = "";' in body
+        assert 'animationMedicSelfProne = "";' in body
 
     # Thoracostomy inherits a blank native animation from CheckPulse/diagnose lineage.
     assert "class ACME_PerformThoracostomy: CheckPulse" in cfg
