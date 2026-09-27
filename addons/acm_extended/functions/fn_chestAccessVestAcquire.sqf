@@ -259,11 +259,19 @@ private _commitRemoval = {
             if (!isNull _patient) then {_patient setVariable [_pfhVar, -1, false];};
         };
 
-        // If the casualty wakes and returns to independent standing/crouched locomotion while gear is in custody,
-        // restore it immediately even if the procedure lease is still open.
-        private _standingConscious = alive _patient
+        // A persistent manual lease has stronger semantics than ordinary chest access: as soon as the casualty
+        // wakes or becomes independently mobile, retire that lease and return the carrier in the same owner frame.
+        private _manualLease = _patient getVariable ["ACME_manualPlateCarrierLease", ""];
+        private _manualState = _patient getVariable ["ACME_manualPlateCarrierState", ""];
+        private _awake = alive _patient
             && {!(_patient getVariable ["ACE_isUnconscious", false])}
-            && {!(_patient getVariable ["ace_medical_unconscious", false])}
+            && {!(_patient getVariable ["ace_medical_unconscious", false])};
+        if (_manualLease != "" && {_manualState != ""} && {_awake}) exitWith {
+            [_patient, "awake"] call ACME_fnc_manualPlateCarrierAutoReturn;
+        };
+
+        // Temporary access retains the historical standing/crouched safety return.
+        private _standingConscious = _awake
             && {isNull objectParent _patient}
             && {(stance _patient) in ["STAND", "CROUCH"]};
         if (_standingConscious) exitWith {
@@ -279,7 +287,11 @@ private _commitRemoval = {
                 private _row = _leases get _x;
                 private _provider = _row param [0,objNull,[objNull]];
                 private _at = _row param [1,CBA_missionTime,[0]];
-                if (isNull _provider || {!alive _provider} || {CBA_missionTime - _at > 900}) then {
+                private _class = _row param [2,"",[""]];
+                // Manual custody persists independently of provider lifetime/time. It ends only through Replace
+                // Plate Carrier or the manual wake/transport auto-return policy.
+                if (_class != "manualplatecarrier"
+                    && {isNull _provider || {!alive _provider} || {CBA_missionTime - _at > 900}}) then {
                     _leases deleteAt _x;
                     _dirty = true;
                 };
