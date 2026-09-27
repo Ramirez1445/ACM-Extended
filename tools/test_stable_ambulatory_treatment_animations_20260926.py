@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B177: standing/crouched ambulatory presentation uses medicUp and a frozen stethoscope contact reach."""
+"""Stable B178: ambulatory provider animations are one-shot; stethoscope freezes in place without replay."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,10 +54,11 @@ def test_treatment_pose_selects_ambulatory_provider_presentation_only():
     assert '_ambulatoryContact];' in s
     assert '_medic setUnitPos "MIDDLE";' in s
     assert '["MIDDLE", "UP"] select' not in s
-    assert 'private _recoverAmbulatoryHold = (_state param [16,false]) || {_state param [19,false]};' in s
+    assert '_recoverAmbulatoryHold' not in s
+    assert 'getOrDefault [_mode, -1];' in s
 
 
-def test_stethoscope_freezes_putdown_reach_and_resumes_authored_exit():
+def test_stethoscope_freezes_current_putdown_frame_without_seeking_or_replay():
     init = read("addons/acm_extended/functions/fn_initChestSealProcedureRuntime.sqf")
     begin = read("addons/acm_extended/functions/fn_beginStethoscopeAction.sqf")
     close = read("addons/acm_extended/functions/fn_stethoscopeClose.sqf")
@@ -66,6 +67,9 @@ def test_stethoscope_freezes_putdown_reach_and_resumes_authored_exit():
     assert 'ACME_uprightStethoscopeHoldAt = 0.55;' in init
     assert '[_medic, "stethoscope", -1, _patient] call ACME_fnc_treatmentPoseStart' in begin
     assert '_poseStateAtClose param [19,false]' in close
+    pose = read("addons/acm_extended/functions/fn_treatmentPoseStart.sqf")
+    assert 'if (_contactHold) then {_phase = -1;};' in pose
+    assert 'if (_contactHold && {_stateDrift}) exitWith {' in pose
     assert '["lower", "contactexit"] select _ambulatoryContact' in close
     assert '"contactexit"' in seq
     assert '[_u] call ace_common_fnc_isPlayer' in seq
@@ -75,21 +79,30 @@ def test_stethoscope_freezes_putdown_reach_and_resumes_authored_exit():
     assert '_first' not in contact
 
 
-def test_nar_spear_temporarily_hands_off_from_workspace_and_returns():
+def test_nar_spear_does_not_replay_ambulatory_workspace_after_one_shot():
     gesture = read("addons/acm_extended/functions/fn_treatmentGesture.sqf")
     ncd = read("addons/acm_extended/functions/fn_chestSealApplyNCD.sqf")
     assert '_existingMode == "chestSealWorkspace"' in gesture
     assert '_mode == "ncdSeat"' in gesture
     assert '[_medic, _mode, _window, _patient] call ACME_fnc_treatmentPoseStart;' in gesture
-    assert 'call ACME_fnc_chestSealProviderHoldStart' in gesture
+    assert '_resume && {!([_p] call ACME_fnc_patientUpright)}' in gesture
     assert '[_medic,"ncdSeat",2.0,_patient] call ACME_fnc_treatmentGesture;' in ncd
 
 
-def test_chest_seal_placement_reasserts_selected_pose_not_hardcoded_down_pose():
+def test_chest_seal_placement_has_no_independent_animation_reassert_loop():
     seal = read("addons/acm_extended/functions/fn_chestSealApply.sqf")
-    assert 'private _poseMain = _state param [2, "AinvPknlMstpSnonWnonDnon_medic3"];' in seal
-    assert '(toLowerANSI animationState _m) != (toLowerANSI _poseMain)' in seal
-    assert '[_m, _poseMain, 1] call ACME_fnc_doAnim;' in seal
+    assert 'B178 one-shot placement ownership' in seal
+    assert 'CBA_fnc_addPerFrameHandler' not in seal
+    assert '_poseMain' not in seal
+    assert '_asserts' not in seal
+    assert '[_m, _poseMain, 1] call ACME_fnc_doAnim;' not in seal
+    assert 'private _restoreWorkspace = !([_p] call ACME_fnc_patientUpright);' in seal
+
+
+def test_ambulatory_pose_stop_does_not_reissue_neutral_crouch_after_natural_return():
+    stop = read("addons/acm_extended/functions/fn_treatmentPoseStop.sqf")
+    assert 'private _ambulatoryAlreadySettled = _upright' in stop
+    assert '&& {!_ambulatoryAlreadySettled}' in stop
 
 
 def test_upright_helpers_remain_registered():
@@ -102,4 +115,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B177 ambulatory treatment animation regression: PASS")
+    print("stable B178 ambulatory one-shot animation regression: PASS")
