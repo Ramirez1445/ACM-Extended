@@ -64,14 +64,26 @@ if (_chestSealEntry && {
     || {(uiNamespace getVariable ["ACME_CS_EntryCancelToken", ""]) == _preparationToken}
 }) exitWith {-1};
 
+// Thoracostomy uses the long-lived UI lease as its presentation generation. If its provider-start packet arrives
+// after the panel entry was cancelled/closed, reject it here instead of starting a new frozen medic4 with no owner.
+private _thoracostomyEntry = (_episodeToken find "vest:access:") == 0
+    && {(_preparationToken find "thora:") == 0};
+if (_thoracostomyEntry && {
+    (uiNamespace getVariable ["ACME_Thora_ChestAccessLease", ""]) != _preparationToken
+    || {(uiNamespace getVariable ["ACME_Thora_Medic", objNull]) isNotEqualTo _medic}
+    || {(uiNamespace getVariable ["ACME_Thora_Patient", objNull]) isNotEqualTo _patient}
+}) exitWith {-1};
+
 // Ordinary chest-access start is routed through the casualty owner as well. Its
 // preflight can be cancelled or handed to clinical work before this packet reaches
-// the provider. Other callers (for example thoracostomy) have no preflight token.
-if ((_episodeToken find "vest:access:") == 0 && {_preparationToken != ""} && {
-    !(_medic getVariable ["ACME_chestAccessPreflightActive", false])
-    || {(_medic getVariable ["ACME_chestAccessPreflightToken", ""]) != _preparationToken}
-    || {((_medic getVariable ["ACME_chestAccess_treatment", []]) param [0, objNull]) isNotEqualTo _patient}
-}) exitWith {-1};
+// the provider. Thoracostomy is validated by its own UI lease above.
+if (!_thoracostomyEntry
+    && {(_episodeToken find "vest:access:") == 0}
+    && {_preparationToken != ""} && {
+        !(_medic getVariable ["ACME_chestAccessPreflightActive", false])
+        || {(_medic getVariable ["ACME_chestAccessPreflightToken", ""]) != _preparationToken}
+        || {((_medic getVariable ["ACME_chestAccess_treatment", []]) param [0, objNull]) isNotEqualTo _patient}
+    }) exitWith {-1};
 
 private _armReadyProbe = {
     params ["_m","_epoch","_token"];
