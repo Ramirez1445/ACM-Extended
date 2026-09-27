@@ -5,9 +5,10 @@
 private _pHE = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _mHE = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
 
+private _entryKeyState = uiNamespace getVariable ["ACME_Thora_EntryKeys",[]];
 {
     if (!(_x isEqualTo -1) && {!(_x isEqualTo "")}) then {[_x,"keydown"] call CBA_fnc_removeKeyHandler;};
-} forEach (uiNamespace getVariable ["ACME_Thora_EntryKeys",[]]);
+} forEach (_entryKeyState param [1,[]]);
 uiNamespace setVariable ["ACME_Thora_EntryKeys",[]];
 uiNamespace setVariable ["ACME_Thora_EntryCancelToken",""];
 [false,_mHE,_pHE,uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]] call ACME_fnc_chestAccessPreparing;
@@ -18,7 +19,9 @@ if (!isNull _mHE && {local _mHE}) then {
     private _providerEntry = _mHE getVariable ["ACME_chestAccessProvider", []];
     if ((_providerEntry param [0,objNull]) isEqualTo _pHE) then {
         private _providerToken = _providerEntry param [2,""];
-        if (_providerToken != "") then {
+        private _providerPrep = _providerEntry param [3,""];
+        private _activeLease = uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""];
+        if (_providerToken != "" && {_providerPrep != ""} && {_providerPrep == _activeLease}) then {
             [_mHE,_pHE,"stop",false,_providerToken] call ACME_fnc_chestAccessVestProvider;
         };
     };
