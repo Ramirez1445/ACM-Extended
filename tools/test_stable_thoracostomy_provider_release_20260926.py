@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B175: thoracostomy preparation is providerless and cannot strand medic4."""
+"""Stable B176: thoracostomy preparation is providerless and cannot strand medic4."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -51,4 +51,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B175 thoracostomy providerless preparation: PASS")
+    print("stable B176 thoracostomy providerless preparation: PASS")
