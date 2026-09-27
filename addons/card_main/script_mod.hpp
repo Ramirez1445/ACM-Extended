@@ -1,2 +1,0 @@
-#define MAINPREFIX z
-#define PREFIX DD1380
