@@ -101,6 +101,19 @@ _patient setVariable ["ACME_manualPlateCarrierRemoved", false, true];
     [_medic, "chestAccessVestProvider", [_medic, _p, "manualstop", false, "", _lease]]
         call ACME_fnc_ownerDispatch;
 
+    // Manual removal may have temporarily flattened an existing Semi-Fowler placement. Once the carrier-removal
+    // choreography is genuinely complete, borrow the removed carrier as support and resume the normal elevated
+    // patient/provider choreography instead of leaving the persistent manual lease blocking re-elevation.
+    if ((_p getVariable ["ACME_headElevated", false])
+        && {_p getVariable ["ACME_headElev_Suspended", false]}) then {
+        if ((backpack _p) == "") then {
+            [_p, "borrow"] call ACME_fnc_manualPlateCarrierHeadElevSupport;
+        };
+        _p setVariable ["ACME_headElev_ResumePending", true, true];
+        private _poseToken = _p getVariable ["ACME_headElev_poseToken", ""];
+        [{_this call ACME_fnc_headElevTryResume;}, [_p, _poseToken], 0.05] call CBA_fnc_waitAndExecute;
+    };
+
     [_p, "activity", "Plate carrier manually removed", []] call ace_medical_treatment_fnc_addToLog;
     ["ACME_manualPlateCarrierAck", [_p, false, true], _medic] call CBA_fnc_targetEvent;
 }, [_patient, _medic, _lease], 8, {
