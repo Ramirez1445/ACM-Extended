@@ -33,11 +33,15 @@ if (isNull _durEdit) then {
     _durEdit setVariable ["ACME_SK_GhostActive",false];
     _durEdit ctrlAddEventHandler ["MouseButtonDown", {
         params ["_ctrl","_button"];
-        if (_button == 0) then {ctrlSetFocus _ctrl;};
+        if (_button == 0) then {
+            uiNamespace setVariable ["ACME_SK_PushDurationEditing",true];
+            ctrlSetFocus _ctrl;
+        };
         false
     }];
     _durEdit ctrlAddEventHandler ["SetFocus", {
         params ["_ctrl"];
+        uiNamespace setVariable ["ACME_SK_PushDurationEditing",true];
         uiNamespace setVariable ["ACME_SK_CarouselHeldDir",0];
         uiNamespace setVariable ["ACME_SK_CarouselRepeatAt",0];
         ((ctrlParent _ctrl) displayCtrl 84832) ctrlShow false;
@@ -45,6 +49,7 @@ if (isNull _durEdit) then {
     _durEdit setVariable ["ACME_SK_PushDurationFor",""];
     _durEdit ctrlAddEventHandler ["KeyUp", {
         params ["_ctrl"];
+        uiNamespace setVariable ["ACME_SK_PushDurationEditing",true];
         private _raw = ctrlText _ctrl;
         private _clean = toString ((toArray _raw) select {_x >= 48 && {_x <= 57}});
         if (_clean != _raw) then {_ctrl ctrlSetText _clean;};
@@ -66,6 +71,20 @@ if (isNull _durEdit) then {
         if (!isNull _display) then {_display setVariable ["ACME_SK_NextBodyAction",0];};
         false
     }];
+    _durEdit ctrlAddEventHandler ["KillFocus", {
+        params ["_ctrl"];
+        private _draftId = _ctrl getVariable ["ACME_SK_PushDurationFor",""];
+        if (_draftId != "") then {
+            private _drafts = uiNamespace getVariable ["ACME_SK_PushDurationDrafts",createHashMap];
+            if !(_drafts isEqualType createHashMap) then {_drafts = createHashMap;};
+            _drafts set [_draftId,ctrlText _ctrl];
+            uiNamespace setVariable ["ACME_SK_PushDurationDrafts",_drafts];
+        };
+        uiNamespace setVariable ["ACME_SK_PushDurationEditing",false];
+        private _display = ctrlParent _ctrl;
+        if (!isNull _display) then {_display setVariable ["ACME_SK_NextBodyAction",0];};
+        false
+    }];
 };
 if (isNull _durHint) then {
     _durHint = _d ctrlCreate ["RscText",84832];
@@ -76,6 +95,13 @@ if (isNull _durHint) then {
 };
 private _durFocusCtrl = focusedCtrl _d;
 private _durFocused = !isNull _durFocusCtrl && {_durFocusCtrl isEqualTo _durEdit};
+private _durEditing = _durFocused || {uiNamespace getVariable ["ACME_SK_PushDurationEditing",false]};
+
+// The editor owns the entire action surface while typing. Any stock-list/carousel/inventory refresh that calls this
+// renderer during text entry is presentation-only and must not move, hide, disable, recreate or rewrite the edit.
+if (_durEditing) exitWith {
+    _durHint ctrlShow false;
+};
 
 private _body = (uiNamespace getVariable ["ACME_SK_View","syringe"]) == "body";
 private _editMode = uiNamespace getVariable ["ACME_SK_TagEditMode",false];
