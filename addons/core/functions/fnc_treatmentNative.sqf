@@ -20,9 +20,6 @@
 
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
-private _medicVehicle = objectParent _medic;
-private _sameVehicleTreatment = !isNull _medicVehicle && {(objectParent _patient) isEqualTo _medicVehicle};
-
 // Delay by a frame if cursor menu is open to prevent progress bar failing
 if (uiNamespace getVariable [QACEGVAR(interact_menu,cursorMenuOpened), false]) exitWith {
     [ACEFUNC(medical_treatment,treatment), _this] call CBA_fnc_execNextFrame;
@@ -327,7 +324,7 @@ if (_callbackProgress isEqualTo {}) then {
     ACEFUNC(medical_treatment,treatmentFailure),
     getText (_config >> "displayNameProgress"),
     _callbackProgress,
-    [["isNotInside", "isNotSwimming", "isNotInZeus"], ["isNotSwimming", "isNotInZeus"]] select _sameVehicleTreatment
+    ["isNotInside", "isNotSwimming", "isNotInZeus"]
 ] call ACEFUNC(common,progressBar);
 
 true

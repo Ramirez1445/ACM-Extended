@@ -50,3 +50,14 @@ def test_continuous_actions_keep_same_vehicle_session_alive():
     for s in (core, steth):
         assert "objectParent _medic isNotEqualTo objectParent _patient" in s
         assert "(!_notInVehicle && _vehicleCondition)" in s
+
+
+def test_timed_medical_progress_always_exempts_inside_vehicle_gate():
+    treatment = read("addons/core/functions/fnc_treatmentNative.sqf")
+    progress = read("addons/core/overrides/fnc_progressBar.sqf")
+
+    # ACE progressBar validates general interaction against objNull. If a same-vehicle
+    # branch removes isNotInside here, every timed treatment fails immediately in a vehicle.
+    assert '["isNotInside", "isNotSwimming", "isNotInZeus"]' in treatment
+    assert '_sameVehicleTreatment' not in treatment
+    assert '[_player, objNull, _exceptions] call ACEFUNC(common,canInteractWith)' in progress
