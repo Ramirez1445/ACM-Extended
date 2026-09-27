@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B180: standing/crouched-conscious carrier protection and controlled-NPC provider lifecycle."""
+"""Stable B181: standing/crouched-conscious carrier protection and controlled-NPC provider lifecycle."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -82,4 +82,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B180 controlled-NPC and standing-carrier regression: PASS")
+    print("stable B181 controlled-NPC and standing-carrier regression: PASS")
