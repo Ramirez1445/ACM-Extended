@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B187: airway removal tears down Ventway custody and Ventway CPR ventilation does not deadlock the AED."""
+"""Stable B188: airway removal tears down Ventway custody and Ventway CPR ventilation does not deadlock the AED."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,7 +109,7 @@ def test_build_identity_is_b187_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B187";' in startup
+    assert 'ACME_buildBatch = "B188";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -117,4 +117,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B187 airway/vent/AED interoperability regression: PASS")
+    print("stable B188 airway/vent/AED interoperability regression: PASS")
