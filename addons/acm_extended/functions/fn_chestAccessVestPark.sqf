@@ -6,6 +6,15 @@ if (isNull _patient || {!local _patient}) exitWith {};
 private _prop = _patient getVariable ["ACME_chestAccess_vestProp", objNull];
 if (isNull _prop) exitWith {};
 
+// While Semi-Fowler is borrowing this manually removed carrier, the fixed chest-access watchdog must not yank the
+// prop back to the ground park. Re-seat the same object behind the upper back instead.
+if ((_patient getVariable ["ACME_headElev_manualCarrierBorrowed", false])
+    && {_patient getVariable ["ACME_headElevated", false]}
+    && {!(_patient getVariable ["ACME_headElev_Suspended", false])}) exitWith {
+    _prop setVariable ["ACME_chestFixedPark", nil, false];
+    [_patient] call ACME_fnc_headElevPropApply;
+};
+
 private _park = _prop getVariable ["ACME_chestFixedPark", []];
 if !(_park isEqualType [] && {count _park == 3}) then {
     private _pel = _patient modelToWorldVisual (_patient selectionPosition "pelvis");
