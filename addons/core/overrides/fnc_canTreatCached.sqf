@@ -25,6 +25,13 @@ private _state = _target getVariable ["ACME_hpmk_state", ""];
 private _part = toLower _bodyPart;
 private _hpmkActions = ["CheckResponse", "ACME_UnwrapHPMK", "ACME_ExposeChestHPMK", "ACME_CoverChestHPMK"];
 
+// B190: partially exposed HPMK is genuine chest access. CPR is a Body action even if the exposed overlay/menu
+// leaves a stale selection context behind. Re-evaluate the exact ACE CPR treatment against the canonical Body
+// selection. Fully wrapped HPMK never enters this branch and remains blocked below.
+if (!isNull _target && {_state == "exposed"} && {(toLowerANSI _className) == "cpr"}) exitWith {
+    [_caller, _target, "Body", _className] call ace_medical_treatment_fnc_canTreat
+};
+
 // fully wrapped: only head-part care, plus the HPMK actions, stays available.
 if (
     !isNull _target
