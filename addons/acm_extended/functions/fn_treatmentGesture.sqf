@@ -13,6 +13,7 @@ if (isNull _medic || {!local _medic} || {!alive _medic} || {_mode == ""}) exitWi
 
 private _existing = _medic getVariable ["ACME_treatmentPoseState", []];
 private _resumeChestWorkspace = false;
+private _blockedByExistingPose = false;
 if !(_existing isEqualTo []) then {
     private _existingMode = _existing param [1, ""];
     private _existingEpoch = _existing param [0, -1];
@@ -24,9 +25,10 @@ if !(_existing isEqualTo []) then {
         _resumeChestWorkspace = true;
         [_medic, _existingMode, _existingEpoch, true] call ACME_fnc_treatmentPoseStop;
     } else {
-        false exitWith {};
+        _blockedByExistingPose = true;
     };
 };
+if (_blockedByExistingPose) exitWith {false};
 
 private _window = if (_duration > 0) then {_duration} else {3};
 // If this starts outside an already-held workspace, account for the normal provider stand/prone -> kneel entry.
