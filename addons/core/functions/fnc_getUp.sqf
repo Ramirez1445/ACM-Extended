@@ -35,6 +35,12 @@ if (_carryOwned) exitWith {
     };
 };
 
+// A manually removed carrier may never survive an accepted Get Up transaction. Force it back on before the
+// lying-state flag or patient animation is released.
+if ((_patient getVariable ["ACME_manualPlateCarrierState", ""]) != "") then {
+    [_patient, "getup"] call ACME_fnc_manualPlateCarrierAutoReturn;
+};
+
 // Zone 3 aortic occlusion is incompatible with weight bearing, but do not swallow the Get Up transaction. Let the
 // casualty actually begin to rise; the owner-local 5 Hz Zone 3 watcher detects STAND/CROUCH, ragdolls them, and
 // immediately settles them prone. That makes a failed attempt look physical instead of making the button appear dead.
