@@ -87,7 +87,7 @@ def test_same_vehicle_treatment_is_clinical_without_forcing_animation():
 
     assert "private _sameVehicleTreatment" in native
     assert '[["isNotInside", "isNotSwimming", "isNotInZeus"], ["isNotSwimming", "isNotInZeus"]] select _sameVehicleTreatment' in native
-    assert "if (isNull objectParent _medic && {_medicAnim != ""})" in native
+    assert 'if (isNull objectParent _medic && {_medicAnim != ""})' in native
     assert "if (!_isSelf && {isNull objectParent _patient})" in native
 
     assert "private _sameVehicleTreatment" in bridge
@@ -104,7 +104,7 @@ def test_chest_and_thoracostomy_workspaces_accept_same_vehicle_without_body_thea
     thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
     thora_tick = read("addons/acm_extended/functions/fn_thoraTick.sqf")
 
-    vehicle = acquire.split("if (!isNull objectParent _patient) exitWith {", 1)[1].split("};", 1)[0]
+    vehicle = acquire.split("if (!isNull objectParent _patient) exitWith {", 1)[1].split("// Every chest procedure starts anterior-up.", 1)[0]
     assert '_patient setVariable [_readyVar, serverTime, true];' in vehicle
     assert "removeVest" not in vehicle
     assert "doAnim" not in vehicle
