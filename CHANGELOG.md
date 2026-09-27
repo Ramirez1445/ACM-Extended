@@ -8,13 +8,15 @@ Updated 26 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B175 with no RC or hotfix suffix in the debug menu.
-- Conscious casualties who are independently standing retain their worn plate carrier during chest-access interventions; if they wake and stand while a carrier is already parked, it is restored immediately.
-- Chest Seal, NAR SPEAR, Thoracostomy and shared chest-access preparation now recognize locally controlled NPC/Zeus medics through ACE's player-control predicate rather than requiring the provider object to equal the cached ACE_player object.
-- Conscious independently standing casualties now use provider-only ambulatory treatment presentation instead of downed-casualty poses. Explicit treatments select validated vanilla `AinvPknl...medicUp0-5` empty-hands states and fall back safely if a state is unavailable.
-- Standing-casualty auscultation uses the existing Semi-Fowler Putdown reach, freezes at the hand-out contact frame for the lifetime of the stethoscope, then resumes directly through the authored Putdown return animation on close.
+- Stable runtime identity uses internal build B176 with no RC or hotfix suffix in the debug menu.
+- Conscious casualties who are independently standing or crouched retain their worn plate carrier during chest-access interventions; if they wake and return to either stance while a carrier is already parked, it is restored immediately.
+- Chest Seal, NAR SPEAR, Thoracostomy and shared chest-access preparation recognize locally controlled NPC/Zeus medics through ACE's player-control predicate rather than requiring the provider object to equal the cached ACE_player object.
+- Conscious independently standing or crouched casualties use provider-only ambulatory treatment presentation instead of downed-casualty poses. Explicit treatments select validated vanilla `AinvPknl...medicUp0-5` empty-hands states and fall back safely if a state is unavailable.
+- Conscious prone casualties deliberately return to the normal downed-target provider animation family, but ACME does not take over or settle the patient's animation while that casualty remains independently conscious.
+- Standing/crouched auscultation uses the existing Semi-Fowler Putdown reach, freezes at the hand-out contact frame for the lifetime of the stethoscope, then resumes directly through the authored Putdown return animation on close.
 - Chest Seal placement uses the selected ambulatory `medicUp3` pose when appropriate. NAR SPEAR temporarily hands off from the chest workspace to `medicUp1`, then restores the workspace pose when the seating gesture ends.
-- Ambulatory presentation never animates the casualty and is restricted to alive, conscious, on-foot patients whose actual stance is `STAND`; crouched, lying, elevated and unconscious casualties retain the existing downed workflow.
+- The debug overlay is now pinned to the absolute left safe edge and uses one height-based reference geometry across aspect ratios. Its panel width, typography and spacing scale uniformly instead of widening on ultrawide displays.
+- Debug rows dynamically expand their value columns before rendering, then the entire overlay receives one common width/height fit. Normal values no longer word-wrap, and the body control is hard-bounded to the panel bottom so 1680x1050 and other short safe areas cannot clip the final sections.
 - Launcher metadata now identifies the package as ACM Extended rather than the development fork.
 - The current stable thoracostomy preparation lifecycle and its providerless menu handoff are included in this release.
 
