@@ -2,7 +2,7 @@
 
 ## 1.2.4
 
-Updated 26 September 2026.
+Updated 27 September 2026.
 
 ### Stable release identity
 
