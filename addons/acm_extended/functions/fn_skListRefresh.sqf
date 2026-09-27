@@ -11,6 +11,14 @@ private _acmeCanvas = call ACME_fnc_uiCanvas;
 _acmeCanvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
 private _d = findDisplay 84000;
 if (isNull _d) exitWith {};
+
+// B189: list rebuilds may ctrlCreate rows/groups. Never run them while the push-duration edit owns the keyboard.
+// This is especially important on the first Narc Box display, where late row construction can otherwise steal focus.
+private _durationFocus = focusedCtrl _d;
+private _durationEditing = (uiNamespace getVariable ["ACME_SK_PushDurationEditing", false])
+    || {!isNull _durationFocus && {(ctrlIDC _durationFocus) == 84831}};
+if (_durationEditing) exitWith {};
+
 [_d] call ACME_fnc_skEpinephrineStock;
 private _view = uiNamespace getVariable ["ACME_SK_View", "syringe"];
 private _body = _view == "body";
