@@ -41,16 +41,39 @@ private _main = switch (_mode) do {
     default {"AinvPknlMstpSnonWrflDnon_medic4"};
 };
 
-// B72 provider stance invariant: all ordinary medical work is authored/forced from the unarmed crouch. Never
-// substitute standing medicUp variants because the casualty happens to be upright. The ONLY intentional standing
-// provider sequence is fn_headElevMedicSeq while DraggerBase performs the lift.
+// B175 ambulatory-target presentation. Clinical treatment and patient animation are unchanged; only the provider's
+// work pose changes when the casualty is alive, conscious and independently STANDING. BI medicUp states remain
+// kneeling-provider animations, so normal crouch entry/exit still applies.
 if (isNull _patient) then {_patient = missionNamespace getVariable ["ace_medical_gui_target", objNull];};
-private _upright = false;
+private _ambulatoryPatient = [_patient] call ACME_fnc_patientUpright;
+private _upright = false;              // true only when a validated BI medicUp state replaced _main.
+private _ambulatoryContact = false;    // stethoscope uses the Semi-Fowler Putdown reach instead of medicUp.
+
+if (_ambulatoryPatient && {_mode == "stethoscope"}) then {
+    _main = "AmovPknlMstpSnonWnonDnon_AinvPknlMstpSnonWnonDnon_Putdown";
+    _ambulatoryContact = true;
+} else {
+    ([_mode, _main, _patient] call ACME_fnc_poseUprightState) params ["_selectedMain", "_selectedUpright"];
+    _main = _selectedMain;
+    _upright = _selectedUpright;
+};
 
 private _holdAt = (missionNamespace getVariable ["ACME_poseHoldAt", createHashMap]) getOrDefault [_mode, -1];
 private _stopAfterHold = (missionNamespace getVariable ["ACME_poseStopAfterHold", createHashMap]) getOrDefault [_mode, -1];
 if !(_holdAt isEqualType 0) then {_holdAt = -1;};
 if !(_stopAfterHold isEqualType 0) then {_stopAfterHold = -1;};
+
+if (_upright) then {
+    private _uprightHold = (missionNamespace getVariable ["ACME_poseUprightHoldAt", createHashMap])
+        getOrDefault [_mode, _holdAt];
+    if (_uprightHold isEqualType 0) then {_holdAt = _uprightHold;};
+};
+if (_ambulatoryContact) then {
+    private _contactHold = missionNamespace getVariable ["ACME_uprightStethoscopeHoldAt", 0.55];
+    if !(_contactHold isEqualType 0 && {finite _contactHold} && {_contactHold >= 0}) then {_contactHold = 0.55;};
+    _holdAt = _contactHold;
+    _stopAfterHold = -1;
+};
 
 private _epoch = (_medic getVariable ["ACME_treatmentPoseEpoch", 0]) + 1;
 _medic setVariable ["ACME_treatmentPoseEpoch", _epoch, true];
@@ -93,12 +116,14 @@ private _prepUntil = _actionStarted + (_prepDelay max 0);
 // State layout:
 //  0 epoch, 1 mode, 2 main, 3 stage, 4 stageStarted, 5 pfh, 6 owner, 7 exclusion,
 //  8 waitUntil, 9 finiteWindow (informational), 10 actionStarted, 11 holdAt, 12 holdPhase,
-//  13 lastHoldAssert, 14 holdStarted, 15 stopAfterHold, 16 upright (standing medicUp state in use), 17 moving animation rate,
- //  18 forceImmediate (skip redundant weapon/crouch prep; hard priority-2 overwrite is roll/Flip only)
+//  13 lastHoldAssert, 14 holdStarted, 15 stopAfterHold, 16 upright-target medicUp state in use, 17 moving animation rate,
+//  18 forceImmediate (skip redundant weapon/crouch prep; hard priority-2 overwrite is roll/Flip only),
+//  19 ambulatoryContact (standing-casualty stethoscope using the frozen Semi-Fowler Putdown reach)
 // Stages: -1 waiting for the one weapon stow, -2 playing the BI stance transition into the crouch,
 //          0 legacy immediate start, 1 requested state entering, 2 running, 3 frozen hold.
 private _state = [_epoch, _mode, _main, -1, _actionStarted, -1, clientOwner, _exclusion,
-    _prepUntil, _window, _actionStarted, _holdAt, -1, -1, -1, _stopAfterHold, _upright, _rate, _forceImmediate];
+    _prepUntil, _window, _actionStarted, _holdAt, -1, -1, -1, _stopAfterHold, _upright, _rate, _forceImmediate,
+    _ambulatoryContact];
 _medic setVariable ["ACME_treatmentPoseState", _state];
 // An accepted physical examination/preparation is actual care; merely viewing
 // the initial medical menu never reaches this controller.
@@ -117,7 +142,8 @@ if (!isNil "ace_advanced_fatigue_setAnimExclusions") then {
 
 private _fnStartMain = {
     params ["_medic", "_main", "_state"];
-    _medic setUnitPos (["MIDDLE", "UP"] select (_state param [16, false]));
+    // BI medicUp is still a Pknl/kneeling provider family. "Upright" describes the casualty target, not the medic.
+    _medic setUnitPos "MIDDLE";
     // Chest-seal placement must keep the normal interpolated motion; only physical Flip needs the hard overwrite.
     // Both may skip redundant prep because the live chest workspace already owns empty-hands crouch theatre.
     private _hardOverride = (_state param [18, false]) && {(_state param [1, ""]) == "roll"};
@@ -134,8 +160,6 @@ private _fnEnter = {
     private _length = 0;
     // Procedure-critical immediate handoffs must not wait for a crouch-transition RTM to complete.
     if (_state param [18, false]) exitWith {[_medic, _main, _state] call _fnStartMain;};
-    // B72 leaves the upright slot false for medical work. Keep this branch only as hot-reload compatibility.
-    if (_state param [16, false]) exitWith {[_medic, _main, _state] call _fnStartMain;};
     switch (stance _medic) do {
         case "STAND": {_transition = "AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"; _length = 0.65;};
         case "PRONE": {_transition = "AmovPpneMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"; _length = 1.116;};
