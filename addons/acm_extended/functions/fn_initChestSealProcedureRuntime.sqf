@@ -30,17 +30,17 @@ ACME_menuPoseEnabled = true;
 // independently. medicUp is a KNEELING-provider family (AinvPknl...) whose hands work upward/in front instead of
 // down toward a casualty on the ground. fn_poseUprightState validates every candidate with isClass at runtime.
 ACME_poseUprightStates = createHashMapFromArray [
-    ["torsoBandage",       "AinvPknlMstpSnonWrflDnon_medicUp4"],
-    ["headBandageLeft",    "AinvPknlMstpSnonWrflDnon_medicUp0"],
-    ["headBandageRight",   "AinvPknlMstpSnonWrflDr_medicUp2"],
-    ["directPressureAction","AinvPknlMstpSnonWrflDnon_medicUp5"],
+    ["torsoBandage",       "AinvPknlMstpSnonWnonDnon_medicUp4"],
+    ["headBandageLeft",    "AinvPknlMstpSnonWnonDnon_medicUp0"],
+    ["headBandageRight",   "AinvPknlMstpSnonWnonDnon_medicUp2"],
+    ["directPressureAction","AinvPknlMstpSnonWnonDnon_medicUp5"],
     ["chestSealWorkspace", "AinvPknlMstpSnonWnonDnon_medicUp4"],
     ["chestSeal",          "AinvPknlMstpSnonWnonDnon_medicUp3"],
-    ["ncdSeat",            "AinvPknlMstpSnonWrflDnon_medicUp1"],
-    ["pulse",              "AinvPknlMstpSnonWrflDnon_medicUp1"],
+    ["ncdSeat",            "AinvPknlMstpSnonWnonDnon_medicUp1"],
+    ["pulse",              "AinvPknlMstpSnonWnonDnon_medicUp1"],
     ["inspect",            "AinvPknlMstpSnonWnonDnon_medicUp4"],
-    ["response",           "AinvPknlMstpSnonWrflDnon_medicUp3"],
-    ["airway",             "AinvPknlMstpSnonWrflDnon_medicUp4"]
+    ["response",           "AinvPknlMstpSnonWnonDnon_medicUp3"],
+    ["airway",             "AinvPknlMstpSnonWnonDnon_medicUp4"]
 ];
 
 // The ordinary inspect/pulse hold times above already transfer directly to their matching medicUp states.
