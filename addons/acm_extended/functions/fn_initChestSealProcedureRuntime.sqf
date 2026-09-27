@@ -102,7 +102,7 @@ ACME_CS_dragLagDenom = 0.36;
 ACME_CS_toolColumnYOffset = 0.065;
 ACME_CS_fingerColorDecay = 0.28;
 // preserve the later anatomical limit without a change to the wound extraction and generation path.
-ACME_CS_maxHolesPerSide = 4;
+ACME_CS_maxHolesPerSide = 6;
 ACME_CS_applySfxCooldown = 2.2;
 
 // restore the original tracking hook. hole generation still reconciles directly from ACE's torso open-wound
