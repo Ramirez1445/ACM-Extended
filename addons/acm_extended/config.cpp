@@ -381,7 +381,7 @@ class CfgPatches {
         // Public release identity is stored in CfgPatches.version because every debug-overlay page reads this
         // exact value. It lets testers prove which PBO Arma actually loaded instead of guessing from a workshop
         // timestamp or repository state.
-        version = "1.2.4";
+        version = "1.2.4.1";
         // Only HEMTT dev/launch output enables experimental development actions.
         acme_developmentBuild = 0;
     };
@@ -1837,6 +1837,7 @@ class CfgFunctions {
             class initMinigameInteractionRuntime {};
             class registerMedicationDeliveryRuntime {};
             class registerEcgJostleRuntime {};
+            class resetPersonalMedicationKit {};
             class registerSyringeLifecycleRuntime {};
             class initForkStartupRuntime {};
 
