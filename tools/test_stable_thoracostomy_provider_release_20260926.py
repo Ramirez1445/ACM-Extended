@@ -19,8 +19,16 @@ def test_thoracostomy_releases_chest_access_pose_before_opening_workspace():
 def test_thoracostomy_timeout_and_close_also_release_provider_pose():
     open_fn = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
     close_fn = read("addons/acm_extended/functions/fn_thoraClose.sqf")
+
+    # Timeout and explicit entry cancellation converge on the same abort helper. That helper owns provider
+    # release, preparation-banner teardown, lease retirement and optional menu reopen. Do not duplicate the
+    # provider stop inside the timeout callback itself or the same episode can receive two teardown requests.
+    abort_block = open_fn.split("private _abortEntry = {", 1)[1].split("[{", 1)[0]
+    assert '[_m,_p,_lease,false] call _releaseProvider;' in abort_block
+
     timeout = open_fn.split('Chest-access preparation timed out', 1)[1]
-    assert '[_m,_p,_lease,false] call _releaseProvider;' in timeout
+    assert '[_p,_m,_lease,_releaseProvider,_finishEntry,_current] call _abort;' in timeout
+
     assert 'ACME_Thora_EntryCancelToken' in open_fn
     assert 'ACME_Thora_EntryKeys' in open_fn
     assert 'call ACME_fnc_chestAccessPreparing' in open_fn
