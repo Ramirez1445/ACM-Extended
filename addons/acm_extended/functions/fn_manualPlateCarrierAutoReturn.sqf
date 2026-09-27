@@ -16,6 +16,17 @@ if (_state == "" && {_lease == ""}) exitWith {false};
 
 private _provider = _patient getVariable ["ACME_manualPlateCarrierProvider", objNull];
 
+// If Semi-Fowler is borrowing this manual carrier, retire that posture first without playing a visible lowering
+// animation. The head-elevation vest restore hook only releases the borrowed support back to manual custody;
+// the forced chest-access restore below then returns it to the casualty.
+if (_patient getVariable ["ACME_headElev_manualCarrierBorrowed", false]) then {
+    if (_patient getVariable ["ACME_headElevated", false]) then {
+        [objNull, _patient, true, true] call ACME_fnc_headElevateStop;
+    } else {
+        [_patient, "release"] call ACME_fnc_manualPlateCarrierHeadElevSupport;
+    };
+};
+
 // Retire the persistent manual lease without disturbing unrelated chest-access leases.
 private _leases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
 if !(_leases isEqualType createHashMap) then {_leases = createHashMap;};
