@@ -9,7 +9,7 @@ params ["_medic", "_patient", "_bodyPart", "_classname"];
 // a leftover/current Semi-Fowler provider sequence before normal treatment gating runs. Manual unsupported
 // Semi-Fowler is also an active hands-on maneuver by design; a new intervention cancels that exact hold so a stale
 // continuous-action generation can never leave the rest of the medical menu inert.
-if (!isNull _medic && {local _medic} && {hasInterface} && {!isNil "ACE_player"} && {_medic isEqualTo ACE_player}) then {
+if (!isNull _medic && {local _medic} && {hasInterface} && {[_medic] call ace_common_fnc_isPlayer}) then {
     // Self-heal a genuinely stale shared continuous-action gate. Live actions refresh LastSeen every <=2 s;
     // a missing session or >4 s heartbeat gap means no current PFH can legitimately own the global lock.
     private _continuousActive = missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false];
@@ -50,7 +50,7 @@ if (_classname == "ACME_DebugInduceSeizure") exitWith {
 // preflight before callbackSuccess. Apply/Stop therefore execute here and repaint the existing menu in place.
 private _fnc_refreshDirectPressureMenu = {
     params ["_m", "_p"];
-    if (!hasInterface || {isNil "ACE_player"} || {_m isNotEqualTo ACE_player}) exitWith {};
+    if (!hasInterface || {!local _m} || {!([_m] call ace_common_fnc_isPlayer)}) exitWith {};
     ace_medical_gui_pendingReopen = false;
     [{
         params ["_patient"];
@@ -228,8 +228,9 @@ if (_classname != "ACME_ConnectETVent") exitWith {
 
         // Escape and F0 cancel preparation, not the next intervention. Handler IDs are generation-local strings.
         private _cancelCode = compile format [
-            "private _m=ACE_player; if (!isNull _m && {(_m getVariable ['ACME_chestAccessPreflightToken','']) == '%1'}) then {_m setVariable ['ACME_chestAccessPreflightCancel',true,false];}; false",
-            _token
+            "private _m=objectFromNetId '%2'; if (!isNull _m && {local _m} && {(_m getVariable ['ACME_chestAccessPreflightToken','']) == '%1'}) then {_m setVariable ['ACME_chestAccessPreflightCancel',true,false];}; false",
+            _token,
+            netId _medic
         ];
         private _prepKeys = [];
         _prepKeys pushBack ([0x01, [false,false,false], _cancelCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler);
@@ -277,7 +278,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             };
 
             if (_reopen && {!isNull _p} && {alive _m} && {!(_m getVariable ["ACE_isUnconscious",false])}
-                && {_m isEqualTo ACE_player}) then {
+                && {local _m} && {[_m] call ace_common_fnc_isPlayer}) then {
                 ace_medical_gui_pendingReopen = false;
                 ["ACM_core_openMedicalMenu", _p] call CBA_fnc_localEvent;
             };
@@ -362,7 +363,8 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                     _m setVariable ["ACME_DP_IdleStart", CBA_missionTime, false];
                 };
 
-                if (alive _m && {!(_m getVariable ["ACE_isUnconscious",false])} && {_m isEqualTo ACE_player}) then {
+                if (alive _m && {!(_m getVariable ["ACE_isUnconscious",false])}
+                    && {local _m} && {[_m] call ace_common_fnc_isPlayer}) then {
                     ace_medical_gui_pendingReopen = false;
                     ["ACM_core_openMedicalMenu", _p] call CBA_fnc_localEvent;
                 };
@@ -580,7 +582,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
 
             private _startedPreflightTreatment = _callArgs call ace_medical_treatment_fnc_treatment;
 
-            if (hasInterface && {!isNil "ACE_player"} && {_u isEqualTo ACE_player}) then {
+            if (hasInterface && {local _u} && {[_u] call ace_common_fnc_isPlayer}) then {
                 ace_medical_gui_pendingReopen = true;
             };
 
