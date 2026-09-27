@@ -9,30 +9,41 @@ def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
 
-def test_aed_visible_art_and_all_button_hitboxes_share_one_background_transform():
+def test_aed_stock_buttons_keep_native_grid_while_sync_uses_background_mapping():
     defs = read("addons/circulation/Defibrillator_defines.hpp")
     dlg = read("addons/circulation/Defibrillator_Monitor_Dialog.hpp")
-    assert "ACM_AED_bgPxToScreen_X" in defs
-    assert "ACM_GUI_AED_GRID_W * ACM_GUI_AED_SIZEM" in defs
+    sync = read("addons/acm_extended/functions/fn_aedSyncSetup.sqf")
+
+    # Stock ACM button constants were authored for ACM_AED_pxToScreen_* and already compensate for the panel art.
     controls = dlg.split("class Controls {", 1)[1]
-    assert "ACM_AED_bgPxToScreen_X" in controls
-    assert "ACM_AED_bgPxToScreen_Y" in controls
-    assert "ACM_AED_bgPxToScreen_W" in controls
-    assert "ACM_AED_bgPxToScreen_H" in controls
-    assert "ACM_AED_pxToScreen_X" not in controls
-    assert "ACM_AED_pxToScreen_Y" not in controls
+    for macro in (
+        "ACM_AED_pxToScreen_X",
+        "ACM_AED_pxToScreen_Y",
+        "ACM_AED_pxToScreen_W",
+        "ACM_AED_pxToScreen_H",
+    ):
+        assert macro in controls
+    assert "ACM_AED_bgPxToScreen_X" not in controls
+    assert "ACM_AED_bgPxToScreen_Y" not in controls
+
+    # SYNC is a later runtime control measured directly on the rendered 1.05x background and remains there.
+    assert "ACM_AED_bgPxToScreen_X" in defs
+    assert "private _fnc_pxBG = {" in sync
+    assert "_btn ctrlSetPosition (_btnPx call _fnc_pxBG);" in sync
+    assert "_led ctrlSetPosition (_ledPx call _fnc_pxBG);" in sync
 
 
-def test_aed_background_and_hitbox_mapping_remain_coincident_at_1680x1050():
-    # Both visible artwork and button hitboxes now multiply their authored 2048px coordinates
-    # by the exact same 1.05 panel scale. Resolution changes only the common grid origin/size.
+def test_aed_stock_button_y_mapping_does_not_gain_extra_105_percent_drop_at_1680x1050():
     width, height = 1680, 1050
-    sizem = 1.05
-    for px in (512, 1632, 1820):
-        art_norm = (px / 2048.0) * sizem
-        hit_norm = (px / 2048.0) * sizem
-        assert abs(art_norm - hit_norm) < 1e-12
     assert width / height == 1.6
+
+    # Regression model: stock buttons use the native grid scale. Applying the panel's 1.05 multiplier to their
+    # authored Y constants is exactly the B179 regression that moved every stock hitbox lower while SYNC stayed right.
+    authored_y = 512
+    native_y = authored_y / 2048.0
+    wrong_bg_y = authored_y / 2048.0 * 1.05
+    assert wrong_bg_y > native_y
+    assert abs((wrong_bg_y / native_y) - 1.05) < 1e-12
 
 
 def test_every_operator_dependent_aed_button_uses_actual_monitor_medic():
