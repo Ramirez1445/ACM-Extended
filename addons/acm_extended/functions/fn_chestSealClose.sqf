@@ -39,6 +39,7 @@ if (!isNull _flipMedic && {local _flipMedic}) then {
     private _pose = _flipMedic getVariable ["ACME_treatmentPoseState",[]];
     private _poseMode = _pose param [1,""];
     private _poseEpoch = _pose param [0,-1];
+    private _ambulatoryPose = _pose param [16,false];
     private _ownsChestPose = _poseMode in ["chestSealWorkspace","chestSeal","chestAccess"];
     if (_entryPFH >= 0) then {
         private _provider = _flipMedic getVariable ["ACME_chestAccessProvider", []];
@@ -57,6 +58,7 @@ if (!isNull _flipMedic && {local _flipMedic}) then {
 
     // User-requested close theatre: the exact Semi-Fowler Putdown pair, then normal unarmed crouch.
     if (_ownsChestPose
+        && {!_ambulatoryPose}
         && {alive _flipMedic}
         && {!(_flipMedic getVariable ["ACE_isUnconscious",false])}
         && {isNull objectParent _flipMedic}
