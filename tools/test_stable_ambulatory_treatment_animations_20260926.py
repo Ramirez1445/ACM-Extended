@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B188: ambulatory provider animations are one-shot; stethoscope freezes in place without replay."""
+"""Stable B189: ambulatory provider animations are one-shot; stethoscope freezes in place without replay."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,4 +115,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B188 ambulatory one-shot animation regression: PASS")
+    print("stable B189 ambulatory one-shot animation regression: PASS")
