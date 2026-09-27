@@ -15,14 +15,18 @@ def test_thoracostomy_launchers_bypass_generic_timed_treatment_preflight():
     assert '[_medic, _patient, _bodyPart] call ACME_fnc_thoraOpen;' in launcher
     assert 'call ACM_core_fnc_treatmentNative' not in launcher
 
-def test_thoracostomy_click_cannot_arm_medical_menu_reopen():
+def test_thoracostomy_click_owns_menu_close_for_entire_preparation():
     renderer = read("addons/gui/overrides/fnc_updateActions.sqf")
     for name in ("acme_performthoracostomy", "acme_adjustthoracostomy", "acme_insertchesttube"):
         assert f"'{name}'" in renderer
     thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    assert 'ACME_chestAccessPreflightActive", true' in thora
+    assert 'ACME_chestAccessPreflightToken", _lease' in thora
     assert 'ace_medical_gui_pendingReopen = false;' in thora
+    assert 'ace_medical_gui_menuDisplay' in thora
+    assert '_menuDisplay closeDisplay 1;' in thora
     assert 'closeDialog 0;' in thora
-    assert 'call CBA_fnc_execNextFrame;' in thora
+    assert '[true, _medic, _patient, _lease] call ACME_fnc_chestAccessPreparing;' in thora
 
 def test_thoracostomy_entry_scrubs_stale_generic_provider_preflight():
     thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
@@ -48,21 +52,26 @@ def test_walkaway_or_lost_provider_contact_aborts_entry_and_open_panel():
     assert 'objectParent _thMedic isNotEqualTo objectParent _thPatient' in tick
     assert '[86600] call ACME_fnc_minigameClose;' in tick
 
-def test_abort_and_close_restore_free_provider_input_state():
+def test_abort_and_close_restore_free_provider_input_state_without_normal_provider_pose():
     thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
     close = read("addons/acm_extended/functions/fn_thoraClose.sqf")
-    assert '[_m,_p,_lease,false] call _releaseProvider;' in thora
+    acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
+    assert 'if (_treatmentClass == "thoracostomy") exitWith {' in acquire
+    providerless = acquire.split('if (_treatmentClass == "thoracostomy") exitWith {',1)[1].split('if (_context == "chestseal") then {',1)[0]
+    assert 'call ACME_fnc_chestAccessVestProvider' not in providerless
+    assert '_patientArgs call _beginPatient;' in providerless
+    assert 'private _releaseProvider = {' not in thora
     for src in (thora, close):
         assert 'setUnitPos "AUTO"' in src
         assert 'setAnimSpeedCoef 1' in src
         assert 'ACME_nativeTreatmentRate' in src
         assert 'treatmentEndInAnim' in src
 
-def test_stable_debug_identity_is_b172_thora1():
+def test_stable_debug_identity_is_b173_thora2():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
-    assert 'ACME_buildBatch = "B172";' in startup
-    assert 'ACME_debugRevision = "THORA1";' in startup
+    assert 'ACME_buildBatch = "B173";' in startup
+    assert 'ACME_debugRevision = "THORA2";' in startup
     assert 'version = "1.2.4";' in cfg
 
 if __name__ == "__main__":

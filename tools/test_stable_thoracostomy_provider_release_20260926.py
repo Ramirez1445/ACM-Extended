@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable regression: thoracostomy chest-access provider theatre must never strand the medic."""
+"""Stable B173: thoracostomy preparation is providerless and cannot strand medic4."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -7,46 +7,48 @@ ROOT = Path(__file__).resolve().parents[1]
 def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
-def test_thoracostomy_releases_chest_access_pose_before_opening_workspace():
+def test_thoracostomy_uses_patient_only_chest_access_preparation():
     open_fn = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
-    assert '[_patient,_medic,_vestLease,true,"thoracostomy",_vestLease] call ACME_fnc_chestAccessVestEvent;' in open_fn
-    assert 'private _releaseProvider = {' in open_fn
-    assert '[_m,_p,"stop",_handoff,_token] call ACME_fnc_chestAccessVestProvider;' in open_fn
-    assert 'ACME_chestAccessProviderPrepToken' in open_fn
-    assert '[_m,_p,_lease,false] call _releaseProvider;' in open_fn
-    assert open_fn.index('[_m,_p,_lease,false] call _releaseProvider;') < open_fn.index('["ACME_Thoracostomy_Dialog"] call ACME_fnc_minigameOpen;')
+    acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
+    assert '[_patient, _medic, _lease, true, "thoracostomy", _lease] call ACME_fnc_chestAccessVestEvent;' in open_fn
+    assert 'private _releaseProvider = {' not in open_fn
+    assert 'if (_treatmentClass == "thoracostomy") exitWith {' in acquire
+    block = acquire.split('if (_treatmentClass == "thoracostomy") exitWith {',1)[1].split('if (_context == "chestseal") then {',1)[0]
+    assert 'call ACME_fnc_chestAccessVestProvider' not in block
+    assert '_patientArgs call _beginPatient;' in block
+    assert 'call CBA_fnc_waitAndExecute;' in block
 
-def test_thoracostomy_timeout_and_close_also_release_provider_pose():
+def test_menu_close_and_preparing_banner_are_owned_until_ready_or_abort():
+    open_fn = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    assert 'ACME_chestAccessPreflightActive", true' in open_fn
+    assert 'ace_medical_gui_menuDisplay' in open_fn
+    assert '_menuDisplay closeDisplay 1;' in open_fn
+    assert 'closeDialog 0;' in open_fn
+    assert '[true, _medic, _patient, _lease] call ACME_fnc_chestAccessPreparing;' in open_fn
+    assert 'ACME_chestAccess_readyLease' in open_fn
+    assert 'ACME_chestAccess_readyServer' in open_fn
+    assert 'CBA_fnc_waitUntilAndExecute' in open_fn
+
+def test_cancel_timeout_and_close_release_one_lease_and_clear_preflight():
     open_fn = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
     close_fn = read("addons/acm_extended/functions/fn_thoraClose.sqf")
+    assert 'private _releaseLease = {' in open_fn
+    assert '[_p, _m, _lease, false, "thoracostomy"] call ACME_fnc_chestAccessVestEvent;' in open_fn
+    assert 'Chest-access preparation timed out' in open_fn
+    assert '[_p, _m, _lease, _finish, _release, true] call _abort;' in open_fn
+    for src in (open_fn, close_fn):
+        assert 'ACME_chestAccessPreflightActive", false' in src
+        assert 'ACME_chestAccessPreflightToken", ""' in src
+        assert 'ACME_chestAccessPreflightCancel", false' in src
+    assert '[_patient, _medic, _lease, false, "thoracostomy"] call ACME_fnc_chestAccessVestEvent;' in close_fn
 
-    # Timeout and explicit entry cancellation converge on the same abort helper. That helper owns provider
-    # release, preparation-banner teardown, lease retirement and optional menu reopen. Do not duplicate the
-    # provider stop inside the timeout callback itself or the same episode can receive two teardown requests.
-    abort_block = open_fn.split("private _abortEntry = {", 1)[1].split("[{", 1)[0]
-    assert '[_m,_p,_lease,false] call _releaseProvider;' in abort_block
-
-    timeout = open_fn.split('Chest-access preparation timed out', 1)[1]
-    assert '[_p,_m,_lease,_releaseProvider,_finishEntry,_current] call _abort;' in timeout
-
-    assert 'ACME_Thora_EntryCancelToken' in open_fn
-    assert 'ACME_Thora_EntryKeys' in open_fn
-    assert 'call ACME_fnc_chestAccessPreparing' in open_fn
-    assert 'ACME_chestAccessProvider' in close_fn
-    assert '[_mHE,_pHE,"stop",false,_providerToken] call ACME_fnc_chestAccessVestProvider;' in close_fn
-
-def test_late_thoracostomy_provider_packet_cannot_reacquire_frozen_medic4():
-    provider = read("addons/acm_extended/functions/fn_chestAccessVestProvider.sqf")
-    assert 'private _thoracostomyEntry = (_episodeToken find "vest:access:") == 0' in provider
-    assert '(_preparationToken find "thora:") == 0' in provider
-    assert '(uiNamespace getVariable ["ACME_Thora_ChestAccessLease", ""]) != _preparationToken' in provider
-    assert '(uiNamespace getVariable ["ACME_Thora_Medic", objNull]) isNotEqualTo _medic' in provider
-    assert '(uiNamespace getVariable ["ACME_Thora_Patient", objNull]) isNotEqualTo _patient' in provider
-    assert '[_patient, _epoch, _episodeToken]' in provider
-    assert 'ACME_chestAccessProviderPrepToken' in provider
+def test_close_keeps_only_legacy_stale_provider_recovery():
+    close_fn = read("addons/acm_extended/functions/fn_thoraClose.sqf")
+    assert 'Hot-load/backward compatibility only: current thoracostomy never starts this provider animation.' in close_fn
+    assert '[_medic, _patient, "stop", false, _oldToken] call ACME_fnc_chestAccessVestProvider;' in close_fn
 
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable thoracostomy provider-release regression: PASS")
+    print("stable B173 thoracostomy providerless preparation: PASS")
