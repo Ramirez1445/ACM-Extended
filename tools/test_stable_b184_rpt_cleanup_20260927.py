@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B184: RPT cleanup for transient-state typing, empty native animations, and structured item text."""
+"""Stable B185 build: B184 RPT cleanup remains enforced, plus manual-carrier SQF syntax."""
 from pathlib import Path
 import re
 
@@ -108,6 +108,16 @@ def test_custom_modal_actions_are_allowed_to_have_no_native_animation():
     assert "class ACME_PerformThoracostomy: CheckPulse" in cfg
 
 
+def test_manual_plate_carrier_awake_guard_uses_valid_sqf_lazy_eval_syntax():
+    s = read("addons/acm_extended/functions/fn_manualPlateCarrierCanToggle.sqf")
+
+    good = 'if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake)} || {!alive _patient}) exitWith {false};'
+    bad = 'if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake}) || {!alive _patient}) exitWith {false};'
+
+    assert good in s
+    assert bad not in s
+
+
 def test_structured_item_descriptions_escape_xml_ampersands():
     cfg = read("addons/acm_extended/config.cpp")
     assert 'descriptionShort = "Hypothermia Prevention &amp; Management Kit. Reusable warming blanket.";' in cfg
@@ -120,11 +130,11 @@ def test_structured_item_descriptions_escape_xml_ampersands():
         assert not re.search(r"&(?!amp;|lt;|gt;|quot;|apos;)", line)
 
 
-def test_build_identity_is_b184_stable():
+def test_build_identity_is_b185_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B184";' in startup
+    assert 'ACME_buildBatch = "B185";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -132,4 +142,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B184 RPT cleanup regression: PASS")
+    print("stable B185 RPT/syntax cleanup regression: PASS")
