@@ -22,12 +22,12 @@ private _finish = {
         _provider setVariable ["ACME_rollProviderPFH",-1];
         _provider setVariable ["ACME_rollProviderToken",""];
         _provider setVariable ["ACME_rollProviderActive",false];
-        [_provider,"roll",_epoch,true] call ACME_fnc_treatmentPoseStop;
+        [_provider,"roll",_epoch] call ACME_fnc_treatmentPoseStop;
     };
     if (!_current) exitWith {};
 
-    // Hand directly from medic4 back into the same hands-on-chest workspace. Do not use the old immediate/priority-2
-    // path here; the normal empty-hands transition is what keeps the selected weapon from reappearing.
+    // Exit medic4 through the normal interpolated roll teardown, then return to the hands-on-chest workspace.
+    // This matches the other chest flip sequences and never restores/reselects the provider's weapon.
     private _after = if (isNull _provider) then {[]} else {_provider getVariable ["ACME_treatmentPoseState",[]]};
     if (_after isEqualTo [] && {!isNull _provider} && {local _provider}) then {
         private _holdEpoch = [_provider,_patient] call ACME_fnc_chestSealProviderHoldStart;
@@ -102,8 +102,8 @@ if ((_pose param [3,-2]) >= 1
     uiNamespace setVariable ["ACME_CS_FlipTarget",_side];
     uiNamespace setVariable ["ACME_CS_FlipLockedUntil",diag_tickTime + _rollTime];
 
-    // Once medic4 is actually on screen, use the immediate patient lease so another casualty animation cannot
-    // delay the requested physical flip. This does not alter the provider's normal medic4 move-graph path.
-    [_patient,_side,false,_provider,false,true] call ACME_fnc_chestSealRoll;
+    // Once medic4 is actually on screen, use the normal patient roll path: priority-1 interpolation first,
+    // with the existing guarded fallback only if Arma swallows that transition. Do not hard-snap the roll.
+    [_patient,_side,false,_provider,false] call ACME_fnc_chestSealRoll;
     [] call ACME_fnc_chestSealRender;
 };
