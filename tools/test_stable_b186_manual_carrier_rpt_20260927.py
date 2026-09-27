@@ -78,7 +78,7 @@ def test_b186_stable_identity():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B188";' in startup
+    assert 'ACME_buildBatch = "B190";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
