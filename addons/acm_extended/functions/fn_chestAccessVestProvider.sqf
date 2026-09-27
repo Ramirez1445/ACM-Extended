@@ -139,7 +139,7 @@ if ((_existingPatient isEqualTo _patient)
     && {(_pose param [0, -2]) == _existingEpoch}
     && {(_pose param [1, ""]) == "chestAccess"}) exitWith {
     if (_episodeToken != "") then {
-        _medic setVariable ["ACME_chestAccessProvider", [_patient, _existingEpoch, _episodeToken], false];
+        _medic setVariable ["ACME_chestAccessProvider", [_patient, _existingEpoch, _episodeToken, _preparationToken], false];
         if (_chestSealEntry) then {
             uiNamespace setVariable ["ACME_CS_EntryProvider", [_existingEpoch, _episodeToken]];
         };
@@ -160,7 +160,7 @@ if (_priorMode in ["stethoscope","inspect","chestSealWorkspace","roll"]
 
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
-    _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken], false];
+    _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken, _preparationToken], false];
     if (_chestSealEntry) then {
         uiNamespace setVariable ["ACME_CS_EntryProvider", [_epoch, _episodeToken]];
     };
