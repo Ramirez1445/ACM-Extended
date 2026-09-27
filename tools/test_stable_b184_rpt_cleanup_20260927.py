@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B185 build: B184 RPT cleanup remains enforced, plus manual-carrier SQF syntax."""
+"""Stable B186 build: B184/B185 RPT cleanup remains enforced."""
 from pathlib import Path
 import re
 
@@ -130,11 +130,11 @@ def test_structured_item_descriptions_escape_xml_ampersands():
         assert not re.search(r"&(?!amp;|lt;|gt;|quot;|apos;)", line)
 
 
-def test_build_identity_is_b185_stable():
+def test_build_identity_is_b186_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B185";' in startup
+    assert 'ACME_buildBatch = "B186";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -142,4 +142,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B185 RPT/syntax cleanup regression: PASS")
+    print("stable B186 RPT/syntax cleanup regression: PASS")
