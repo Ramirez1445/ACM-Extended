@@ -243,6 +243,7 @@ switch (_operation) do {
     case "rhythmSet": {_args call ACME_fnc_rhythmSet;};
     case "rhythmToggle": {_args call ACME_fnc_rhythmToggle;};
     case "shock": {_args call ACME_fnc_shockLocal;};
+    case "manualPlateCarrier": {_args call ACME_fnc_manualPlateCarrierCommit;};
     case "syncArmed": {
         _args params [["_medic", objNull, [objNull]], ["_armed", false, [false]], ["_epoch", -1, [0]]];
         if (!isNull _medic && {alive _medic} && {[_medic] call ace_common_fnc_isAwake}
