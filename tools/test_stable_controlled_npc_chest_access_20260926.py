@@ -66,7 +66,14 @@ def test_shared_treatment_preflight_uses_controlled_provider_identity_not_cached
     stance = read("addons/acm_extended/functions/fn_providerStanceOwned.sqf")
     assert "ACE_player" not in treatment
     assert "ACE_player" not in stance
-    assert treatment.count("ace_common_fnc_isPlayer") >= 5
+
+    # B177 removed one redundant presentation-preflight player predicate when treatment start became immediate.
+    # Validate the four remaining semantic call sites instead of counting raw occurrences.
+    assert 'local _medic} && {hasInterface} && {[_medic] call ace_common_fnc_isPlayer}' in treatment
+    assert '!([_m] call ace_common_fnc_isPlayer)' in treatment
+    assert treatment.count('local _m} && {[_m] call ace_common_fnc_isPlayer}') >= 2
+
+    # Escape/F0 cancellation resolves the actual controlled provider rather than cached ACE_player.
     assert 'objectFromNetId' in treatment
     assert '[_unit] call ace_common_fnc_isPlayer' in stance
 
