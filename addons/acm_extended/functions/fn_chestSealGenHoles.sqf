@@ -68,9 +68,9 @@ private _fnc_confinePoint = {
 
 private _injuryMap = missionNamespace getVariable ["ACM_breathing_ChestInjury_Chances", createHashMap];
 private _eligibleIDs = keys _injuryMap;
-private _maxPerSide = missionNamespace getVariable ["ACME_CS_maxHolesPerSide", 4];
-if !(_maxPerSide isEqualType 0 && {finite _maxPerSide} && {_maxPerSide >= 1}) then {_maxPerSide = 4;};
-_maxPerSide = (floor _maxPerSide) min 4;
+private _maxPerSide = missionNamespace getVariable ["ACME_CS_maxHolesPerSide", 6];
+if !(_maxPerSide isEqualType 0 && {finite _maxPerSide} && {_maxPerSide >= 1}) then {_maxPerSide = 6;};
+_maxPerSide = (floor _maxPerSide) min 6;
 
 private _fnc_mkHole = {
     params ["_side", ["_sealed", false]];
@@ -179,11 +179,21 @@ private _holes = [];
     };
 } forEach _holes;
 
-// Preserve every existing hole, including treatment-created punctures. A joining
-// viewer must never delete another provider's work.
-// Preserve record indices: treatment requests and native coverage snapshots
-// refer to these identities. Regrouping by face can reassign an existing seal.
+// Preserve valid existing holes in original order, but enforce the same authoritative 6+6 cap during migration.
+// This corrects casualties created by older builds that allowed front impacts to exceed the configured limit.
 _holes = _holes select {(_x select 0) in ["front", "back"]};
+private _cappedHoles = [];
+private _frontKept = 0;
+private _backKept = 0;
+{
+    private _side = _x select 0;
+    if (_side == "front") then {
+        if (_frontKept < _maxPerSide) then {_cappedHoles pushBack _x; _frontKept = _frontKept + 1;};
+    } else {
+        if (_backKept < _maxPerSide) then {_cappedHoles pushBack _x; _backKept = _backKept + 1;};
+    };
+} forEach _holes;
+_holes = _cappedHoles;
 
 // seed the same-side point lists from any existing holes, so newly generated wounds space against them too. it is
 // used by the rejection sampling of _fnc_mkHole above.
@@ -230,9 +240,8 @@ for "_recordIndex" from _processed to ((count _tracked) - 1) do {
     };
     if !(_injuryChance isEqualType 0 && {finite _injuryChance}) then {_injuryChance = _maxChance;};
 
-    // The visual cap bounds historical backfill, not new genuine impacts. A
-    // later penetrating hit must remain treatable even when four sites exist.
-    if (_frontCount < _maxPerSide || {!_historical}) then {
+    // Every front entry is bounded by the same authoritative per-side cap.
+    if (_frontCount < _maxPerSide) then {
         _holes pushBack ((["front", _coveredRecord] call _fnc_mkHole) + [controlNull, controlNull]);
         _frontCount = _frontCount + 1;
     };
