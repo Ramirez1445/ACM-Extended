@@ -44,67 +44,36 @@ private _fnc_getWoundsToTreat = {
 private _fnc_handleReopening = {
     params ["_patient", "_bodyPart", "_id", "_unstable", "_plateletCount"];
 
-    private _reopenDelay = linearConversion [2.5, 1, _plateletCount, 480, 180, true];
+    // Stable B180: native clot formation may very rarely schedule ONE partial clot failure.
+    // Applied bandages/wraps/stitches are never involved, and all clot-pop sources share one cooldown.
+    if (!_unstable || {isNull _patient} || {!local _patient}) exitWith {};
+    if (serverTime < (_patient getVariable ["ACME_clotPop_nextServer", -1])) exitWith {};
 
-    if !(_unstable) then {
-        _reopenDelay = linearConversion [2, 0.5, _plateletCount, 600, 300, true];
-    };
+    private _baseChance = missionNamespace getVariable ["ACME_clotPop_nativeChance", 0.0015];
+    private _maxChance = missionNamespace getVariable ["ACME_clotPop_nativeMaxChance", 0.003];
+    private _strength = (_patient getVariable ["ACME_coag_clotStrength", 1]) max 0.08 min 1.15;
+    private _plateletF = linearConversion [2.5, 0.5, _plateletCount, 0.5, 1.5, true];
+    private _strengthF = linearConversion [1, 0.25, _strength, 0.5, 1.5, true];
+    private _chance = (_baseChance * _plateletF * _strengthF) min _maxChance;
+    if (random 1 >= _chance) exitWith {};
 
-    private _delay = random [(_reopenDelay - 30), _reopenDelay, (_reopenDelay + 30)];
+    private _delayMid = linearConversion [2.5, 0.5, _plateletCount, 480, 240, true];
+    private _delay = random [(_delayMid - 60) max 120, _delayMid, _delayMid + 60];
+    private _cooldown = missionNamespace getVariable ["ACME_clotPop_cooldown", 600];
+
+    // Reserve the casualty-wide cooldown now so recursive clotting cannot queue several delayed pops.
+    _patient setVariable ["ACME_clotPop_nextServer", serverTime + _delay + _cooldown, true];
 
     [{
         params ["_patient", "_bodyPart", "_id"];
-
-        private _clottedWounds = GET_CLOTTED_WOUNDS(_patient);
-        private _clottedWoundsOnPart = _clottedWounds getOrDefault [_bodyPart, []];
-
-        private _clottedIndex = _clottedWoundsOnPart findIf {(_x select 0) isEqualTo _id && {(_x select 1) > 0}};
-
-        if (_clottedIndex isEqualTo -1) exitWith {};
-
-        (_clottedWoundsOnPart select _clottedIndex) params ["", "_clottedAmountOf", "_clottedBleeding", "_clottedDamage"];
-
-        private _clottedWound = [_id, ((_clottedAmountOf - 1) max 0), _clottedBleeding, _clottedDamage];
-
-        _clottedWoundsOnPart set [_clottedIndex, _clottedWound];
-        _clottedWounds set [_bodyPart, _clottedWoundsOnPart];
-
-        _patient setVariable [VAR_CLOTTED_WOUNDS, _clottedWounds, true];
-
-        [_patient, 1] call FUNC(refreshWounds);
-
-        private _openWounds = GET_OPEN_WOUNDS(_patient);
-        private _openWoundsOnPart = _openWounds getOrDefault [_bodyPart, []];
-
-        private _index = _openWoundsOnPart findIf {(_x select 0) isEqualTo _id};
-
-        if (_index isEqualTo -1) exitWith {};
-
-        (_openWoundsOnPart select _index) params ["", "_woundAmountOf", "_woundBleeding", "_woundDamage"];
-
-        private _openWound = [_id, (_woundAmountOf + 1), _woundBleeding, _woundDamage];
-        _openWoundsOnPart set [_index, _openWound];
-        _openWounds set [_bodyPart, _openWoundsOnPart];
-
-        _patient setVariable [VAR_OPEN_WOUNDS, _openWounds, true];
-
-        [_patient] call ACEFUNC(medical_status,updateWoundBloodLoss);
-
-        private _partIndex = GET_BODYPART_INDEX(_bodyPart);
-
-        switch (_partIndex) do {
-            case 0: { [_patient, true, false, false, false] call ACEFUNC(medical_engine,updateBodyPartVisuals); };
-            case 1: { [_patient, false, true, false, false] call ACEFUNC(medical_engine,updateBodyPartVisuals); };
-            case 2;
-            case 3: { [_patient, false, false, true, false] call ACEFUNC(medical_engine,updateBodyPartVisuals); };
-            default { [_patient, false, false, false, true] call ACEFUNC(medical_engine,updateBodyPartVisuals); };
-        };
-
-        // Check if limping is caused by this wound re-opening
-        if ((ACEGVAR(medical,limping) == 1) && {_partIndex > 3}) then {
-            [_patient] call ACEFUNC(medical_engine,updateDamageEffects);
-        };
-    }, [_patient, _bodyPart, _id, _unstable], _delay] call CBA_fnc_waitAndExecute;
+        if (isNull _patient || {!alive _patient} || {!local _patient}) exitWith {};
+        [
+            _patient,
+            missionNamespace getVariable ["ACME_clotPop_fraction", 0.15],
+            _bodyPart,
+            _id
+        ] call ACME_fnc_popClots;
+    }, [_patient, _bodyPart, _id], _delay] call CBA_fnc_waitAndExecute;
 };
 
 private _fnc_finalUpdate = {
@@ -199,19 +168,12 @@ if (_clotSuccess) then {
     _patient setVariable [VAR_OPEN_WOUNDS, _openWounds, true];
 
     private _plateletCount = _patient getVariable [QEGVAR(circulation,Platelet_Count), 3];
+    private _hasTXA = ([_patient, "TXA_IV", false] call ACEFUNC(medical_status,getMedicationCount)) > 0.05;
 
-    private _reopenChance = [0, (0.5 / _plateletCount)] select (_plateletCount < 2.5);
-
-    private _hasTXA = _TXAEffect > 0.15;
-
-    if (_hasTXA || !_unstable) then {
-        _reopenChance = _reopenChance * 0.5;
-    };
-
-    for "_i" from 1 to _amountClotted do {
-        if ((random 1) < _reopenChance) then {
-            [_patient, _bodyPart, _clottedID, (_unstable && !_hasTXA), _plateletCount] call _fnc_handleReopening;
-        };
+    // Exactly one rare scheduling decision for this clotting episode. TXA-stabilized or explicitly stable clots
+    // do not enter the spontaneous-pop path at all.
+    if (_unstable && {!_hasTXA}) then {
+        [_patient, _bodyPart, _clottedID, true, _plateletCount] call _fnc_handleReopening;
     };
 };
 
