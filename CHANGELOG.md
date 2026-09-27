@@ -8,7 +8,12 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B182 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B183 with no RC or hotfix suffix in the debug menu.
+- Remove/Replace Plate Carrier is now a global medical-menu control pinned above every category instead of living only under Advanced.
+- Manual carrier removal now uses the same chest-access medic4 provider choreography, patient lift/release animation and fixed above-head carrier prop as automatic chest access.
+- Manual removal is represented by a persistent chest-access lease. Later CPR/BVM, Chest Seal and other chest procedures reuse the already-open chest and skip the carrier-removal choreography instead of creating a second custody system.
+- A manually removed carrier is automatically and forcefully returned if the casualty wakes, starts Get Up, is dragged/carried, enters a vehicle, is externally moved away from the removal point, or another system restores a vest.
+- Manual carrier leases do not expire with provider lifetime or the ordinary 15-minute temporary chest-access stale-lease cleanup; another medic can still explicitly replace the carrier while the casualty remains down.
 - LifePak stock button hitboxes have been restored to ACM's native AED pixel grid. The separately tuned SYNC button/LED remains on the 1.05x rendered-background mapping; applying that mapping to the stock controls was what shifted them downward.
 - Provider animation speed now has an explicit ownership contract. Native treatment, treatment-pose and Semi-Fowler rate leases retire without leaving getAnimSpeedCoef above 1, preventing a completed medical action from making that player run/sprint abnormally fast.
 - Remove Plate Carrier / Replace Plate Carrier is now available on stable main under Advanced on the Body. Manual removal is immediate and animation-free, preserves the exact vest slot/loadout, remains off across later chest interventions and can only be restored by the explicit Replace action.
