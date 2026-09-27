@@ -46,9 +46,9 @@ private _hold = if (_target isEqualTo "back") then {
     missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]
 };
 
-// Ordinary callers keep the smooth priority-1 transition plus the scoped fallback. The chest-seal Flip button
-// passes _immediate=true: that path deliberately uses priority 2 and a higher lease priority on the first request,
- // because a requested physical flip must overwrite an existing casualty animation with no 0.15 s dead period.
+// Normal chest flips use the smooth priority-1 transition plus the scoped fallback. _immediate remains available
+// only for callers that explicitly need a hard patient-animation takeover; the interactive Flip button does not
+// use it because front/back rolls should interpolate into their authored motion rather than snap to frame zero.
 private _token = format ["%1:%2:%3", clientOwner, CBA_missionTime, random 1];
 private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85 / (call ACME_fnc_choreographyRate)];
 if (!(_rollTime isEqualType 0) || {!finite _rollTime} || {_rollTime <= 0}) then {_rollTime = 1.85 / (call ACME_fnc_choreographyRate);};
