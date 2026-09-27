@@ -8,7 +8,9 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B185 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B186 with no RC or hotfix suffix in the debug menu.
+- Fixed a manual plate-carrier completion callback argument mismatch that unpacked the provider object into the lease slot. The resulting string-vs-object comparison threw every scheduler pass and stranded the provider animation.
+- Fixed manual plate-carrier medical log entries to pass ACE a string message instead of an array, eliminating the repeated `isLocalized: Type Array, expected String` medical-log errors.
 - Manual Plate Carrier eligibility now uses valid SQF lazy-evaluation syntax for the medic-awake guard, fixing the HEMTT `SPE2` parse failure in `fn_manualPlateCarrierCanToggle.sqf`.
 - Transient-state reconciliation now treats IV band presence as a boolean existence problem end-to-end. Malformed replicated band flags are type-normalized before logical use, and the old numeric `findIf >= 0` path that could throw `Type Bool, expected Number` has been removed.
 - Native treatment animation handling now canonicalizes non-string/blank animation config to an empty string and completely skips animation-duration lookup when no native provider animation exists. ACME-owned Chest Seal, Inspect Chest, Thoracostomy, IV minigame and similar modal actions no longer emit empty-animation duration warnings.
