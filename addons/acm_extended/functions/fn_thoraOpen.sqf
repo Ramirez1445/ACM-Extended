@@ -56,7 +56,7 @@ if (dialog) then {closeDialog 0;};
 
 // Escape/F0 cancels only this pending thoracostomy entry.
 private _cancelCode = compile format [
-    "private _m=ACE_player; if (!isNull _m && {(_m getVariable ['ACME_chestAccessPreflightToken','']) == '%1'}) then {_m setVariable ['ACME_chestAccessPreflightCancel',true,false]; uiNamespace setVariable ['ACME_Thora_EntryCancelToken','%1'];}; false",
+    "private _m=uiNamespace getVariable ['ACME_Thora_Medic',objNull]; if (!isNull _m && {local _m} && {(_m getVariable ['ACME_chestAccessPreflightToken','']) == '%1'}) then {_m setVariable ['ACME_chestAccessPreflightCancel',true,false]; uiNamespace setVariable ['ACME_Thora_EntryCancelToken','%1'];}; false",
     _lease
 ];
 private _keys = [];
@@ -117,7 +117,7 @@ private _abort = {
     };
 
     if (_reopen && {!isNull _p} && {!isNull _m} && {alive _m} && {local _m}
-        && {!(_m getVariable ["ACE_isUnconscious", false])} && {_m isEqualTo ACE_player}) then {
+        && {!(_m getVariable ["ACE_isUnconscious", false])} && {[_m] call ace_common_fnc_isPlayer}) then {
         [_p, "airway"] call ACME_fnc_reopenMedicalMenu;
     };
 };
@@ -158,7 +158,7 @@ private _abort = {
         if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease", ""]) != _lease) exitWith {};
         if (isNull (findDisplay 86600)) then {
             [_p, _m, _lease] call _release;
-            if (!isNull _p && {!isNull _m} && {alive _m} && {local _m} && {_m isEqualTo ACE_player}) then {
+            if (!isNull _p && {!isNull _m} && {alive _m} && {local _m} && {[_m] call ace_common_fnc_isPlayer}) then {
                 [_p, "airway"] call ACME_fnc_reopenMedicalMenu;
             };
         };
