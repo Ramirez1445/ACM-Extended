@@ -42,6 +42,7 @@ def test_treatment_pose_selects_ambulatory_provider_presentation_only():
     assert '_ambulatoryContact];' in s
     assert '_medic setUnitPos "MIDDLE";' in s
     assert '["MIDDLE", "UP"] select' not in s
+    assert 'private _recoverAmbulatoryHold = (_state param [16,false]) || {_state param [19,false]};' in s
 
 
 def test_stethoscope_freezes_putdown_reach_and_resumes_authored_exit():
@@ -55,6 +56,8 @@ def test_stethoscope_freezes_putdown_reach_and_resumes_authored_exit():
     assert '_poseStateAtClose param [19,false]' in close
     assert '["lower", "contactexit"] select _ambulatoryContact' in close
     assert '"contactexit"' in seq
+    assert '[_u] call ace_common_fnc_isPlayer' in seq
+    assert "ACE_player" not in seq
     contact = seq.split('if (_mode == "contactexit") then {', 1)[1].split('} else {', 1)[0]
     assert '[_u, _second, 1] call ACME_fnc_doAnim;' in contact
     assert '_first' not in contact
