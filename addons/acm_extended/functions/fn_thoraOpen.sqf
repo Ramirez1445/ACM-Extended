@@ -46,7 +46,7 @@ private _releaseProvider = {
     private _entry = _m getVariable ["ACME_chestAccessProvider", []];
     if ((_entry param [0,objNull]) isNotEqualTo _p) exitWith {};
     // Same-patient stale callbacks must never stop a newer chest-access episode.
-    if ((_entry param [3,""]) != _lease) exitWith {};
+    if ((_m getVariable ["ACME_chestAccessProviderPrepToken",""]) != _lease) exitWith {};
     private _token = _entry param [2,""];
     if (_token == "") exitWith {};
     [_m,_p,"stop",_handoff,_token] call ACME_fnc_chestAccessVestProvider;
