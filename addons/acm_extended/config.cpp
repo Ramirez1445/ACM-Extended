@@ -8089,6 +8089,9 @@ class ace_medical_treatment_actions {
     // surgical. it shows only while an un-sutured tube is present.
     class ACME_SutureChestTube: ACME_PerformThoracostomy {
         displayName = "Suture Chest Tube";
+        // This is a state commit, not a timed procedure. Keep a tiny non-zero ACE duration because treatmentNative
+        // rejects exactly zero, while making the accepted click clinically effective on the next scheduler frame.
+        treatmentTime = 0.001;
         displayNameProgress = "Suturing chest tube in place...";
         condition = "([_medic, 'ACME_SutureChestTube'] call ACME_fnc_procedureActionAllowed) && {!isNull _patient && {(([_medic, _patient, ['ACE_surgicalKit']] call ace_medical_treatment_fnc_hasItem) || {_patient getVariable ['ACM_breathing_Thoracostomy_UsedKit', false]})} && {((_patient getVariable ['ACME_thora_tube_left', false]) && {!(_patient getVariable ['ACME_thora_sealed_left', false])}) || ((_patient getVariable ['ACME_thora_tube_right', false]) && {!(_patient getVariable ['ACME_thora_sealed_right', false])})}}";
         callbackSuccess = "_this call ACME_fnc_thoraSutureTube";
