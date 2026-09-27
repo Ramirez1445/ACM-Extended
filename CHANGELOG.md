@@ -8,7 +8,12 @@ Updated 26 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B178 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B179 with no RC or hotfix suffix in the debug menu.
+- LifePak/AED physical buttons now use the exact same 1.05x background transform as the rendered device artwork, eliminating invisible hitbox drift at 1680x1050 and other nonstandard aspect ratios. Analyze, Charge, NIBP, Speed Dial/Cancel and Shock all resolve the actual monitor operator rather than the legacy casualty sentinel.
+- The Narc Box Seconds to Push over editor now owns an explicit focus lease from mouse-down through KillFocus. Carousel, stock-list and 25 Hz UI refreshes cannot move, hide, disable or rewrite the edit while typing, and the lease is cleared on dialog teardown.
+- Get Up is mutually exclusive with ACE carry ownership. An attached/carried casualty cannot clear lying state or force a new animation underneath the carry transaction, and the Get Up prompt retires while carry ownership is active.
+- Same-vehicle medical care is clinically allowed while provider/patient animation remains suppressed. Generic progress bars, chest-access preparation, Chest Seal and Thoracostomy now treat a shared vehicle as a valid interaction context rather than failing because the animation cannot run.
+- Penetrating chest-hole state is authoritatively capped at six front and six back. New impacts cannot bypass the cap, and existing over-cap casualties are migrated down to the first six records per side.
 - Accepted medical-menu treatments now start native treatment/progress immediately on the click frame. Provider weapon/stance preparation is presentation-only and can no longer hold a clinical button for 0.5–3 seconds before anything happens.
 - Suture Chest Tube no longer inherits the Thoracostomy launcher's one-second treatment delay; it uses a 0.001 s ACE treatment window so the state commit is effectively immediate while retaining the normal treatment callback path.
 - Intentionally timed transfusion assembly buttons repaint their active state on the click frame before their assembly timer begins. Existing deferred menu transitions already close the current UI or start the native move flow first.
