@@ -24,6 +24,17 @@ if (!local _patient) exitWith {
 };
 if (!_authorized) exitWith {};
 
+// Get Up may never mutate a casualty while ACE dragging/carrying owns their transform. Clearing lying state or
+// switchMove'ing an attached casualty corrupts the carry transaction and can make the entity disappear on peers.
+private _carryOwner = attachedTo _patient;
+private _carryAnim = toLowerANSI animationState _patient;
+private _carryOwned = !isNull _carryOwner || {(_carryAnim find "carried") >= 0};
+if (_carryOwned) exitWith {
+    if (!isNull _initiator && {local _initiator}) then {
+        ["Put the casualty down before using Get Up.", 2, _initiator] call ace_common_fnc_displayTextStructured;
+    };
+};
+
 // Zone 3 aortic occlusion is incompatible with weight bearing, but do not swallow the Get Up transaction. Let the
 // casualty actually begin to rise; the owner-local 5 Hz Zone 3 watcher detects STAND/CROUCH, ragdolls them, and
 // immediately settles them prone. That makes a failed attempt look physical instead of making the button appear dead.
