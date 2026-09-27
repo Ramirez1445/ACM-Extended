@@ -7918,9 +7918,9 @@ class ace_medical_treatment_actions {
         ACM_menuIcon = "ACME_Spray_Esketamine";
     };
 
-    // Stable B182 manual chest-access gear toggle. Manual custody is persistent and intentionally separate from
-    // automatic chest-access custody: Remove Plate Carrier stores the exact vest loadout and leaves it off across
-    // later interventions; Replace Plate Carrier is the explicit restore path.
+    // Stable B183 manual chest-access gear toggle. Manual removal owns a persistent ordinary chest-access lease,
+    // so it uses the exact same medic4/patient lift + above-head carrier prop as automatic preparation. Later chest
+    // interventions reuse that custody without replaying removal; wake/transport forcibly returns the carrier.
     class ACME_ManualRemovePlateCarrier: CheckPulse {
         displayName = "Remove Plate Carrier";
         displayNameProgress = "";
