@@ -42,7 +42,7 @@ def test_measurement_uses_wrapped_content_height_without_changing_font(metric_he
         'private _renderBlock={_draws pushBack _this;};' + source + '''
         private _height=[["Patient: Long Complete Patient Name"],0.34] call _measureRows;
         [_positions isEqualTo [0.34],"measurement did not use actual wrapping width"] call _check;
-        [abs (_height-_metricH-0.0045)<0.00001,"content height replaced by fixed allocation"] call _check;
+        [abs (_height-_metricH-0.00324)<0.00001,"content height replaced by fixed allocation"] call _check;
         [_fontH==0.018 && {count (_draws select 0)==2},"measurement reduced readable font"] call _check;
         [((_draws select 0) select 1) isEqualTo ["Patient: Long Complete Patient Name"],"measurement lost text"] call _check;
     ''')
@@ -50,13 +50,16 @@ def test_measurement_uses_wrapped_content_height_without_changing_font(metric_he
 
 def test_common_base_font_is_safezone_relative_and_uniform_across_resolutions():
     source = read("debugMenuClinical")
-    assert 'private _fontH = safeZoneH * 0.0096;' in source
-    assert 'pixelH' not in source
+    assert 'private _baseFontH = safeZoneH * 0.0092;' in source
+    assert 'private _totalW = (safeZoneWAbs * 0.160)' in source
+    assert 'private _measureNaturalWidth = {' in source
+    assert '_fontH = _fontH * ((_totalW / _naturalW) min 1);' in source
+    assert '_fontH = _fontH * ((_availableH / _neededH) * 0.992);' in source
+    assert 'private _bodyAvail = (_panelBottom - _bodyY) max 0;' in source
+    assert 'max _bodyH' not in source
+    assert 'pixelH' not in source and 'pixelW' not in source and 'getResolution' not in source
     assert '{_x ctrlSetFontHeight _fontH;} forEach [_ctrlH, _ctrlT, _ctrlL, _ctrlR, _ctrlS, _ctrlM];' in source
-    assert 'safeZoneWAbs * 0.130' in source
-    assert 'safeZoneWAbs * 0.105' in source
     assert "size='" not in source
-    assert '_measureBlock' not in source and '_fit' not in source
 
 
 def test_section_color_spacing_and_values_survive_shared_formatting():
@@ -185,31 +188,32 @@ def test_normal_readings_stay_complete_on_one_row_with_fixed_label_positions(val
     ''')
 
 
-def test_extended_device_lists_wrap_without_reintroducing_a_second_major_column():
+def test_extended_device_values_expand_field_and_never_wrap():
     source=''.join(definition(n) for n in ('_safe','_padRight','_alignValue','_wrapValue','_pair','_one','_formatRow','_renderAll'))
     execute('''
-        private _cLabel="label";private _valueW=11;private _fontH=0.018;
-        private _totalW=0.21;
+        private _cLabel="label";private _valueW=11;private _baseFontH=0.018;private _fontH=0.018;
+        private _gapFactor=0.26;private _gap=_fontH*_gapFactor;private _totalW=0.21;
+        private _panelBottom=0.84;private _y=-0.16;
         private _ctrlH="head";private _ctrlL="body";
         private _renders=[];private _sizes=[];private _heights=[];
+        private _applyFont={};
+        private _measureNaturalWidth={0.20};
         private _measureRows={_heights pushBack _this;[0.025,0.58] select ((count _heights)-1)};
         private _layout={_sizes=+_this;};
         private _renderBlock={_renders pushBack _this;};
     '''+source+'''
-        private _header=["ACME DEBUG B165 | Patient: Complete Long Name"];
+        private _header=["ACME DEBUG B176 | Patient: Complete Long Name"];
         private _top=[["Role","client","good","MP","yes","good"] call _pair];
         private _left=[["HR",103,"good","BP","120/80","good"] call _pair];
         private _right=[["AAJT","Z3+Ing-left+AxL+AxR+additional device","good","XStat","no","good"] call _pair];
-        private _network=[["Chest/Own","S1/E1","good","Revision","NA2-1.2.3-stable","good"] call _pair];
+        private _network=[["Chest/Own","S1/E1","good","Revision","NA2-1.2.4-stable","good"] call _pair];
         call _renderAll;
         [count _renders==2 && {count _heights==2},"compact renderer still painted multiple major columns"] call _check;
-        [_sizes isEqualTo [0.025,0.58],"content-driven layout did not receive one combined body height"] call _check;
+        [_valueW==count "Z3+Ing-left+AxL+AxR+additional device","value field did not grow to longest current value"] call _check;
         private _rows=(_renders select 1) select 1;
         [count _rows==4,"logical sections were lost while serializing the single column"] call _check;
         private _long=_rows select 2;
-        [(_long find "<br/>")>=0,"long device list did not wrap inside narrow panel"] call _check;
-        private _parts=["Z3+Ing-left+AxL+AxR+additional device",11] call _wrapValue;
-        [(_parts joinString "")=="Z3+Ing-left+AxL+AxR+additional device","wrapping dropped device text"] call _check;
-        {[(count _x)<=11,"continuation overruns compact field"] call _check;} forEach _parts;
+        [(_long find "<br/>")==-1,"long device value wrapped despite dynamic field width"] call _check;
+        [(_long find "Z3+Ing-left+AxL+AxR+additional device")>=0,"long device value was truncated"] call _check;
     ''')
 
