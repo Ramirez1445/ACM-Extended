@@ -19,9 +19,10 @@ params ["_patient"];
 
 if (isNull _patient) exitWith {};
 
-private _medic = _patient getVariable [QGVAR(AED_Provider), objNull];
-
-if (isNull _medic) exitWith {};
+// AED_Provider is a legacy casualty sentinel in this fork. The monitor records the actual local operator.
+private _medic = missionNamespace getVariable [QGVAR(AED_Monitor_Medic), objNull];
+if (isNull _medic) then {_medic = ACE_player;};
+if (isNull _medic || {!alive _medic}) exitWith {};
 
 if ([_medic, _patient] call FUNC(AED_CanManualCharge)) then {
     [_medic, _patient, true] call FUNC(AED_BeginCharge);
