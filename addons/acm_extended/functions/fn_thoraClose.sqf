@@ -19,7 +19,7 @@ if (!isNull _mHE && {local _mHE}) then {
     private _providerEntry = _mHE getVariable ["ACME_chestAccessProvider", []];
     if ((_providerEntry param [0,objNull]) isEqualTo _pHE) then {
         private _providerToken = _providerEntry param [2,""];
-        private _providerPrep = _providerEntry param [3,""];
+        private _providerPrep = _mHE getVariable ["ACME_chestAccessProviderPrepToken",""];
         private _activeLease = uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""];
         if (_providerToken != "" && {_providerPrep != ""} && {_providerPrep == _activeLease}) then {
             [_mHE,_pHE,"stop",false,_providerToken] call ACME_fnc_chestAccessVestProvider;
