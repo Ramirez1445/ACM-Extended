@@ -204,6 +204,7 @@ if (count (missionNamespace getVariable ["ACME_spikingActive", []]) > 0) exitWit
 // a "Spiking Bag..." beat on the button, then the commit, which consumes the iv line and the bag and stores a
 // single-bag set.
 missionNamespace setVariable ["ACME_spikingActive", [_class, diag_tickTime + 1.6]];
+call ACME_fnc_updateTransfusionControls;
 [{
     params ["_class", "_action", "_setItem", "_setName", "_kind", "_cold", "_medic", "_target"];
     missionNamespace setVariable ["ACME_spikingActive", []];
