@@ -1829,6 +1829,7 @@ class CfgFunctions {
             class manualPlateCarrierCanToggle {};
             class manualPlateCarrierCommit {};
             class manualPlateCarrierAutoReturn {};
+            class manualPlateCarrierHeadElevSupport {};
             class registerManualPlateCarrierRuntime {};
             class chestSealProviderHoldStart {};
             class registerMegacodeInteractionRuntime {};
