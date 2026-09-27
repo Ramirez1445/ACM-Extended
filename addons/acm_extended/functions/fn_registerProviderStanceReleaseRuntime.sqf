@@ -163,12 +163,9 @@
             // That left getAnimSpeedCoef at the choreography rate and made only this unit run/sprint extremely fast.
             _medic setVariable ["ACME_nativeTreatmentRate", [], true];
 
-            // A newer live pose may legitimately own a non-1 coefficient. Preserve only a real current speed owner,
-            // never an epoch mismatch by itself.
-            private _remotePose = _medic getVariable ["ACME_treatmentPoseRemote", []];
-            private _remoteOp = _remotePose param [1, ""];
-            private _remoteOwnsRate = _remoteOp in ["run", "hold", "exit"];
-            if ([_medic] call ACME_fnc_providerStanceOwned || {_remoteOwnsRate}) exitWith {};
+            // A newer live animation-speed owner may legitimately keep a non-1 coefficient. Broad stance ownership
+            // is NOT enough: menu crouch/Direct Pressure must never strand an old accelerated treatment rate.
+            if ([_medic] call ACME_fnc_providerAnimSpeedOwned) exitWith {};
 
             _medic setAnimSpeedCoef 1;
             ["ace_common_setAnimSpeedCoef", [_medic, 1]] call CBA_fnc_globalEvent;
