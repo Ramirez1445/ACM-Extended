@@ -118,7 +118,7 @@ private _providerPFH = [{
 
     // Movement cancels only provider theatre. It never changes the patient-side Semi-Fowler state.
     private _cancel = false;
-    if (hasInterface && {!isNil "ACE_player"} && {_u isEqualTo ACE_player}) then {
+    if (hasInterface && {local _u} && {[_u] call ace_common_fnc_isPlayer}) then {
         _cancel = ["MoveForward", "MoveBack", "TurnLeft", "TurnRight", "MoveLeft", "MoveRight",
             "MoveFastForward", "MoveSlowForward"] findIf {(inputAction _x) > 0.05} >= 0;
     };
