@@ -26,21 +26,34 @@ ACME_poseStopAfterHold = createHashMapFromArray [
 // B57 medical-menu provider stance. Opening the menu uses only empty hands plus the normal BI transition into
 // crouch. No medic-over-patient state is held, which keeps root motion and the player's head/camera free.
 ACME_menuPoseEnabled = true;
-// B56 upright patients: candidate standing medicUp states per pose mode, used only when the patient is standing
-// or crouching, conscious and on foot, and only if the state exists on this machine (fn_poseUprightState). Names
-// follow the BI pattern of the kneeling states; correct any entry here without a build.
+// B175 ambulatory patients: explicit BI medicUp states for treatment of a conscious casualty who is standing
+// independently. medicUp is a KNEELING-provider family (AinvPknl...) whose hands work upward/in front instead of
+// down toward a casualty on the ground. fn_poseUprightState validates every candidate with isClass at runtime.
 ACME_poseUprightStates = createHashMapFromArray [
-    ["torsoBandage", "AinvPercMstpSnonWrflDnon_medicUp4"],
-    ["headBandageLeft", "AinvPercMstpSnonWrflDnon_medicUp0"],
-    ["headBandageRight", "AinvPercMstpSnonWrflDnon_medicUp2"],
-    ["directPressureAction", "AinvPercMstpSnonWrflDnon_medicUp5"],
-    ["chestSeal", "AinvPercMstpSnonWnonDnon_medicUp3"],
-    ["ncdSeat", "AinvPercMstpSnonWrflDnon_medicUp1"],
-    ["pulse", "AinvPercMstpSnonWrflDnon_medicUp1"],
-    ["inspect", "AinvPercMstpSnonWnonDnon_medicUp4"],
-    ["response", "AinvPercMstpSnonWrflDnon_medicUp3"],
-    ["airway", "AinvPercMstpSnonWrflDnon_medicUp4"]
+    ["torsoBandage",       "AinvPknlMstpSnonWrflDnon_medicUp4"],
+    ["headBandageLeft",    "AinvPknlMstpSnonWrflDnon_medicUp0"],
+    ["headBandageRight",   "AinvPknlMstpSnonWrflDr_medicUp2"],
+    ["directPressureAction","AinvPknlMstpSnonWrflDnon_medicUp5"],
+    ["chestSealWorkspace", "AinvPknlMstpSnonWnonDnon_medicUp4"],
+    ["chestSeal",          "AinvPknlMstpSnonWnonDnon_medicUp3"],
+    ["ncdSeat",            "AinvPknlMstpSnonWrflDnon_medicUp1"],
+    ["pulse",              "AinvPknlMstpSnonWrflDnon_medicUp1"],
+    ["inspect",            "AinvPknlMstpSnonWnonDnon_medicUp4"],
+    ["response",           "AinvPknlMstpSnonWrflDnon_medicUp3"],
+    ["airway",             "AinvPknlMstpSnonWrflDnon_medicUp4"]
 ];
+
+// The ordinary inspect/pulse hold times above already transfer directly to their matching medicUp states.
+// The chest-seal workspace is normally a looped custom downed pose, so its ambulatory medicUp4 replacement needs
+// an explicit frozen work sample for the lifetime of the panel.
+ACME_poseUprightHoldAt = createHashMapFromArray [
+    ["chestSealWorkspace", 2.2]
+];
+
+// Standing-casualty auscultation deliberately does not use a generic medicUp state. It uses the same authored
+// Putdown reach as Semi-Fowler provider theatre and freezes while the hand is extended toward the casualty.
+// Native RTM seconds; one constant makes the exact contact frame easy to tune in game without changing control flow.
+ACME_uprightStethoscopeHoldAt = 0.55;
 // the searchable thorax band, as a fraction of the body rect [x,y,w,h]. it sits above the diaphragm and over
 // the lung fields, not the abdomen. nudge it if holes land off the chest on your body image.
 ACME_CS_thoraxZoneFrac = [0.395, 0.205, 0.21, 0.18];
