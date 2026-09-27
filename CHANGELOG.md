@@ -8,7 +8,7 @@ Updated 26 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B177 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B178 with no RC or hotfix suffix in the debug menu.
 - Accepted medical-menu treatments now start native treatment/progress immediately on the click frame. Provider weapon/stance preparation is presentation-only and can no longer hold a clinical button for 0.5–3 seconds before anything happens.
 - Suture Chest Tube no longer inherits the Thoracostomy launcher's one-second treatment delay; it uses a 0.001 s ACE treatment window so the state commit is effectively immediate while retaining the normal treatment callback path.
 - Intentionally timed transfusion assembly buttons repaint their active state on the click frame before their assembly timer begins. Existing deferred menu transitions already close the current UI or start the native move flow first.
@@ -17,8 +17,8 @@ Updated 26 September 2026.
 - Chest Seal, NAR SPEAR, Thoracostomy and shared chest-access preparation recognize locally controlled NPC/Zeus medics through ACE's player-control predicate rather than requiring the provider object to equal the cached ACE_player object.
 - Conscious independently standing or crouched casualties use provider-only ambulatory treatment presentation instead of downed-casualty poses. Explicit treatments select validated vanilla `AinvPknl...medicUp0-5` empty-hands states and fall back safely if a state is unavailable.
 - Conscious prone casualties deliberately return to the normal downed-target provider animation family, but ACME does not take over or settle the patient's animation while that casualty remains independently conscious.
-- Standing/crouched auscultation uses the existing Semi-Fowler Putdown reach, freezes at the hand-out contact frame for the lifetime of the stethoscope, then resumes directly through the authored Putdown return animation on close.
-- Chest Seal placement uses the selected ambulatory `medicUp3` pose when appropriate. NAR SPEAR temporarily hands off from the chest workspace to `medicUp1`, then restores the workspace pose when the seating gesture ends.
+- Standing/crouched auscultation uses the existing Semi-Fowler Putdown reach, freezes the frame already on screen without seeking backward into the RTM, then resumes directly through the authored Putdown return animation on close.
+- Ambulatory `medicUp` animations are now strict one-shot gestures: no hold recovery, no watchdog replay, no repeated seek, and no independent Chest Seal reassert loop. Chest Seal and NAR SPEAR no longer replay the ambulatory workspace animation after their one-shot gesture ends.
 - The debug overlay is now pinned to the absolute left safe edge and uses one height-based reference geometry across aspect ratios. Its panel width, typography and spacing scale uniformly instead of widening on ultrawide displays.
 - Debug rows dynamically expand their value columns before rendering, then the entire overlay receives one common width/height fit. Normal values no longer word-wrap, and the body control is hard-bounded to the panel bottom so 1680x1050 and other short safe areas cannot clip the final sections.
 - Launcher metadata now identifies the package as ACM Extended rather than the development fork.
