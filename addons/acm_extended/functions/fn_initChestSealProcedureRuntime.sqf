@@ -43,12 +43,9 @@ ACME_poseUprightStates = createHashMapFromArray [
     ["airway",             "AinvPknlMstpSnonWnonDnon_medicUp4"]
 ];
 
-// The ordinary inspect/pulse hold times above already transfer directly to their matching medicUp states.
-// The chest-seal workspace is normally a looped custom downed pose, so its ambulatory medicUp4 replacement needs
-// an explicit frozen work sample for the lifetime of the panel.
-ACME_poseUprightHoldAt = createHashMapFromArray [
-    ["chestSealWorkspace", 2.2]
-];
+// B178: medicUp states are finite one-shot provider gestures. Never freeze or recover them. Replaying/seeking a
+// finished medicUp RTM is visibly wrong and was the source of the repeated ambulatory treatment animations.
+ACME_poseUprightHoldAt = createHashMap;
 
 // Standing-casualty auscultation deliberately does not use a generic medicUp state. It uses the same authored
 // Putdown reach as Semi-Fowler provider theatre and freezes while the hand is extended toward the casualty.
