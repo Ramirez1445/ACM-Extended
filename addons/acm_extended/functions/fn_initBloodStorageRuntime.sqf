@@ -82,7 +82,8 @@ if (hasInterface) then {
     // NA2: register after ACME_coolerContentsDt is initialized below.
 };
 
-// clot pop. the server tick fires this at the owner of a patient to reopen bandaged wounds.
+// Clot pop. The server tick targets the casualty owner and may partially reopen ONE unsecured clot.
+ // Applied dressings are never touched by this event.
 ["ACME_popClots", { _this call ACME_fnc_popClots }] call CBA_fnc_addEventHandler;
 
 // blood cold chain. a cooler keeps blood transfusable and warm blood spoils. freshness is tracked from the
@@ -111,14 +112,16 @@ ACME_coolerBoxScale      = 0.65;  // visual and geometry scale applied to a depl
 // loose.
 ACME_clotPop_enabled     = true;
 ACME_clotPop_bvThreshold = 5.1;  // blood volume in l below which the patient is unstable. normal is 6, so this is about a 15 percent loss.
-ACME_clotPop_chance      = 0.08;  // B120: low base per-pass risk; coagulopathy can reopen a clot occasionally rather than every few seconds.
-ACME_clotPop_fraction    = 0.20;  // fraction of one selected bandaged wound that tears back open per event
-ACME_clotPop_dt          = 30;  // s between clot-pop risk evaluations
-ACME_clotPop_maxChance   = 0.15;  // ceiling per pass after load/shock/MAP scaling.
+ACME_clotPop_chance      = 0.001; // B180: 0.1% base risk per one-minute pass, only while an unsecured clot exists.
+ACME_clotPop_fraction    = 0.15;  // at most 0.15 of ONE clotted wound reopens per successful event.
+ACME_clotPop_dt          = 60;    // one risk evaluation per minute.
+ACME_clotPop_maxChance   = 0.003; // hard 0.3% ceiling per minute after all severity scaling.
+ACME_clotPop_nativeChance = 0.0015; // rare instability of a newly formed native clot.
+ACME_clotPop_nativeMaxChance = 0.003; // hard cap for native clot-instability scheduling.
 ACME_ca_mapEasePerSec    = 0.2;  // mmhg/s that the calcium MAP suppression is walked off. 18 mmhg across about 90 s,
                                   // rather than vanishing on the tick after the syringe goes in.
 ACME_clotPop_fluidTypes  = ["Saline", "PlasmaLyte"];  // dilutional fluids that pop clots. add "HTS" or "Plasma" to include them.
-ACME_clotPop_cooldown    = 120; // seconds after a successful clot-pop before that casualty can suffer another custom reopen.
+ACME_clotPop_cooldown    = 600; // ten-minute shared cooldown after any scheduled/successful clot-pop event.
 if (isServer) then {
     [{ [] call ACME_fnc_bloodColdChainTick }, ACME_bloodScanInterval, []] call CBA_fnc_addPerFrameHandler;
     [{ [] call ACME_fnc_clotPopTick }, ACME_clotPop_dt, []] call CBA_fnc_addPerFrameHandler;
