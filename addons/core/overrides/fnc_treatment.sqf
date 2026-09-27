@@ -604,11 +604,11 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     if (_started && {local _medic} && {!isNull _medic} && {isNull objectParent _medic}) then {
         if (_mode != "") then {
             [{
-                params ["_m", "_mode", "_window"];
+                params ["_m", "_mode", "_window", "_patient"];
                 if (!isNull _m && {alive _m} && {local _m}) then {
                     [_m, _mode, _window, _patient] call ACME_fnc_treatmentGesture;
                 };
-            }, [_medic, _mode, _gestureWindow]] call CBA_fnc_execNextFrame;
+            }, [_medic, _mode, _gestureWindow, _patient]] call CBA_fnc_execNextFrame;
         } else {
             if (_exactAnim != "") then {
                 [{
