@@ -8,7 +8,8 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B188 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B189 with no RC or hotfix suffix in the debug menu.
+- Fixed the remaining first-open Narc Box Seconds to Push over focus race. Deferred Draw-page tag controls are no longer created after Body Map takes ownership, and hidden medication/list refreshes are suspended while the duration editor owns keyboard focus.
 - A manually removed plate carrier can now be borrowed directly as the Semi-Fowler support when no backpack is present. The same saved vest and world prop are reused, so no duplicate carrier is spawned and manual custody remains authoritative.
 - Semi-Fowler now resumes automatically after manual carrier-removal choreography if it had been temporarily flattened for the removal. The casualty replays the normal patient lift/hold sequence, and the provider replays the normal supported Semi-Fowler lift.
 - The chest-access carrier watchdog no longer pulls a manually borrowed Semi-Fowler support prop back to the ground park while the patient is elevated.
