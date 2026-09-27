@@ -179,6 +179,7 @@ def test_manual_carrier_auto_returns_on_wake_getup_transport_and_movement():
 
     assert "ACME_manualPlateCarrierWatchPFH" in runtime
     assert "_awake || {_transported} || {_moved} || {_externalVest}" in runtime
+    assert "distance2D _origin > 0.35" in runtime
     assert '"ace_dragging_setupDrag"' in runtime
     assert '"ace_dragging_setupCarry"' in runtime
     assert '[_patient, "getup"] call ACME_fnc_manualPlateCarrierAutoReturn;' in getup
