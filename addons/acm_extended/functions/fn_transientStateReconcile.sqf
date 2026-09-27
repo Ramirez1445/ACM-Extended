@@ -331,13 +331,19 @@ for "_i" from 2 to 5 do {
     private _rowValid = false;
     if (_stateValid) then {
         private _key = format ["%1|%2", _parts select _i, _view];
-        private _ri = _siteRows findIf {
+
+        // B184: this is a boolean existence test, not an index lookup. Older builds used findIf and then compared
+        // its result numerically. A corrupted/foreign return value could therefore reach ">= 0" as a BOOL and throw
+        // "Type Bool, expected Number". Walk the rows directly so the invariant itself is boolean end-to-end.
+        {
             private _row = _x;
-            if !(_row isEqualType [] && {count _row == 4} && {(_row param [0, ""]) == _key}) exitWith {false};
-            private _rb = _row param [1, []];
-            (_rb isEqualType []) && {count _rb == 6} && {_rb param [0, false]}
-        };
-        _rowValid = _ri >= 0;
+            if (_row isEqualType [] && {count _row == 4} && {(_row param [0, ""]) == _key}) then {
+                private _rb = _row param [1, []];
+                if (_rb isEqualType [] && {count _rb == 6} && {_rb param [0, false]}) exitWith {
+                    _rowValid = true;
+                };
+            };
+        } forEach _siteRows;
     };
 
     private _ghost = (_flag && {!(_stateValid && {_rowValid})}) || {!_flag && {_stateOn}};
