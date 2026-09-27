@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B172: thoracostomy modal launch must not strand menu/weapon/provider state."""
+"""Stable B173: thoracostomy modal launch must not strand menu/weapon/provider state."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -67,11 +67,11 @@ def test_abort_and_close_restore_free_provider_input_state_without_normal_provid
         assert 'ACME_nativeTreatmentRate' in src
         assert 'treatmentEndInAnim' in src
 
-def test_stable_debug_identity_is_b173_thora2():
+def test_stable_debug_identity_is_b173_without_hotfix_suffix():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'ACME_buildBatch = "B173";' in startup
-    assert 'ACME_debugRevision = "THORA2";' in startup
+    assert 'ACME_debugRevision = "";' in startup
     assert 'version = "1.2.4";' in cfg
 
 if __name__ == "__main__":
