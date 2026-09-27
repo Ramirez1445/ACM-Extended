@@ -77,11 +77,8 @@ private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85 / (ca
 if !(_rollTime isEqualType 0 && {finite _rollTime}) then {_rollTime = 1.85 / (call ACME_fnc_choreographyRate);};
 _rollTime = (_rollTime max 0.1) min 5;
 
-// The workspace/medic3/medic1 states are already visibly Wnon/Snon. Clear only the logical selected weapon
-// so medicAnimationPrep sees the real empty-hands handoff instead of asking Arma to play another holster/draw chain.
-// Then use the SAME rollProviderStart call used by the other chest flip sequences.
-if (currentWeapon _provider != "") then {_provider selectWeapon "";};
-_provider setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
+// Use the exact same provider entry path as the other chest flips. Do not manipulate weapon selection here:
+ // rollProviderStart/treatmentPoseStart own the normal empty-hands preflight and medic4 interpolation.
 private _started = [_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart;
 private _pose = _provider getVariable ["ACME_treatmentPoseState", []];
 private _epoch = if (_started) then {_pose param [0, -1]} else {-1};
