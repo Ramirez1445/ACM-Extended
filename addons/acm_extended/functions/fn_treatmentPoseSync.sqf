@@ -54,8 +54,17 @@ if (_operation != "hold") exitWith {
             if (isNull _medic) exitWith {};
             private _record = _medic getVariable ["ACME_treatmentPoseRemote", []];
             if !(_record isEqualTo [_epoch, "exit", -1]) exitWith {};
-            if (((_medic getVariable ["ACME_treatmentPoseEpisode", [-1, false]]) select 0) > _epoch) exitWith {};
-            if (local _medic && {[_medic] call ACME_fnc_providerStanceOwned}) exitWith {};
+
+            private _episode = _medic getVariable ["ACME_treatmentPoseEpisode", [-1, false]];
+            private _newerEpisode = (_episode param [0, -1]) > _epoch;
+            private _newerSpeedOwner = local _medic && {[_medic, _epoch] call ACME_fnc_providerAnimSpeedOwned};
+
+            // B182: an old exit record is retired even when a newer controller owns the coefficient. Leaving the
+            // record as "exit" made later cleanup believe the OLD pose still owned speed, so nobody restored 1.0.
+            if (_newerEpisode || {_newerSpeedOwner}) exitWith {
+                _medic setVariable ["ACME_treatmentPoseRemote", [_epoch, "release", -1]];
+            };
+
             _medic setAnimSpeedCoef 1;
             _medic setVariable ["ACME_treatmentPoseRemote", [_epoch, "release", -1]];
         }, [_medic, _epoch], if (_phase > 0) then {_phase} else {0.85 / _rate}] call CBA_fnc_waitAndExecute;
