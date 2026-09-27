@@ -8,7 +8,10 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B183 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B184 with no RC or hotfix suffix in the debug menu.
+- Transient-state reconciliation now treats IV band presence as a boolean existence problem end-to-end. Malformed replicated band flags are type-normalized before logical use, and the old numeric `findIf >= 0` path that could throw `Type Bool, expected Number` has been removed.
+- Native treatment animation handling now canonicalizes non-string/blank animation config to an empty string and completely skips animation-duration lookup when no native provider animation exists. ACME-owned Chest Seal, Inspect Chest, Thoracostomy, IV minigame and similar modal actions no longer emit empty-animation duration warnings.
+- Structured item descriptions now XML-escape ampersands. The HPMK description no longer produces repeated `Unknown entity: Management Kit. Reusable warming blanket` log spam, and the AAJT-S description was corrected at the same boundary.
 - Remove/Replace Plate Carrier is now a global medical-menu control pinned above every category instead of living only under Advanced.
 - Manual carrier removal now uses the same chest-access medic4 provider choreography, patient lift/release animation and fixed above-head carrier prop as automatic chest access.
 - Manual removal is represented by a persistent chest-access lease. Later CPR/BVM, Chest Seal and other chest procedures reuse the already-open chest and skip the carrier-removal choreography instead of creating a second custody system.
