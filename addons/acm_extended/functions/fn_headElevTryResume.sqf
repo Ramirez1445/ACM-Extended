@@ -21,11 +21,15 @@ if (_patient getVariable ["ACME_CS_ProcedureActive", false]) exitWith {
     [{_this call ACME_fnc_headElevTryResume;}, [_patient, _token], 0.5] call CBA_fnc_waitAndExecute;
 };
 
-// A backpack-supported chest action restores its worn carrier through a visible reverse lift.
-// Do not re-elevate the casualty underneath that animation or move the support/carrier props at the same time.
+// Ordinary chest-access owners still block re-elevation while their carrier transaction is active. A persistent
+// manual carrier lease is different: it is the support source Semi-Fowler is allowed to borrow, so ignore only that
+// exact lease after its removal choreography has finished.
 private _chestLeases = _patient getVariable ["ACME_chestAccess_leases", createHashMap];
+if !(_chestLeases isEqualType createHashMap) then {_chestLeases = createHashMap;};
+private _manualLease = _patient getVariable ["ACME_manualPlateCarrierLease", ""];
+private _blockingChestLeases = (keys _chestLeases) select {_x != _manualLease};
 private _chestBusy = _patient getVariable ["ACME_chestAccess_vestBusy", ""];
-if ((count _chestLeases) > 0 || {_chestBusy != ""}) exitWith {
+if ((count _blockingChestLeases) > 0 || {_chestBusy != ""}) exitWith {
     [{_this call ACME_fnc_headElevTryResume;}, [_patient, _token], 0.5] call CBA_fnc_waitAndExecute;
 };
 
