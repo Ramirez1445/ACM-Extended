@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B188 build: B184/B185 RPT cleanup remains enforced."""
+"""Stable B189 build: B184/B185 RPT cleanup remains enforced."""
 from pathlib import Path
 import re
 
@@ -111,7 +111,7 @@ def test_custom_modal_actions_are_allowed_to_have_no_native_animation():
 def test_manual_plate_carrier_awake_guard_uses_valid_sqf_syntax():
     s = read("addons/acm_extended/functions/fn_manualPlateCarrierCanToggle.sqf")
 
-    # B188 deliberately split the old compound lazy-eval expression into simple executable guards.
+    # B189 deliberately split the old compound lazy-eval expression into simple executable guards.
     # This is clearer to HEMTT/SQF parsing and avoids the malformed-brace regression entirely.
     assert 'if (!(alive _medic)) exitWith {false};' in s
     assert 'if (!([_medic] call ace_common_fnc_isAwake)) exitWith {false};' in s
@@ -142,7 +142,7 @@ def test_build_identity_is_b186_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B188";' in startup
+    assert 'ACME_buildBatch = "B189";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -150,4 +150,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B188 RPT/syntax cleanup regression: PASS")
+    print("stable B189 RPT/syntax cleanup regression: PASS")
