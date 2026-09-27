@@ -50,7 +50,7 @@ if (_restore) exitWith {
             _p setVariable ["ACME_manualPlateCarrierProvider", objNull, true];
             _p setVariable ["ACME_manualPlateCarrierOriginASL", [], true];
             _p setVariable ["ACME_manualPlateCarrierRemoved", false, true];
-            [_p, "activity", ["Plate carrier replaced"], []] call ace_medical_treatment_fnc_addToLog;
+            [_p, "activity", "Plate carrier replaced", []] call ace_medical_treatment_fnc_addToLog;
         };
         ["ACME_manualPlateCarrierAck", [_p, true, _success], _medic] call CBA_fnc_targetEvent;
     }, [_patient, _medic, _lease], 6, {
@@ -79,7 +79,8 @@ _patient setVariable ["ACME_manualPlateCarrierRemoved", false, true];
 [_patient, _medic, _lease, true, "manualplatecarrier", _lease] call ACME_fnc_chestAccessVestEvent;
 
 [{
-    params ["_p", "_lease"];
+    // CBA passes the exact argument array below. Keep the provider slot here so the lease remains the third value.
+    params ["_p", "_medic", "_lease"];
     if (isNull _p || {!local _p}) exitWith {true};
     if ((_p getVariable ["ACME_manualPlateCarrierLease", ""]) != _lease) exitWith {true};
     private _saved = _p getVariable ["ACME_chestAccess_vestLoadout", []];
@@ -100,7 +101,7 @@ _patient setVariable ["ACME_manualPlateCarrierRemoved", false, true];
     [_medic, "chestAccessVestProvider", [_medic, _p, "manualstop", false, "", _lease]]
         call ACME_fnc_ownerDispatch;
 
-    [_p, "activity", ["Plate carrier manually removed"], []] call ace_medical_treatment_fnc_addToLog;
+    [_p, "activity", "Plate carrier manually removed", []] call ace_medical_treatment_fnc_addToLog;
     ["ACME_manualPlateCarrierAck", [_p, false, true], _medic] call CBA_fnc_targetEvent;
 }, [_patient, _medic, _lease], 8, {
     params ["_p", "_medic"];
