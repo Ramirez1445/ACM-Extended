@@ -198,6 +198,10 @@ switch (_operation) do {
     case "ettExtubate": {
         _args params [["_medic", objNull, [objNull]]];
         if (_patient getVariable ["ACME_ETT_Inserted", false]) then {
+            // The ETT is a valid Ventway airway. Tear down the mounted ventilator/custody before removing the tube
+            // so no drive tick or circuit state survives an airway that no longer exists.
+            [_patient, _medic, "ETT removed"] call ACME_fnc_ventAirwayLoss;
+
             [_patient, false, false, false, false, true, false] call ACME_fnc_ettAirwayStateCommit;
             [_patient, "placement", [0, 0, false]] call ACME_fnc_ettMigrationStateCommit;
             [_patient, "obstruction", [false, 0]] call ACME_fnc_ettMigrationStateCommit;
@@ -207,10 +211,6 @@ switch (_operation) do {
             _patient setVariable ["ACME_ETT_Trauma", false, true];
             _patient setVariable ["ACME_ETT_Medic", objNull, true];
             _patient setVariable ["ACME_ETT_Time", 0, true];
-            if (_patient getVariable ["ACME_vent_connected", false]) then {
-                _patient setVariable ["ACME_vent_connected", false, true];
-                _patient setVariable ["ACME_vent_driving", false, true];
-            };
             if (!isNil "ace_medical_treatment_fnc_addToLog") then {
                 [_patient, "airway", "Extubated: ET tube removed", []] call ace_medical_treatment_fnc_addToLog;
             };
