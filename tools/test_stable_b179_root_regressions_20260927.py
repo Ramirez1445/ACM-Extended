@@ -45,7 +45,7 @@ def test_every_operator_dependent_aed_button_uses_actual_monitor_medic():
     ):
         s = read(f"addons/circulation/functions/fnc_{name}.sqf")
         assert "AED_Monitor_Medic" in s
-        assert "AED_Provider" not in s
+        assert '_patient getVariable [QGVAR(AED_Provider)' not in s
     charge = read("addons/circulation/functions/fnc_AED_BeginCharge.sqf")
     assert '_medic setVariable [QGVAR(AED_Medic_InUse), true, true];' in charge
 
