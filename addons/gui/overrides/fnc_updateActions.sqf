@@ -125,8 +125,24 @@ _dogTags = _dogTags apply {
     _row set [7, ''];
     _row
 };
-// Stop Direct Pressure is always the first treatment row whenever its normal condition makes it visible. Apply
-// Direct Pressure follows it, still ahead of bandage headers/actions. Use stable treatment classes, never labels.
+// Manual plate-carrier custody is a global chest-access control, not an Advanced-only workflow. Pull the
+// mutually-exclusive Remove/Replace row out before grouping and clone its category to the currently selected tab,
+// so the same authoritative action is pinned above EVERY category without duplicating treatment classes.
+private _manualCarrier = _menuActions select {
+    (toLower (_x param [8, ''])) in ['acme_manualremoveplatecarrier', 'acme_manualreplaceplatecarrier']
+};
+_menuActions = _menuActions select {
+    !((toLower (_x param [8, ''])) in ['acme_manualremoveplatecarrier', 'acme_manualreplaceplatecarrier'])
+};
+_manualCarrier = _manualCarrier apply {
+    private _row = +_x;
+    _row set [1, _selectedCategory];
+    if ((count _row) > 9) then {_row set [9, ''];};
+    _row
+};
+
+// Stop Direct Pressure follows the carrier control whenever its normal condition makes it visible. Apply
+// Direct Pressure remains ahead of ordinary bandage headers/actions. Use stable treatment classes, never labels.
 private _stopPressure = _menuActions select {toLower (_x param [8, '']) == 'acme_stopdirectpressure'};
 private _pressure = _menuActions select {toLower (_x param [8, '']) == 'acme_directpressure'};
 _menuActions = _menuActions select {
@@ -213,7 +229,7 @@ if (_nestEnabled) then {
     _menuActions = _out;
 };
 
-_menuActions = _stopPressure + _pressure + _menuActions + _dogTags;
+_menuActions = _manualCarrier + _stopPressure + _pressure + _menuActions + _dogTags;
 private _shownIndex = 0;
 private _actionIndex = 0;
 {
