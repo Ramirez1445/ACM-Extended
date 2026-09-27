@@ -2692,6 +2692,7 @@ class CfgFunctions {
             class ventPanelHideScreen {};
             class ventConnectPatient {};
             class ventDisconnectPatient {};
+            class ventAirwayLoss {};
             class ventDeviceFields {};
             class ventRecoveryNear {};
             class ventPatientClear {};
