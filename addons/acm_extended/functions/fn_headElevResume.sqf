@@ -40,6 +40,16 @@ _patient setVariable ["ACME_headElev_baseDir", getDir _patient, true];
 private _headProp = _patient getVariable ["ACME_headElev_propObj", objNull];
 if (!isNull _headProp) then {_headProp setVariable ["ACME_chestFixedPark", nil, false];};
 [_patient] call ACME_fnc_headElevPropApply;
+
+// A manually borrowed support carrier came from an explicit provider action. Reproduce the normal supported
+// Semi-Fowler provider lift on resume so the patient and provider return to the elevated posture together.
+if (_patient getVariable ["ACME_headElev_manualCarrierBorrowed", false]) then {
+    private _provider = _patient getVariable ["ACME_manualPlateCarrierProvider", objNull];
+    if (!isNull _provider && {alive _provider}) then {
+        [_provider, "headElevMedicStart", [_provider, _patient]] call ACME_fnc_ownerDispatch;
+    };
+};
+
 private _resumed = [_patient] call ACME_fnc_headElevApplyTilt;
 if !(_resumed isEqualTo true) then {
     // Keep the logical episode suspended and retry after the competing animation lease retires. Never publish an
