@@ -12,6 +12,15 @@ if (isNull _display) exitWith {[]};
 private _list = _display displayCtrl 84006;
 if (isNull _list) exitWith {[]};
 
+// B189: lbClear/lbSetCurSel on the hidden native selector can still take keyboard focus on a fresh display.
+// While Seconds to Push over owns the keyboard, return the already-published row model without touching the list.
+private _durationFocus = focusedCtrl _display;
+private _durationEditing = (uiNamespace getVariable ["ACME_SK_PushDurationEditing", false])
+    || {!isNull _durationFocus && {(ctrlIDC _durationFocus) == 84831}};
+if (_durationEditing) exitWith {
+    +(_display getVariable ["ACME_SK_MedicationRows", []])
+};
+
 private _infusion = !((_display getVariable ["ACME_SK_Return", []]) isEqualTo []);
 private _rawRows = [_infusion] call ACME_fnc_medicationSourceRows;
 
