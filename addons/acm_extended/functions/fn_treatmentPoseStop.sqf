@@ -23,7 +23,6 @@ private _stage = _state param [3, 0];
 private _pfh = _state param [5, -1];
 private _exclusion = _state param [7, ""];
 private _upright = _state param [16, false];
-private _ambulatoryContact = _state param [19, false];
 // B175 medicUp is an AinvPknl family: the casualty is upright, the provider is not. Always return these provider
 // poses to the normal unarmed crouch. Retain the old standing exit only for a hot-loaded legacy AinvPerc state.
 private _exitUpright = _upright && {((toLowerANSI _main) find "ainvperc") == 0};
