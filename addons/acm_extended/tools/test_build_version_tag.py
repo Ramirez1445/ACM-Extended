@@ -10,7 +10,7 @@ def read(rel: str) -> str:
 
 def test_release_is_the_cfgpatches_version():
     config = read("config.cpp")
-    assert 'version = "1.2.4.1";' in config
+    assert 'version = "1.2.4.2";' in config
 
 
 def test_single_debug_renderer_uses_cfgpatches_version():
@@ -21,8 +21,8 @@ def test_single_debug_renderer_uses_cfgpatches_version():
         assert "call ACME_fnc_debugMenuClinical;" in read(f"functions/fn_{name}.sqf")
 
 
-def test_stable_1241_debug_identity_has_no_rc_suffix():
+def test_stable_1242_debug_identity_has_no_rc_suffix():
     startup = read("functions/fn_initForkStartupRuntime.sqf")
-    assert 'ACME_buildBatch = "B191";' in startup
+    assert 'ACME_buildBatch = "B192";' in startup
     assert 'ACME_debugRevision = "";' in startup
-    assert 'ACME_networkAuditRevision = "NA2-1.2.4.1-stable";' in startup
+    assert 'ACME_networkAuditRevision = "NA2-1.2.4.2-stable";' in startup

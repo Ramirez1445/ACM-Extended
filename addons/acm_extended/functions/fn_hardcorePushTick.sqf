@@ -13,7 +13,8 @@ private _patient = _job getOrDefault ["patient",objNull];
 if (isNull _medic || {isNull _patient} || {!local _medic} || {!alive _medic} || {_medic getVariable ["ACE_isUnconscious",false]}) exitWith {["provider"] call ACME_fnc_hardcorePushStop;};
 // Exact ACM AED leash semantics: same objectParent plus configured distance, or the same vehicle.
 private _leash = missionNamespace getVariable ["ACM_circulation_AEDDistanceLimit",5];
-if (((objectParent _medic) isNotEqualTo (objectParent _patient)) || {(_patient distance _medic) > _leash}) exitWith {["leash"] call ACME_fnc_hardcorePushStop;};
+if (((objectParent _medic) isNotEqualTo (objectParent _patient))
+    || {([_medic, _patient] call ACME_fnc_patientInteractionDistance) > _leash}) exitWith {["leash"] call ACME_fnc_hardcorePushStop;};
 private _body = _job getOrDefault ["bodyPart","body"];
 private _site = _job getOrDefault ["site",-2];
 private _identity = [_patient,_body,_site] call ACME_fnc_medicationLineIdentity;

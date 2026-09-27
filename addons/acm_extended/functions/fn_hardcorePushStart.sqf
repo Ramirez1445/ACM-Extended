@@ -20,7 +20,8 @@ if ([_patient,_body,_site] call ACME_fnc_medicationLineBloodBusy) exitWith {
     false
 };
 private _leash = missionNamespace getVariable ["ACM_circulation_AEDDistanceLimit",5];
-if (((objectParent ACE_player) isNotEqualTo (objectParent _patient)) || {ACE_player distance _patient > _leash}) exitWith {false};
+if (((objectParent ACE_player) isNotEqualTo (objectParent _patient))
+    || {([ACE_player, _patient] call ACME_fnc_patientInteractionDistance) > _leash}) exitWith {false};
 private _store = [ACE_player] call ACME_fnc_skStoreEnsureIds;
 private _idx = [_store] call ACME_fnc_skSelectedIndex;
 if (_idx < 0 || {_idx >= count _store}) exitWith {false};

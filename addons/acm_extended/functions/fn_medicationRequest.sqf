@@ -12,7 +12,8 @@ private _fail = {
 if (isNull _medic || {!local _medic} || {!alive _medic} || {isNull _patient}) exitWith {call _fail};
 private _outOfRange = if (_hcPush) then {
     private _leash = missionNamespace getVariable ["ACM_circulation_AEDDistanceLimit",5];
-    ((objectParent _medic) isNotEqualTo (objectParent _patient)) || {_medic distance _patient > _leash}
+    ((objectParent _medic) isNotEqualTo (objectParent _patient))
+        || {([_medic, _patient] call ACME_fnc_patientInteractionDistance) > _leash}
 } else {
     _medic distance _patient > 5 && {isNull objectParent _medic || {objectParent _medic != objectParent _patient}}
 };
