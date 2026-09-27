@@ -26,8 +26,8 @@ ACME_poseStopAfterHold = createHashMapFromArray [
 // B57 medical-menu provider stance. Opening the menu uses only empty hands plus the normal BI transition into
 // crouch. No medic-over-patient state is held, which keeps root motion and the player's head/camera free.
 ACME_menuPoseEnabled = true;
-// B175 ambulatory patients: explicit BI medicUp states for treatment of a conscious casualty who is standing
-// independently. medicUp is a KNEELING-provider family (AinvPknl...) whose hands work upward/in front instead of
+// B178 ambulatory patients: explicit BI medicUp states for treatment of a conscious casualty who is standing
+// or crouched independently. medicUp is a KNEELING-provider family (AinvPknl...) whose hands work upward/in front instead of
 // down toward a casualty on the ground. fn_poseUprightState validates every candidate with isClass at runtime.
 ACME_poseUprightStates = createHashMapFromArray [
     ["torsoBandage",       "AinvPknlMstpSnonWnonDnon_medicUp4"],
