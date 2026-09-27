@@ -48,7 +48,7 @@ call _applyFont;
 
 private _gapFactor = 0.26;
 private _gap = _fontH * _gapFactor;
-private _marginX = safeZoneWAbs * 0.0015;
+private _marginX = safeZoneH * 0.0025;
 private _marginY = safeZoneH * 0.004;
 private _x = safeZoneXAbs + _marginX;
 private _y = safeZoneY + _marginY;
@@ -56,7 +56,7 @@ private _panelBottom = safeZoneY + safeZoneH - _marginY;
 
 // Fixed horizontal proportion on every display. B176 is intentionally a little wider than B165 so normal values,
 // revision strings and paired columns never need to word-wrap. Width does NOT change based on aspect ratio.
-private _totalW = (safeZoneWAbs * 0.160) min (safeZoneWAbs - (2 * _marginX));
+private _totalW = (safeZoneH * 0.255) min (safeZoneWAbs - (2 * _marginX));
 private _valueW = 11;
 
 private _renderBlock = {
@@ -77,7 +77,7 @@ private _measureNaturalWidth = {
     _ctrlM ctrlSetPosition [_x, _y, safeZoneWAbs * 8, safeZoneH * 4];
     _ctrlM ctrlCommit 0;
     [_ctrlM, _rows] call _renderBlock;
-    (ctrlTextWidth _ctrlM) + (safeZoneWAbs * 0.003)
+    (ctrlTextWidth _ctrlM) + (safeZoneH * 0.005)
 };
 private _layout = {
     params ["_headerH", "_bodyH"];
