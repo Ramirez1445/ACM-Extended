@@ -2,6 +2,12 @@
    Use the vest's loadout entry to retain partial magazines and weapon attachments. */
 params [["_patient", objNull, [objNull]]];
 if (isNull _patient || {!local _patient}) exitWith {false};
+
+// A carrier borrowed from persistent manual custody must never be re-worn merely because Semi-Fowler ends.
+// Return only the head-elevation view of the custody and park the same prop above the casualty again.
+if (_patient getVariable ["ACME_headElev_manualCarrierBorrowed", false]) exitWith {
+    [_patient, "release"] call ACME_fnc_manualPlateCarrierHeadElevSupport;
+};
 if (!(_patient getVariable ["ACME_headElev_vestRemoved", false])
     && {(_patient getVariable ["ACME_headElev_propVest", ""]) == ""}
     && {count (_patient getVariable ["ACME_headElev_vestLoadout", []]) == 0}) exitWith {true};
