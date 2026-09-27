@@ -42,7 +42,7 @@ private _main = switch (_mode) do {
 };
 
 // B175 ambulatory-target presentation. Clinical treatment and patient animation are unchanged; only the provider's
-// work pose changes when the casualty is alive, conscious and independently STANDING. BI medicUp states remain
+// work pose changes when the casualty is alive, conscious and independently STANDING/CROUCHED. BI medicUp states remain
 // kneeling-provider animations, so normal crouch entry/exit still applies.
 if (isNull _patient) then {_patient = missionNamespace getVariable ["ace_medical_gui_target", objNull];};
 private _ambulatoryPatient = [_patient] call ACME_fnc_patientUpright;
