@@ -72,12 +72,15 @@ private _providerPFH = [{
 
         _u setVariable ["ACME_headElev_pinToken", (_u getVariable ["ACME_headElev_pinToken", 0]) + 1, false];
 
-        // Local bookkeeping above always retires. A newer treatment owns the provider presentation during a handoff.
-        if (!local _u || {_handoff}) exitWith {};
+        // Local bookkeeping above always retires. Speed ownership is separate from stance ownership: a handoff
+        // skips the neutral/rest animation, but it may not strand this sequence's accelerated coefficient.
+        if (!local _u) exitWith {};
+        if !([_u] call ACME_fnc_providerAnimSpeedOwned) then {
+            _u setAnimSpeedCoef 1;
+            ["ace_common_setAnimSpeedCoef", [_u, 1]] call CBA_fnc_globalEvent;
+        };
+        if (_handoff) exitWith {};
         if ([_u] call ACME_fnc_providerStanceOwned) exitWith {};
-
-        _u setAnimSpeedCoef 1;
-        ["ace_common_setAnimSpeedCoef", [_u, 1]] call CBA_fnc_globalEvent;
 
         if (alive _u && {isNull objectParent _u} && {!(_u getVariable ["ACE_isUnconscious", false])}) then {
             _u selectWeapon "";
