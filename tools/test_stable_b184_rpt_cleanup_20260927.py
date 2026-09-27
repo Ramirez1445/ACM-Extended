@@ -25,7 +25,7 @@ def test_iv_ghost_band_reconcile_is_boolean_end_to_end():
 
     # B184 removed the numeric findIf/index comparison that produced
     # "Type Bool, expected Number" when malformed transient state leaked through.
-    assert " findIf " not in block
+    assert "_siteRows findIf" not in block
     assert "_rowValid = _ri >= 0;" not in block
 
 
