@@ -83,8 +83,8 @@ private _layout = {
     params ["_headerH", "_bodyH"];
     private _bodyY = _y + _headerH + _gap;
     private _panelH = (_panelBottom - _y) max 0;
-    // Never allow the structured-text control itself to extend below the panel. B165 used max _bodyH here,
-    // which is exactly how 1680x1050 and other short safe areas drew text past the bottom edge.
+    // Never allow the structured-text control itself to extend below the panel. The previous layout expanded
+    // the body to its measured content height, which is exactly how 1680x1050 drew text past the bottom edge.
     private _bodyAvail = (_panelBottom - _bodyY) max 0;
 
     _ctrlB ctrlSetPosition [_x, _y, _totalW, _panelH];
