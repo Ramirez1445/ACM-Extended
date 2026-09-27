@@ -1,8 +1,7 @@
-"""B170 treatment-preflight root regression contracts.
+"""B177 treatment-start regression contracts.
 
-The runtime RPT showed the menu was not simply losing its renderer: after Narc Box completed and its continuous
-controller cancelled, ACME later logged "Cleared stale treatment preflight." That presentation-only preflight used a
-global Boolean as a hard treatment mutex. B170 makes it tokenized, supersedable, and fail-open to clinical treatment.
+B170 originally made presentation preflight bounded and fail-open. B177 removes the remaining invisible latency:
+presentation is now strictly non-blocking and native treatment starts on the accepted click.
 """
 from pathlib import Path
 
@@ -16,40 +15,52 @@ def read(path):
     return path.read_text(encoding="utf-8")
 
 
-def test_preflight_boolean_is_not_a_hard_treatment_mutex_anymore():
+def test_presentation_is_not_a_treatment_mutex_or_wait_gate():
     s = read(TREATMENT)
-    assert 'if (_medic getVariable ["ACME_treatmentPreflightActive", false]) exitWith {false};' not in s
-    assert 'if (_medic getVariable ["ACME_treatmentPreflightActive", false]) then {' in s
-    assert 'ACME_treatmentPreflightStartedAt' in s
+    marker = s.index("// B177 button-responsiveness invariant")
+    end = s.index("// A newly accepted head-position action", marker)
+    block = s[marker:end]
+    assert "provider presentation NEVER gates clinical treatment start" in block
+    assert "CBA_fnc_waitUntilAndExecute" not in block
+    assert "CBA_fnc_waitAndExecute" not in block
+    assert "CBA_fnc_execNextFrame" not in block
+    assert 'ACME_treatmentPreflightActive", false' in block
+    assert 'ACME_treatmentPreflightToken", ""' in block
 
 
-def test_post_treatment_menu_pose_is_authoritative_readiness_not_animation_frame():
+def test_old_preflight_generation_is_retired_on_every_new_click():
     s = read(TREATMENT)
-    assert 'private _genericMenuPoseReady = (count _menuPose) >= 3' in s
-    assert 'ACME_menuPoseGenericEpoch' in s
-    preflight = s[s.index('private _preflightReady ='):s.index('// Presentation preflight may never become a clinical mutex.')]
-    assert '_genericMenuPoseReady' in preflight
+    marker = s.index("// Retire any pre-B177 deferred presentation generation immediately")
+    end = s.index("// A newly accepted head-position action", marker)
+    block = s[marker:end]
+    for token in (
+        'ACME_treatmentPreflightActive", false',
+        'ACME_treatmentPreflightToken", ""',
+        'ACME_treatmentPreflightBypass", []',
+        'ACME_treatmentPreflightStartedAt", -1',
+    ):
+        assert token in block
 
 
-def test_one_helper_retires_preflight_before_recursive_treatment_launch():
+def test_provider_owned_animation_prep_is_nonblocking():
     s = read(TREATMENT)
-    helper = s[s.index('private _launchAfterPreflight = {'):s.index('[_medic, "", -1, true] call ACME_fnc_treatmentPoseStop;')]
-    clear_active = helper.index('setVariable ["ACME_treatmentPreflightActive", false')
-    recursive = helper.index('_callArgs call ace_medical_treatment_fnc_treatment')
-    assert clear_active < recursive
-    assert 'setVariable ["ACME_treatmentPreflightStartedAt", -1' in helper
-    assert 'ACME_treatmentPreflightBypass' in helper
+    marker = s.index("// Presentation begins now but never delays native progress")
+    end = s.index("// A newly accepted head-position action", marker)
+    block = s[marker:end]
+    assert 'if (_ownsProviderAnim)' in block
+    assert 'call ACME_fnc_menuPoseStop' in block
+    assert 'call ACME_fnc_medicAnimationPrep' in block
+    assert "waitUntil" not in block
 
 
-def test_both_visual_timeouts_fail_open_to_the_real_treatment():
+def test_native_treatment_call_remains_after_nonblocking_presentation_setup():
     s = read(TREATMENT)
-    assert s.count('[_u, _callArgs, _token] call _launch;') >= 1
-    assert s.count('[_m, _args, _tok] call _launch;') >= 1
-    assert 'presentation failure, not a clinical-action failure' in s
-    assert 'Clinical treatment still owns the accepted click' in s
+    marker = s.index("// B177 button-responsiveness invariant")
+    native = s.index("private _started = _nativeArgs call ACM_core_fnc_treatmentNative;", marker)
+    assert native > marker
 
 
-def test_stale_preflight_does_not_own_provider_stance_forever():
+def test_stale_hotload_preflight_still_cannot_own_provider_forever():
     s = read(STANCE)
     assert 'ACME_treatmentPreflightStartedAt' in s
     assert 'ACME_treatmentPreflightToken' in s
@@ -57,35 +68,8 @@ def test_stale_preflight_does_not_own_provider_stance_forever():
     assert 'if (_preflightOwned) exitWith {true};' in s
 
 
-def test_reconcile_uses_real_preflight_generation_age():
+def test_reconcile_can_still_repair_pre_b177_hotload_state():
     s = read(RECONCILE)
     assert 'ACME_treatmentPreflightStartedAt' in s
     assert 'CBA_missionTime - _startedAt' in s
     assert 'ACME_reconcilePreflightSeen' not in s
-
-
-def test_latest_click_supersedes_presentation_only_generation_model():
-    state = {"token": "old", "active": True, "launched": []}
-
-    def click(token):
-        if state["active"]:
-            state["active"] = False
-            state["token"] = ""
-        state["token"] = token
-        state["active"] = True
-
-    def completion(token):
-        if state["token"] != token:
-            return
-        state["active"] = False
-        state["launched"].append(token)
-        state["token"] = ""
-
-    click("new")
-    completion("old")
-    assert state["active"] is True
-    assert state["launched"] == []
-
-    completion("new")
-    assert state["active"] is False
-    assert state["launched"] == ["new"]
