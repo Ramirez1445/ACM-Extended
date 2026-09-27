@@ -1828,6 +1828,7 @@ class CfgFunctions {
             class chestAccessPreparing {};
             class manualPlateCarrierCanToggle {};
             class manualPlateCarrierCommit {};
+            class manualPlateCarrierAutoReturn {};
             class registerManualPlateCarrierRuntime {};
             class chestSealProviderHoldStart {};
             class registerMegacodeInteractionRuntime {};
@@ -7926,7 +7927,7 @@ class ace_medical_treatment_actions {
         category = "advanced";
         treatmentLocations[] = {"All"};
         medicRequired = 0;
-        allowSelfTreatment = 1;
+        allowSelfTreatment = 0;
         treatmentTime = 0.001;
         allowedSelections[] = {"Body"};
         condition = "[_medic, _patient, false] call ACME_fnc_manualPlateCarrierCanToggle";
