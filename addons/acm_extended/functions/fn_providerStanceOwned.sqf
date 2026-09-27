@@ -46,7 +46,7 @@ if (_unit getVariable ["ACM_circulation_isPerformingCPR", false]) exitWith {true
 // clears the actual global gate.
 private _session = _unit getVariable ["ACM_core_ContinuousAction_Session", []];
 private _lastSeen = _unit getVariable ["ACM_core_ContinuousAction_LastSeen", -1e6];
-private _continuousOwned = hasInterface && {!isNil "ACE_player"} && {_unit isEqualTo ACE_player}
+private _continuousOwned = hasInterface && {local _unit} && {[_unit] call ace_common_fnc_isPlayer}
     && {missionNamespace getVariable ["ACM_core_ContinuousAction_Active", false]}
     && {(count _session) >= 2}
     && {(CBA_missionTime - _lastSeen) <= 4};
