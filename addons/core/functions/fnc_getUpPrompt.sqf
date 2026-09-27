@@ -31,7 +31,9 @@ private _inVehicle = !(isNull (objectParent _unit));
 [{
     params ["_unit", "_inVehicle"];
 
-    !(_unit getVariable [QGVAR(Lying_State), false]) || IS_UNCONSCIOUS(_unit) || !(alive _unit) || (animationState _unit == "AinjPfalMstpSnonWnonDf_carried_dead") || (_inVehicle != !(isNull (objectParent _unit)));
+    private _anim = toLowerANSI animationState _unit;
+    private _carryOwned = !isNull (attachedTo _unit) || {(_anim find "carried") >= 0};
+    !(_unit getVariable [QGVAR(Lying_State), false]) || IS_UNCONSCIOUS(_unit) || !(alive _unit) || _carryOwned || (_inVehicle != !(isNull (objectParent _unit)));
 }, {
     params ["_unit"];
 
