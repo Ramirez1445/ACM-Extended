@@ -42,7 +42,7 @@ if (_patient call ace_common_fnc_isBeingDragged || {_patient call ace_common_fnc
 
 private _awake = !(_patient getVariable ["ACE_isUnconscious", false])
     && {!(_patient getVariable ["ace_medical_unconscious", false])};
-private _lyingRaw = _patient getVariable ["ACM_core_Lying_State", false];
-private _lying = if (_lyingRaw isEqualType true) then {_lyingRaw} else {_lyingRaw > 0};
 
-!_awake || {_lying}
+// If the casualty is already awake, persistent manual exposure is invalid by definition: the runtime would
+// immediately return the carrier. Keep Remove Plate Carrier out of the menu until the casualty is actually down.
+!_awake
