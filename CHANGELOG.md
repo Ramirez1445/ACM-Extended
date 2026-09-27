@@ -8,7 +8,11 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B189 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B190 with no RC or hotfix suffix in the debug menu.
+- CPR now treats an HPMK in the `exposed` state as genuine chest access and normalizes the action to the Body selection before both menu eligibility and treatment execution. Fully wrapped HPMKs still block chest CPR.
+- IO fluid syncope is now one-shot per physical IO-line generation. Eligibility is decided only by the casualty's consciousness when the first admitted fluid enters that IO; an IO that first flowed while the casualty was unconscious can never make them pass out later after they wake.
+- A conscious casualty can experience at most one short IO fluid syncope event on that IO generation. ACE's timed unconscious transition is used with stable-vitals forced wake, so the event is transient rather than a repeatedly re-armed knockout.
+- Medication pushes through an IO no longer use the fluid-pressure syncope path or force raw pain to maximum. They use only a moderate IO medication-pain floor, allowing analgesics pushed through the IO to behave as medication rather than repeatedly recreating fluid syncope.
 - Fixed the remaining first-open Narc Box Seconds to Push over focus race. Deferred Draw-page tag controls are no longer created after Body Map takes ownership, and hidden medication/list refreshes are suspended while the duration editor owns keyboard focus.
 - A manually removed plate carrier can now be borrowed directly as the Semi-Fowler support when no backpack is present. The same saved vest and world prop are reused, so no duplicate carrier is spawned and manual custody remains authoritative.
 - Semi-Fowler now resumes automatically after manual carrier-removal choreography if it had been temporarily flattened for the removal. The casualty replays the normal patient lift/hold sequence, and the provider replays the normal supported Semi-Fowler lift.
