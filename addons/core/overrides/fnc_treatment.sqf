@@ -504,189 +504,33 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     };
     private _ownsProviderAnim = (_mode != "") || {_exactAnim != ""};
 
-    // One empty-hands request and one transition to crouch before native treatment starts.
-    private _bypass = _medic getVariable ["ACME_treatmentPreflightBypass", []];
-    private _isBypass = (_bypass isEqualType []) && {count _bypass >= 3}
-        && {(_bypass select 0) isEqualTo _patient}
-        && {(_bypass select 1) == _bodyPart}
-        && {(_bypass select 2) == _classname};
+    // B177 button-responsiveness invariant: provider presentation NEVER gates clinical treatment start.
+    // Earlier builds waited for weapon holster + crouch before calling fnc_treatmentNative, producing a dead
+    // 0.5-3.0 second interval after a valid button click. Native treatment/progress now starts on this frame.
+    // ACME-owned provider theatre catches up independently after the click and may never become a clinical mutex.
     private _headOwned = _classname in ["ACME_ElevateHead", "ACME_LowerHead"];
 
     // Recovery-position changes, head positioning and any treatment that must roll a casualty out of recovery are
-    // incompatible with physically maintaining wound pressure.  Pause the clinical marker only for that maneuver.
+    // incompatible with physically maintaining wound pressure. Pause the clinical marker only for that maneuver.
     private _dpPatientManeuver = _classKey in ["recoveryposition", "cancelrecoveryposition", "acme_elevatehead", "acme_lowerhead"]
         || {(getNumber (_cfg >> "ACM_rollToBack")) > 0}
         || {(_patient getVariable ["ACM_airway_RecoveryPosition_State", false]) && {(getNumber (_cfg >> "ACM_cancelRecovery")) > 0}};
     if (_dpSamePatient && {_dpPatientManeuver}) then {[_medic, _classKey] call _fnc_dpPauseForManeuver;};
 
-    // Fast path: only a genuinely empty-handed crouch may bypass preflight. Both the logical weapon selection
-    // and the visible Wnon/Snon skeleton must agree; sidearms can clear one before the other.
-    private _animNow = if (!isNull _medic) then {toLowerANSI animationState _medic} else {""};
-    private _visuallyEmptyNow = !isNull _medic
-        && {(((_animNow find "wnon") >= 0) && {(_animNow find "snon") >= 0})
-            || {_animNow in ["acm_genericcontinuous", "acm_pronecontinuous"]}};
-    private _emptyHandsNow = !isNull _medic
-        && {(currentWeapon _medic == "")}
-        && {_visuallyEmptyNow};
-
-    // A visible Direct Pressure hold is already an authored empty-hands provider theatre.
-    private _dpPoseReady = _dpSamePatient && {
-        (_medic getVariable ["ACME_DP_InPose", false]) || {_animNow == "acme_directpressurehold"}
-    };
-
-    // A post-treatment medical menu already owns the provider's generic empty-hands choreography. Its logical
-    // ownership is authoritative even during the one or two transition frames before animationState reports the
-    // final ACM_GenericContinuous pose. B169's RPT proved that waiting on that transient visual state could start a
-    // second treatment preflight after Narc Box closed and strand ACME_treatmentPreflightActive for several seconds.
-    // A live generic menu pose is therefore a direct treatment handoff, not another presentation prerequisite.
-    private _menuPose = _medic getVariable ["ACME_menuPose", []];
-    private _menuPoseEpoch = _menuPose param [0, -1];
-    private _genericMenuPoseReady = (count _menuPose) >= 3
-        && {(_menuPose param [2, objNull]) isEqualTo _patient}
-        && {(_medic getVariable ["ACME_menuPoseGenericEpoch", -2]) == _menuPoseEpoch};
-
-    private _preflightReady = _dpPoseReady
-        || {_genericMenuPoseReady}
-        || {_emptyHandsNow && {stance _medic == "CROUCH"}};
-
-    // Presentation preflight may never become a clinical mutex. The latest accepted click supersedes any older
-    // presentation-only generation; stale callbacks are already token-guarded and become harmless immediately.
-    // This removes the global dead-button failure where one stranded preflight made every later intervention return
-    // false until the provider-state watchdog eventually repaired it.
-    if (!_isBypass && {!_headOwned} && {!_preflightReady} && {local _medic} && {!isNull _medic} && {alive _medic} && {isNull objectParent _medic}) exitWith {
-        if (_medic getVariable ["ACME_treatmentPreflightActive", false]) then {
-            _medic setVariable ["ACME_treatmentPreflightActive", false, false];
-            _medic setVariable ["ACME_treatmentPreflightToken", "", false];
-            _medic setVariable ["ACME_treatmentPreflightBypass", [], false];
-            _medic setVariable ["ACME_treatmentPreflightStartedAt", -1, false];
-        };
-
-        private _args = +_this;
-        private _token = format ["%1:%2:%3", clientOwner, netId _medic, diag_tickTime];
-        _medic setVariable ["ACME_treatmentPreflightActive", true, false];
-        _medic setVariable ["ACME_treatmentPreflightToken", _token, false];
-        _medic setVariable ["ACME_treatmentPreflightStartedAt", CBA_missionTime, false];
-
-        // One exit path launches the actual ACE/ACM treatment. It always retires the presentation lock *before*
-        // the recursive treatment call, so even a callback which opens a dialog or another continuous action cannot
-        // leave the medical menu gated by this old preflight.
-        private _launchAfterPreflight = {
-            params ["_u", "_callArgs", "_tok"];
-            if (isNull _u || {!local _u} || {!alive _u}
-                || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {false};
-
-            _u setVariable ["ACME_treatmentPreflightActive", false, false];
-            _u setVariable ["ACME_treatmentPreflightStartedAt", -1, false];
-            _u setVariable ["ACME_treatmentPreflightBypass",
-                [_callArgs select 1, _callArgs select 2, _callArgs select 3], false];
-
-            private _startedPreflightTreatment = _callArgs call ace_medical_treatment_fnc_treatment;
-
-            if (hasInterface && {local _u} && {[_u] call ace_common_fnc_isPlayer}) then {
-                ace_medical_gui_pendingReopen = true;
-            };
-
-            if ((_u getVariable ["ACME_treatmentPreflightToken", ""]) == _tok) then {
-                _u setVariable ["ACME_treatmentPreflightBypass", [], false];
-                _u setVariable ["ACME_treatmentPreflightToken", "", false];
-            };
-            _startedPreflightTreatment
-        };
-        [_medic, "", -1, true] call ACME_fnc_treatmentPoseStop;
-        [_medic, true] call ACME_fnc_menuPoseStop;
-        private _rate = call ACME_fnc_choreographyRate;
-        _medic setAnimSpeedCoef _rate;
-        ["ace_common_setAnimSpeedCoef", [_medic, _rate]] call CBA_fnc_globalEvent;
-
-        // Phase 1: issue exactly one holster request and wait until the handgun/long gun is both logically gone
-        // and visually in Wnon/Snon. Do not start a stance transition while the weapon-away RTM still owns the arms.
-        [_medic] call ACME_fnc_medicAnimationPrep;
-        [{
-            params ["_m", "_args", "_tok", "_launchAfterPreflight"];
-            if (isNull _m || {!alive _m} || {!local _m}
-                || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {true};
-            private _anim = toLowerANSI animationState _m;
-            (currentWeapon _m == "")
-                && {(((_anim find "wnon") >= 0) && {(_anim find "snon") >= 0})
-                    || {_anim in ["acm_genericcontinuous", "acm_pronecontinuous"]}}
-        }, {
-            params ["_m", "_args", "_tok", "_launchAfterPreflight"];
-            if (isNull _m || {!alive _m} || {!local _m}
-                || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {
-                if (!isNull _m && {local _m} && {(_m getVariable ["ACME_treatmentPreflightToken", ""]) == _tok}) then {
-                    _m setVariable ["ACME_treatmentPreflightActive", false, false];
-                    _m setVariable ["ACME_treatmentPreflightToken", "", false];
-                    _m setVariable ["ACME_treatmentPreflightBypass", [], false];
-                    _m setVariable ["ACME_treatmentPreflightStartedAt", -1, false];
-                    _m setUnitPos "AUTO";
-                    _m setAnimSpeedCoef 1;
-                    ["ace_common_setAnimSpeedCoef", [_m, 1]] call CBA_fnc_globalEvent;
-                };
-            };
-
-            // Phase 2: only after empty hands are visually settled do we move the provider into the treatment crouch.
-            _m setUnitPos "MIDDLE";
-            private _transition = switch (stance _m) do {
-                case "STAND": {"AmovPercMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
-                case "PRONE": {"AmovPpneMstpSnonWnonDnon_AmovPknlMstpSnonWnonDnon"};
-                default {""};
-            };
-            if (_transition != "") then {[_m, _transition, 1] call ACME_fnc_doAnim;};
-
-            [{
-                params ["_u", "_callArgs", "_token", "_launchAfterPreflight"];
-                if (isNull _u || {!alive _u} || {!local _u}
-                    || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {true};
-                private _anim2 = toLowerANSI animationState _u;
-                (currentWeapon _u == "")
-                    && {(((_anim2 find "wnon") >= 0) && {(_anim2 find "snon") >= 0})
-                        || {_anim2 in ["acm_genericcontinuous", "acm_pronecontinuous"]}}
-                    && {stance _u == "CROUCH"}
-            }, {
-                params ["_u", "_callArgs", "_token"];
-                if (isNull _u || {!alive _u} || {!local _u}
-                    || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {
-                    if (!isNull _u && {local _u} && {(_u getVariable ["ACME_treatmentPreflightToken", ""]) == _token}) then {
-                        _u setVariable ["ACME_treatmentPreflightActive", false, false];
-                        _u setVariable ["ACME_treatmentPreflightToken", "", false];
-                        _u setVariable ["ACME_treatmentPreflightBypass", [], false];
-                        _u setVariable ["ACME_treatmentPreflightStartedAt", -1, false];
-                        _u setUnitPos "AUTO";
-                    _u setAnimSpeedCoef 1;
-                    ["ace_common_setAnimSpeedCoef", [_u, 1]] call CBA_fnc_globalEvent;
-                    };
-                };
-
-                [_u, _callArgs, _token] call _launchAfterPreflight;
-            }, [_m, _args, _tok, _launchAfterPreflight], 1.8, {
-                params ["_u", "_callArgs", "_token", "_launch"];
-                if (isNull _u || {!local _u} || {!alive _u}
-                    || {(_u getVariable ["ACME_treatmentPreflightToken", ""]) != _token}) exitWith {};
-
-                // Provider presentation failed to settle in time. Clinical treatment still owns the accepted click.
-                // Fail open to native treatment instead of consuming the button and leaving a preflight mutex behind.
-                _u setUnitPos "AUTO";
-                _u setAnimSpeedCoef 1;
-                ["ace_common_setAnimSpeedCoef", [_u, 1]] call CBA_fnc_globalEvent;
-                [_u, _callArgs, _token] call _launch;
-            }] call CBA_fnc_waitUntilAndExecute;
-        }, [_medic, _args, _token, _launchAfterPreflight], 3.0, {
-            params ["_m", "_args", "_tok", "_launch"];
-            if (isNull _m || {!local _m} || {!alive _m}
-                || {(_m getVariable ["ACME_treatmentPreflightToken", ""]) != _tok}) exitWith {};
-
-            // Even a failed weapon-away transition is a presentation failure, not a clinical-action failure.
-            _m setUnitPos "AUTO";
-            _m setAnimSpeedCoef 1;
-            ["ace_common_setAnimSpeedCoef", [_m, 1]] call CBA_fnc_globalEvent;
-            [_m, _args, _tok] call _launch;
-        }] call CBA_fnc_waitUntilAndExecute;
-        true
-    };
-
-    if (_isBypass) then {
+    // Retire any pre-B177 deferred presentation generation immediately. Its token change makes already-queued
+    // callbacks inert, so a hot-loaded client cannot launch an old delayed treatment after this click.
+    if (local _medic) then {
         _medic setVariable ["ACME_treatmentPreflightActive", false, false];
+        _medic setVariable ["ACME_treatmentPreflightToken", "", false];
+        _medic setVariable ["ACME_treatmentPreflightBypass", [], false];
         _medic setVariable ["ACME_treatmentPreflightStartedAt", -1, false];
+
+        // Presentation begins now but never delays native progress. ACME-owned poses stop the menu pose and issue
+        // the one holster request immediately; their pose controller waits for visual readiness independently.
+        if (_ownsProviderAnim) then {
+            [_medic, true] call ACME_fnc_menuPoseStop;
+            if (currentWeapon _medic != "") then {[_medic] call ACME_fnc_medicAnimationPrep;};
+        };
     };
 
     // A newly accepted head-position action replaces the previous finite treatment's exit lease.
