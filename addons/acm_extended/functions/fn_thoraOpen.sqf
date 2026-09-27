@@ -31,7 +31,7 @@ private _cancelCode = compile format [
 private _entryKeys = [];
 _entryKeys pushBack ([0x01,[false,false,false],_cancelCode,"keydown","",false,0] call CBA_fnc_addKeyHandler);
 _entryKeys pushBack ([0xF0,[false,false,false],_cancelCode,"keydown","",false,0] call CBA_fnc_addKeyHandler);
-uiNamespace setVariable ["ACME_Thora_EntryKeys",_entryKeys];
+uiNamespace setVariable ["ACME_Thora_EntryKeys",[_vestLease,_entryKeys]];
 
 // Pass the procedure lease as the presentation token too. A delayed patient-owner provider-start packet must be
 // rejected after this exact thoracostomy entry is cancelled or closed.
@@ -41,10 +41,12 @@ uiNamespace setVariable ["ACME_Thora_EntryKeys",_entryKeys];
 // medic4 episode synchronously before opening the long thoracostomy workspace. This is the same rule used by
 // ordinary chest-access treatments: a patient-owner completion packet must never leave the provider frozen.
 private _releaseProvider = {
-    params ["_m","_p",["_handoff",false,[false]]];
+    params ["_m","_p","_lease",["_handoff",false,[false]]];
     if (isNull _m || {!local _m}) exitWith {};
     private _entry = _m getVariable ["ACME_chestAccessProvider", []];
     if ((_entry param [0,objNull]) isNotEqualTo _p) exitWith {};
+    // Same-patient stale callbacks must never stop a newer chest-access episode.
+    if ((_entry param [3,""]) != _lease) exitWith {};
     private _token = _entry param [2,""];
     if (_token == "") exitWith {};
     [_m,_p,"stop",_handoff,_token] call ACME_fnc_chestAccessVestProvider;
@@ -52,11 +54,16 @@ private _releaseProvider = {
 
 private _finishEntry = {
     params ["_m","_p","_lease"];
-    {
-        if (!(_x isEqualTo -1) && {!(_x isEqualTo "")}) then {[_x,"keydown"] call CBA_fnc_removeKeyHandler;};
-    } forEach (uiNamespace getVariable ["ACME_Thora_EntryKeys",[]]);
-    uiNamespace setVariable ["ACME_Thora_EntryKeys",[]];
-    uiNamespace setVariable ["ACME_Thora_EntryCancelToken",""];
+    private _entry = uiNamespace getVariable ["ACME_Thora_EntryKeys",[]];
+    if ((_entry param [0,""]) == _lease) then {
+        {
+            if (!(_x isEqualTo -1) && {!(_x isEqualTo "")}) then {[_x,"keydown"] call CBA_fnc_removeKeyHandler;};
+        } forEach (_entry param [1,[]]);
+        uiNamespace setVariable ["ACME_Thora_EntryKeys",[]];
+        if ((uiNamespace getVariable ["ACME_Thora_EntryCancelToken",""]) == _lease) then {
+            uiNamespace setVariable ["ACME_Thora_EntryCancelToken",""];
+        };
+    };
     [false,_m,_p,_lease] call ACME_fnc_chestAccessPreparing;
 };
 
@@ -66,7 +73,7 @@ private _open = {
     params ["_p","_m","_lease","_releaseProvider","_finishEntry"];
     if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) != _lease) exitWith {};
     if (isNull _p || {isNull _m} || {!alive _m} || {!local _m}) exitWith {
-        [_m,_p,false] call _releaseProvider;
+        [_m,_p,_lease,false] call _releaseProvider;
         [_m,_p,_lease] call _finishEntry;
         uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];
         if (!isNull _p) then {[_p,_m,_lease,false,"thoracostomy"] call ACME_fnc_chestAccessVestEvent;};
@@ -74,7 +81,7 @@ private _open = {
 
     // The minigame itself does not own a provider animation. Exit medic4 to the normal unarmed crouch now;
     // never leave the player frozen for the lifetime of the panel.
-    [_m,_p,false] call _releaseProvider;
+    [_m,_p,_lease,false] call _releaseProvider;
     [_m,_p,_lease] call _finishEntry;
 
     ["ACME_Thoracostomy_Dialog"] call ACME_fnc_minigameOpen;
@@ -91,7 +98,7 @@ private _open = {
 
 private _abortEntry = {
     params ["_p","_m","_lease","_releaseProvider","_finishEntry",["_reopen",true,[false]]];
-    [_m,_p,false] call _releaseProvider;
+    [_m,_p,_lease,false] call _releaseProvider;
     [_m,_p,_lease] call _finishEntry;
     if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) == _lease) then {
         uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];
@@ -116,13 +123,14 @@ private _abortEntry = {
     private _cancelled = (uiNamespace getVariable ["ACME_Thora_EntryCancelToken",""]) == _lease;
     private _current = (uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) == _lease;
     if (_cancelled || {!_current} || {isNull _p} || {isNull _m} || {!alive _m}) exitWith {
-        [_p,_m,_lease,_releaseProvider,_finishEntry,true] call _abort;
+        [_p,_m,_lease,_releaseProvider,_finishEntry,_current] call _abort;
     };
     [_p,_m,_lease,_releaseProvider,_finishEntry] call _open;
 }, [_patient,_medic,_vestLease,_releaseProvider,_finishEntry,_open,_abortEntry], 12, {
-    params ["_p","_m","_lease","_releaseProvider","_finishEntry","","_abort"];
-    if ((uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) == _lease) then {
+    params ["_p","_m","_lease","_releaseProvider","_finishEntry","_open","_abort"];
+    private _current = (uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]) == _lease;
+    if (_current) then {
         diag_log format ["[ACME THORACOSTOMY] Chest-access preparation timed out on %1.", netId _p];
     };
-    [_p,_m,_lease,_releaseProvider,_finishEntry,true] call _abort;
+    [_p,_m,_lease,_releaseProvider,_finishEntry,_current] call _abort;
 }] call CBA_fnc_waitUntilAndExecute;
