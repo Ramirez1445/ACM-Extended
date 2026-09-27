@@ -73,7 +73,7 @@ def test_seconds_edit_preserves_focus_and_does_not_swallow_keys():
     assert 'ctrlAddEventHandler ["SetFocus"' in body
     assert 'ctrlAddEventHandler ["KeyDown"' not in body
     assert 'call ACME_fnc_skBodyActionRender;' not in body.split('ctrlAddEventHandler ["KeyUp"', 1)[1].split('}];', 1)[0]
-    assert 'ctrlIDC _focus) != 84831' not in tick
+    assert 'ACME_SK_PushDurationEditing' in tick
     assert 'call ACME_fnc_skBodyActionRender;' in tick
     assert 'if (!_durFocused && {(ctrlPosition _durEdit) isNotEqualTo _editRect})' in body
     assert 'if ((ctrlEnabled _durEdit) isNotEqualTo _durationEnabled)' in body
@@ -104,7 +104,9 @@ def test_seconds_control_is_explicitly_editable_and_click_focuses_without_reset(
     focus = body.split('ctrlAddEventHandler ["SetFocus",', 1)[1].split('}];', 1)[0]
     assert "ctrlSetText" not in focus
     assert '["ACME_SK_CarouselHeldDir",0]' in focus
-    assert 'ctrlAddEventHandler ["KillFocus"' not in body
+    assert 'ctrlAddEventHandler ["KillFocus"' in body
+    assert 'ACME_SK_PushDurationEditing' in body
+    assert 'if (_durEditing) exitWith {' in body
 
 
 def test_carousel_shortcuts_yield_to_every_edit_control_before_processing_keys():
