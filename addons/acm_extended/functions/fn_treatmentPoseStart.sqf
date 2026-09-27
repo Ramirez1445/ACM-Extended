@@ -64,9 +64,10 @@ if !(_holdAt isEqualType 0) then {_holdAt = -1;};
 if !(_stopAfterHold isEqualType 0) then {_stopAfterHold = -1;};
 
 if (_upright) then {
+    // B178 medicUp is always a finite one-shot gesture. It never inherits the downed pose's frozen hold.
     private _uprightHold = (missionNamespace getVariable ["ACME_poseUprightHoldAt", createHashMap])
-        getOrDefault [_mode, _holdAt];
-    if (_uprightHold isEqualType 0) then {_holdAt = _uprightHold;};
+        getOrDefault [_mode, -1];
+    _holdAt = if (_uprightHold isEqualType 0) then {_uprightHold} else {-1};
 };
 if (_ambulatoryContact) then {
     private _contactHold = missionNamespace getVariable ["ACME_uprightStethoscopeHoldAt", 0.55];
@@ -279,8 +280,7 @@ private _pfh = [{
                     _state set [4, _now];
                 };
             };
-            private _recoverAmbulatoryHold = (_state param [16,false]) || {_state param [19,false]};
-            if (_current != toLower _main && {_mode != "chestAccess"} && {!_recoverAmbulatoryHold}) exitWith {
+            if (_current != toLower _main && {_mode != "chestAccess"}) exitWith {
                 // A sparse frame can skip the finite roll's held sample entirely.
                 // It was observed running in stage 1; after its authored work time
                 // has elapsed, record completion without replaying that finished RTM.
@@ -313,9 +313,11 @@ private _pfh = [{
             private _phase = (_holdAt / _duration) min 1;
             if (!_knownDuration) then {_phase = -1;};
 
-            // B57: freeze the owning client directly first. The old path depended on the global CBA event
-            // round-tripping back to the owner; that allowed the local animation to keep running/restart instead of
-            // stopping at the requested sample. Peers still receive the synchronized held frame below.
+            // B178 ambulatory stethoscope freezes the frame already on screen. Never seek backward into the
+            // Putdown RTM: even one switchMove seek can look like the reach restarted. Downed holds retain their
+            // exact authored seek behavior.
+            private _contactHold = _state param [19, false];
+            if (_contactHold) then {_phase = -1;};
             if (_phase >= 0) then {_medic switchMove [_main, _phase, 1, false];};
             _medic setAnimSpeedCoef 0;
             private _jip = format ["ACME_treatmentPose_%1_%2", netId _medic, _epoch];
@@ -343,14 +345,24 @@ private _pfh = [{
             };
             private _stateDrift = _current != toLower _main;
             private _speedDrift = getAnimSpeedCoef _medic != 0;
+            private _contactHold = _state param [19, false];
+
+            // B178 never restarts an ambulatory contact animation. If another controller legitimately moves the
+            // provider out of the held Putdown state, abandon visual holding and let the provider move naturally.
+            if (_contactHold && {_stateDrift}) exitWith {
+                _medic setAnimSpeedCoef 1;
+                _state set [3, 4];
+            };
+
             if (_stateDrift || {_speedDrift}) then {
-                // A speed-only disturbance does not need another switchMove. Re-seeking the exact frame every time
-                // an external system nudged animSpeedCoef was visible as an auscultation camera snap. Only restore
-                // the move when the animation state itself actually changed.
                 if (_stateDrift && {_phase >= 0}) then {_medic switchMove [_main, _phase, 1, false];};
                 _medic setAnimSpeedCoef 0;
                 _state set [13, _now];
             };
+        };
+
+        case 4: {
+            // Visual hold was superseded. Keep only the token/episode alive until the owning treatment closes.
         };
     };
 }, 0, [_medic, _epoch, _exclusion, _fnEnter, _fnStartMain]] call CBA_fnc_addPerFrameHandler;
