@@ -5,6 +5,11 @@
  */
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
+private _medicVehicle = objectParent _medic;
+private _sameVehicleTreatment = !isNull _medicVehicle && {(objectParent _patient) isEqualTo _medicVehicle};
+private _interactionChecks = [["isNotInside", "isNotSwimming", "isNotInZeus"], ["isNotSwimming", "isNotInZeus"]] select _sameVehicleTreatment;
+private _rangeOkay = _sameVehicleTreatment || {(_medic distance _patient) <= ace_medical_gui_maxDistance};
+
 // Head positioning is provider theatre, never a global treatment lock. Any newly accepted medical click preempts
 // a leftover/current Semi-Fowler provider sequence before normal treatment gating runs. Manual unsupported
 // Semi-Fowler is also an active hands-on maneuver by design; a new intervention cancels that exact hold so a stale
@@ -98,8 +103,8 @@ if (_classname in [
 ]) exitWith {
     if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
     if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
-    if !([_medic, _patient, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith) exitWith {false};
-    if ((_medic distance _patient) > ace_medical_gui_maxDistance) exitWith {false};
+    if !([_medic, _patient, _interactionChecks] call ace_common_fnc_canInteractWith) exitWith {false};
+    if (!_rangeOkay) exitWith {false};
 
     // Modal procedure launchers are not ACE timed treatments. Their panel/preparation controller owns provider
     // animation, cancellation and medical-menu return. Running thoracostomy through the generic treatment preflight
@@ -190,8 +195,8 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     if (_needsChestAccess && {_needsPhysicalPrep || {_heldBreathingCheck}} && {!_alreadyPrepared}
         && {local _medic} && {!isNull _medic} && {alive _medic}) exitWith {
         if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
-        if !([_medic, _patient, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith) exitWith {false};
-        if ((_medic distance _patient) > ace_medical_gui_maxDistance) exitWith {false};
+        if !([_medic, _patient, _interactionChecks] call ace_common_fnc_canInteractWith) exitWith {false};
+        if (!_rangeOkay) exitWith {false};
         // One accepted click owns this preparation generation. A closed menu plus this flag makes repeated clicks no-ops.
         if (_medic getVariable ["ACME_chestAccessPreflightActive", false]) exitWith {false};
 
@@ -296,7 +301,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 || {!alive _m}
                 || {_classKey == "checkbreathing" && {!alive _p}}
                 || {_m getVariable ["ACE_isUnconscious", false]}
-                || {(_m distance _p) > ace_medical_gui_maxDistance}
+                || {isNull objectParent _m && {(_m distance _p) > ace_medical_gui_maxDistance}}
                 || {objectParent _m isNotEqualTo objectParent _p};
             if (_cancelled) exitWith {
                 [_m,_p,_leaseId,_classKey,_tok,_finish,true] call _abort;
@@ -306,8 +311,8 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             // cached menu result from the original click. A casualty/provider state or range change may never turn
             // into a delayed treatment start.
             private _stillTreatable = _args call ace_medical_treatment_fnc_canTreat;
-            private _stillInteractive = [_m, _p, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith;
-            if (!_stillTreatable || {!_stillInteractive} || {(_m distance _p) > ace_medical_gui_maxDistance}
+            private _stillInteractive = [_m, _p, [["isNotInside","isNotSwimming","isNotInZeus"],["isNotSwimming","isNotInZeus"]] select (!isNull objectParent _m && {objectParent _m isEqualTo objectParent _p})] call ace_common_fnc_canInteractWith;
+            if (!_stillTreatable || {!_stillInteractive} || {isNull objectParent _m && {(_m distance _p) > ace_medical_gui_maxDistance}}
                 || {objectParent _m isNotEqualTo objectParent _p}) exitWith {
                 _m setVariable ["ACME_chestAccessPreflightCancel", true, false];
                 [_m,_p,_leaseId,_classKey,_tok,_finish,true] call _abort;
@@ -382,9 +387,9 @@ if (_classname != "ACME_ConnectETVent") exitWith {
                 || {!alive _m}
                 || {_classKey == "checkbreathing" && {!alive _p}}
                 || {_m getVariable ["ACE_isUnconscious", false]}
-                || {(_m distance _p) > ace_medical_gui_maxDistance}
+                || {isNull objectParent _m && {(_m distance _p) > ace_medical_gui_maxDistance}}
                 || {objectParent _m isNotEqualTo objectParent _p}
-                || {!([_m, _p, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith)};
+                || {!([_m, _p, [["isNotInside","isNotSwimming","isNotInZeus"],["isNotSwimming","isNotInZeus"]] select (!isNull objectParent _m && {objectParent _m isEqualTo objectParent _p})] call ace_common_fnc_canInteractWith)};
             if (_invalid) exitWith {
                 _m setVariable ["ACME_chestAccessPreflightCancel", true, false];
                 true
@@ -625,7 +630,7 @@ if (uiNamespace getVariable ["ace_interact_menu_cursorMenuOpened", false]) exitW
     true
 };
 if !(_this call ace_medical_treatment_fnc_canTreat) exitWith {false};
-if !([_medic, _patient, ["isNotInside", "isNotSwimming", "isNotInZeus"]] call ace_common_fnc_canInteractWith) exitWith {false};
+if !([_medic, _patient, _interactionChecks] call ace_common_fnc_canInteractWith) exitWith {false};
 if !([_medic, _patient] call ACME_fnc_ventRecoveryNear) exitWith {false};
 [_medic, _patient] call ACME_fnc_ventConnectPatient;
 true
