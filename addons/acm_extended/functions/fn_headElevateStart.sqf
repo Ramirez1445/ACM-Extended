@@ -88,15 +88,25 @@ if (_needFrontFirst) exitWith {
 // At this point the patient is definitively anterior-up. All Semi-Fowler patient/provider animations start from it.
 _patient setVariable ["ACME_CS_facing","front",true];
 
-if (_patient getVariable ["ACME_headElev_vestRemoved", false]) then {
+private _hadHeadSupport = _patient getVariable ["ACME_headElev_vestRemoved", false];
+if (_hadHeadSupport) then {
     [_patient] call ACME_fnc_headElevVestRestore;
 };
-[_patient] call ACME_fnc_chestAccessVestRestore;
-if (_patient getVariable ["ACME_headElev_vestRemoved", false]) exitWith {};
-// something has to physically prop the casualty up. a worn backpack does it directly, and if there is no backpack
-// but the casualty is wearing a plate carrier, we strip the carrier, lift them, and wedge it behind the
-// back.
+if (_hadHeadSupport && {_patient getVariable ["ACME_headElev_vestRemoved", false]}) exitWith {};
+
+// A manually removed carrier remains under manual custody, but when there is no backpack Semi-Fowler may borrow
+// that exact saved carrier/prop as its physical bolster. Do not re-wear it just to remove it a second time.
 private _hasBag = ((backpack _patient) isNotEqualTo "");
+private _manualCarrierSupport = false;
+if (!_hasBag && {(_patient getVariable ["ACME_manualPlateCarrierState", ""]) == "off"}) then {
+    _manualCarrierSupport = [_patient, "borrow"] call ACME_fnc_manualPlateCarrierHeadElevSupport;
+};
+if (!_manualCarrierSupport) then {
+    [_patient] call ACME_fnc_chestAccessVestRestore;
+};
+
+// something has to physically prop the casualty up. a worn backpack does it directly, and if there is no backpack
+// but the casualty is wearing a plate carrier, we strip the carrier, lift them, and wedge it behind the back.
 private _vestClass = vest _patient;
 
 // Only an actual armored carrier is accepted as passive Semi-Fowler support. An unarmored chest rig/vest does not
@@ -112,7 +122,7 @@ if (_vestClass != "") then {
     private _carrierArmor = (((_legacyArmor max _chestArmor) max _diaArmor) max _abdArmor);
     _hasCarrier = _carrierArmor > 0;
 };
-private _manual = !_hasBag && {!_hasCarrier};
+private _manual = !_hasBag && {!_hasCarrier} && {!_manualCarrierSupport};
 if (_manual && {_auto || {isNull _medic} || {!alive _medic}
     || {_medic getVariable ["ACE_isUnconscious", false]}
     || {([_medic, _patient] call ACME_fnc_patientInteractionDistance) > (missionNamespace getVariable ["ace_medical_gui_maxDistance", 3])
@@ -132,7 +142,7 @@ _patient setVariable ["ACME_headElev_manualUnsupported", _manual, true];
 _patient setVariable ["ACME_headElev_hold", [[], [_medic, _poseToken, CBA_missionTime]] select _manual, true];
 
 // A backpack or vehicle seat needs no removed vest and no refund record.
-if (!_manual && {!_hasBag} && {!([_patient] call ACME_fnc_animBlocked)}) then {
+if (!_manual && {!_hasBag} && {!_manualCarrierSupport} && {!([_patient] call ACME_fnc_animBlocked)}) then {
     private _vestEntry = (getUnitLoadout _patient) param [4, [], [[]]];
     if (count _vestEntry == 2) then {
         _patient setVariable ["ACME_headElev_vestLoadout", _vestEntry, true];
@@ -150,7 +160,7 @@ if (!_manual && {!_hasBag} && {!([_patient] call ACME_fnc_animBlocked)}) then {
 
 };
 
-if (!_manual && {!_hasBag} && {!([_patient] call ACME_fnc_animBlocked)}
+if (!_manual && {!_hasBag} && {!_manualCarrierSupport} && {!([_patient] call ACME_fnc_animBlocked)}
     && {!(_patient getVariable ["ACME_headElev_vestRemoved", false])}) exitWith {
     _patient setVariable ["ACME_headElevated", false, true];
     _patient setVariable ["ACME_headElev_poseToken", "", true];
