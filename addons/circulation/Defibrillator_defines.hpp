@@ -10,8 +10,9 @@
 #define ACM_AED_pxToScreen_W(X) (X / 2048 * ACM_GUI_AED_GRID_W)
 #define ACM_AED_pxToScreen_H(X) (X / 2048 * ACM_GUI_AED_GRID_H)
 
-// Physical LifePak controls are printed on the 1.05x background texture. Invisible button hitboxes must use the
-// exact same transform or they drift away from the visible buttons, especially at non-16:9 resolutions.
+// Runtime controls whose coordinates were measured directly on the rendered 1.05x panel (currently SYNC/LED)
+// use this background transform. Stock ACM LifePak buttons retain ACM_AED_pxToScreen_* because their authored
+// constants already compensate for the panel scale; applying the background transform to them shifts them down/right.
 #define ACM_AED_bgPxToScreen_X(X) (X / 2048 * (ACM_GUI_AED_GRID_W * ACM_GUI_AED_SIZEM) + ACM_GUI_AED_GRID_X)
 #define ACM_AED_bgPxToScreen_Y(X) (X / 2048 * (ACM_GUI_AED_GRID_H * ACM_GUI_AED_SIZEM) + ACM_GUI_AED_GRID_Y)
 #define ACM_AED_bgPxToScreen_W(X) (X / 2048 * (ACM_GUI_AED_GRID_W * ACM_GUI_AED_SIZEM))
