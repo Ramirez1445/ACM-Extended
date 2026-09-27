@@ -4,6 +4,61 @@ if (!isServer || {isNull _patient} || {isNull _medic} || {!alive _medic}) exitWi
 if !([_medic, _patient] call ACME_fnc_ventRecoveryNear) exitWith {};
 private _records = missionNamespace getVariable ["ACME_vent_custody", createHashMap];
 private _id = _patient getVariable ["ACME_vent_custodyId", ""];
+
+// Airway removal is a forced recovery path. It must not be blocked by the ventilator procedure toggle because
+// the patient can no longer support the mounted circuit. The medic removing the airway receives the device.
+if (_op == "airwayLoss") exitWith {
+    private _r = _records getOrDefault [_id, createHashMap];
+
+    // Adopt a legacy/on-patient device exactly as manual recovery does, but preserve its current device settings.
+    if (count _r == 0 && {_patient getVariable ["ACME_vent_onPatient", false]}) then {
+        private _serial = (missionNamespace getVariable ["ACME_vent_custodySerial", 0]) + 1;
+        missionNamespace setVariable ["ACME_vent_custodySerial", _serial];
+        _id = format ["vent:%1:%2", netId _patient, _serial];
+
+        private _settings = [];
+        {
+            if (!isNil {_patient getVariable _x}) then {
+                _settings pushBack [_x, _patient getVariable _x];
+            };
+        } forEach ([] call ACME_fnc_ventDeviceFields);
+
+        _r = createHashMapFromArray [
+            ["patient", _patient],
+            ["supplier", _patient getVariable ["ACME_vent_supplier", objNull]],
+            ["supplierUID", _patient getVariable ["ACME_vent_supplierUID", ""]],
+            ["phase", "attached"],
+            ["settings", _settings],
+            ["lastSent", -100],
+            ["lastPos", getPosASL _patient],
+            ["lastVehicle", objectParent _patient],
+            ["deleted", false]
+        ];
+        _records set [_id, _r];
+        _patient setVariable ["ACME_vent_custodyId", _id, true];
+    };
+
+    if (count _r == 0) exitWith {
+        // No device ledger exists; ensure stale patient-side state cannot survive the airway removal.
+        ["ACME_ventPatientClear", [_patient, _id, true], _patient] call CBA_fnc_targetEvent;
+    };
+
+    if ((_r getOrDefault ["phase", ""]) != "attached") exitWith {};
+
+    _r set ["recipient", _medic];
+    _r set ["recipientUID", getPlayerUID _medic];
+    _r set ["phase", "returning"];
+    _r set ["lastSent", -100];
+    _patient setVariable ["ACME_vent_recovering", true, true];
+
+    ["ACME_ventPatientClear", [_patient, _id, false], _patient] call CBA_fnc_targetEvent;
+
+    if ((missionNamespace getVariable ["ACME_vent_custodyPFH", -1]) < 0) then {
+        missionNamespace setVariable ["ACME_vent_custodyPFH", [{[] call ACME_fnc_ventCustodyTick;}, 0.25, []] call CBA_fnc_addPerFrameHandler];
+    };
+    [] call ACME_fnc_ventCustodyTick;
+};
+
 if (_op == "attach") exitWith {
     if !([_medic, "ventilator"] call ACME_fnc_procedureAllowed) exitWith {};
     if (!(_patient isKindOf "CAManBase")
