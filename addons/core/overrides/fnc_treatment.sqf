@@ -553,9 +553,15 @@ if (_classname != "ACME_ConnectETVent") exitWith {
     // A newly accepted head-position action replaces the previous finite treatment's exit lease.
     // Its leftover rate record must not make the Putdown controller mistake its own startup for a takeover.
     if (_headOwned && {local _medic}) then {
+        // B182: replacing a native animation-rate lease is a real speed handoff. Retire the old lease/pose first,
+        // then restore 1.0 unless the incoming/current controller has already acquired explicit speed ownership.
         _medic setVariable ["ACME_nativeTreatmentRate", [], true];
         [_medic, "", -1, true] call ACME_fnc_treatmentPoseStop;
         [_medic, true] call ACME_fnc_menuPoseStop;
+        if !([_medic] call ACME_fnc_providerAnimSpeedOwned) then {
+            _medic setAnimSpeedCoef 1;
+            ["ace_common_setAnimSpeedCoef", [_medic, 1]] call CBA_fnc_globalEvent;
+        };
     };
 
     // Head positioning is head-selection only. Pass the selected body part through unchanged.
