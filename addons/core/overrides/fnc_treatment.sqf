@@ -5,6 +5,15 @@
  */
 params ["_medic", "_patient", "_bodyPart", "_classname"];
 
+// B190: the exposed HPMK overlay represents a physically open chest. CPR must execute as the canonical Body
+// treatment even if the medical-menu overlay retained another exposed selection when the button was pressed.
+if ((toLowerANSI _classname) == "cpr"
+    && {!isNull _patient}
+    && {(_patient getVariable ["ACME_hpmk_state", ""]) == "exposed"}) then {
+    _bodyPart = "Body";
+    _this set [2, _bodyPart];
+};
+
 private _medicVehicle = objectParent _medic;
 private _sameVehicleTreatment = !isNull _medicVehicle && {(objectParent _patient) isEqualTo _medicVehicle};
 private _interactionChecks = [["isNotInside", "isNotSwimming", "isNotInZeus"], ["isNotSwimming", "isNotInZeus"]] select _sameVehicleTreatment;
