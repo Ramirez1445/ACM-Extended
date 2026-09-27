@@ -8,7 +8,14 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B187 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B188 with no RC or hotfix suffix in the debug menu.
+- A manually removed plate carrier can now be borrowed directly as the Semi-Fowler support when no backpack is present. The same saved vest and world prop are reused, so no duplicate carrier is spawned and manual custody remains authoritative.
+- Semi-Fowler now resumes automatically after manual carrier-removal choreography if it had been temporarily flattened for the removal. The casualty replays the normal patient lift/hold sequence, and the provider replays the normal supported Semi-Fowler lift.
+- The chest-access carrier watchdog no longer pulls a manually borrowed Semi-Fowler support prop back to the ground park while the patient is elevated.
+- Lowering/canceling Semi-Fowler returns a borrowed manual carrier to its parked manual-custody position instead of re-wearing it. The carrier still remains off until Replace Plate Carrier or an automatic wake/transport return.
+- Wake, Get Up, drag/carry, vehicle loading, or independent movement while Semi-Fowler is borrowing the manual carrier now retires Semi-Fowler first and then force-restores the carrier to the casualty.
+- Manual plate-carrier eligibility now uses explicit HEMTT-safe alive/awake checks instead of the previously ambiguous compound expression.
+- i-gel and ETT removal continue to sever Ventway clinical state and initiate ventilator custody return before the airway state is cleared.
 - Removing an i-gel or extubating an ETT now immediately stops patient-side Ventway ventilation and starts a full custody return of the mounted ventilator to the airway-removing medic.
 - ETT extubation no longer clears only the connected/driving flags; airway loss uses the same complete Ventway patient/custody teardown path for both ETT and i-gel removal.
 - Ventway's patient-as-BVM gas-exchange sentinel no longer counts as AED motion. Analyze can complete while the Ventway is ventilating in CPR mode, while real chest compressions and a real BVM provider still register as motion exactly as before.
