@@ -95,7 +95,8 @@ if (_body) then {
     // KeyUp performs the one validation render needed for each actual edit. Outside text entry, 8 Hz is enough for
     // access/busy-state changes and prevents the visible repeated reload of the carousel/action controls.
     private _actionFocus = focusedCtrl _d;
-    private _durationEditing = !isNull _actionFocus && {(ctrlIDC _actionFocus) == 84831};
+    private _durationEditing = (uiNamespace getVariable ["ACME_SK_PushDurationEditing",false])
+        || {!isNull _actionFocus && {(ctrlIDC _actionFocus) == 84831}};
     if (!_durationEditing && {_now >= (_d getVariable ["ACME_SK_NextBodyAction",0])}) then {
         _d setVariable ["ACME_SK_NextBodyAction",_now + 0.12];
         call ACME_fnc_skBodyActionRender;
