@@ -108,14 +108,22 @@ def test_custom_modal_actions_are_allowed_to_have_no_native_animation():
     assert "class ACME_PerformThoracostomy: CheckPulse" in cfg
 
 
-def test_manual_plate_carrier_awake_guard_uses_valid_sqf_lazy_eval_syntax():
+def test_manual_plate_carrier_awake_guard_uses_valid_sqf_syntax():
     s = read("addons/acm_extended/functions/fn_manualPlateCarrierCanToggle.sqf")
 
-    good = 'if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake)} || {!alive _patient}) exitWith {false};'
-    bad = 'if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake}) || {!alive _patient}) exitWith {false};'
+    # B188 deliberately split the old compound lazy-eval expression into simple executable guards.
+    # This is clearer to HEMTT/SQF parsing and avoids the malformed-brace regression entirely.
+    assert 'if (!(alive _medic)) exitWith {false};' in s
+    assert 'if (!([_medic] call ace_common_fnc_isAwake)) exitWith {false};' in s
+    assert 'if (!(alive _patient)) exitWith {false};' in s
 
-    assert good in s
-    assert bad not in s
+    # Persistent removal is valid only while the casualty remains medically down.
+    assert 'private _awake = !(_patient getVariable ["ACE_isUnconscious", false])' in s
+    assert '&& {!(_patient getVariable ["ace_medical_unconscious", false])};' in s
+    assert s.rstrip().endswith("!_awake")
+
+    # The malformed historical expression must never return.
+    assert 'if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake})' not in s
 
 
 def test_structured_item_descriptions_escape_xml_ampersands():
