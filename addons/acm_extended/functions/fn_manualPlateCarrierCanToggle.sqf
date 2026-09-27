@@ -39,4 +39,6 @@ if (_restore) exitWith {
     _hasStored && {_worn == ""}
 };
 
-_worn != "" && {!_hasStored || {_worn == _savedClass}}
+// If an external system restored or swapped the vest while an old manual snapshot still exists,
+// Remove remains available and the commit path refreshes custody from the currently worn exact loadout.
+_worn != ""
