@@ -243,6 +243,7 @@ switch (_operation) do {
     case "rhythmSet": {_args call ACME_fnc_rhythmSet;};
     case "rhythmToggle": {_args call ACME_fnc_rhythmToggle;};
     case "shock": {_args call ACME_fnc_shockLocal;};
+    case "ventAirwayLoss": {_args call ACME_fnc_ventAirwayLoss;};
     case "manualPlateCarrier": {_args call ACME_fnc_manualPlateCarrierCommit;};
     case "manualPlateCarrierAutoReturn": {_args call ACME_fnc_manualPlateCarrierAutoReturn;};
     case "syncArmed": {
