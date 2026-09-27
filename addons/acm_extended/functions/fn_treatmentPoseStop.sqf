@@ -23,9 +23,10 @@ private _stage = _state param [3, 0];
 private _pfh = _state param [5, -1];
 private _exclusion = _state param [7, ""];
 private _upright = _state param [16, false];
-// B57: these assessment/roll episodes always finish in the project's default unarmed crouch, even if a stale
-// upright/menu target made B56 choose a standing medicUp entry.
-private _exitUpright = _upright && {!(_currentMode in ["roll","inspect","pulse"])};
+private _ambulatoryContact = _state param [19, false];
+// B175 medicUp is an AinvPknl family: the casualty is upright, the provider is not. Always return these provider
+// poses to the normal unarmed crouch. Retain the old standing exit only for a hot-loaded legacy AinvPerc state.
+private _exitUpright = _upright && {((toLowerANSI _main) find "ainvperc") == 0};
 if (_mode != "" && {_mode != _currentMode}) exitWith {};
 if (_epoch >= 0 && {_epoch != _currentEpoch}) exitWith {};
 
@@ -75,8 +76,8 @@ if (!_handoff
     && {!(_medic getVariable ["ACE_isUnconscious", false])}
     && {!([_medic] call ACME_fnc_animBlocked)}
     && {_current == toLower _main || {_ownsEntry} || {_stage >= 2} || {_currentMode in ["stethoscope","pulse"]}}) then {
-    // B56: a standing medicUp episode exits to the unarmed standing idle; every kneeling episode exits to
-    // the unarmed crouch.
+    // B175: current medicUp states are kneeling-provider motions and therefore exit to unarmed crouch.
+    // _exitUpright is only a compatibility path for an already-running legacy AinvPerc episode.
     _medic setUnitPos (["MIDDLE", "UP"] select _exitUpright);
     [_medic, ["AmovPknlMstpSnonWnonDnon", "AmovPercMstpSnonWnonDnon"] select _exitUpright, 1] call ACME_fnc_doAnim;
 
