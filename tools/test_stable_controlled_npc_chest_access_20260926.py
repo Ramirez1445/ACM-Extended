@@ -22,7 +22,19 @@ def test_conscious_standing_or_crouched_casualty_is_never_stripped_for_chest_acc
 def test_carrier_is_force_restored_if_patient_wakes_and_stands_or_crouches_during_custody():
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
     watchdog = acquire.split("// Custody watchdog.", 1)[1].split("// Animation is allowed", 1)[0]
-    assert 'private _standingConscious = alive _patient' in watchdog
+
+    # B183 computes awake once because the same watchdog now owns both the persistent manual-return path
+    # and the historical temporary standing/crouched safety return.
+    assert 'private _awake = alive _patient' in watchdog
+    assert 'getVariable ["ACE_isUnconscious", false]' in watchdog
+    assert 'getVariable ["ace_medical_unconscious", false]' in watchdog
+
+    # Persistent manual custody returns immediately on wake, before temporary-custody handling.
+    assert 'private _manualLease = _patient getVariable ["ACME_manualPlateCarrierLease", ""];' in watchdog
+    assert '[_patient, "awake"] call ACME_fnc_manualPlateCarrierAutoReturn;' in watchdog
+
+    # Ordinary automatic chest-access custody retains the standing/crouched conscious return.
+    assert 'private _standingConscious = _awake' in watchdog
     assert '(stance _patient) in ["STAND", "CROUCH"]' in watchdog
     assert '[_patient, true, objNull, _ctx, true] call ACME_fnc_chestAccessVestRestore;' in watchdog
 
