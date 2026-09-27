@@ -58,6 +58,12 @@ _medic setVariable ["ACME_dah_gen", (_medic getVariable ["ACME_dah_gen", 0]) + 1
 [_medic, [["treatmentEndInAnim"]]] call ACM_core_fnc_setAceMedicalState;
 
 private _current = toLower animationState _medic;
+private _alreadyNeutralCrouch = (_current find "amovpknlmstpsnonwnondnon") == 0
+    || {(_current find "aidlpknlmstpsnonwnondnon") == 0};
+private _ambulatoryAlreadySettled = _upright
+    && {_stage >= 2}
+    && {_current != toLower _main}
+    && {_alreadyNeutralCrouch};
 private _ownsEntry = _stage <= 1 && {
     (_current find "amovpknlmstpsnonwnondnon") == 0
     || {(_current find "amovpercmstpsnonwnondnon_amovpknlmstpsnonwnondnon") == 0}
@@ -70,6 +76,7 @@ private _ownsEntry = _stage <= 1 && {
 // Use playMoveNow through the move graph, never switchMove, so the work state blends back into the normal
 // unarmed crouch. Weapon selection is not touched here; the start preflight already cleared it exactly once.
 if (!_handoff
+    && {!_ambulatoryAlreadySettled}
     && {local _medic}
     && {alive _medic}
     && {!(_medic getVariable ["ACE_isUnconscious", false])}
