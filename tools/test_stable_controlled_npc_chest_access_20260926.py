@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B183: standing/crouched-conscious carrier protection and controlled-NPC provider lifecycle."""
+"""Stable B184: standing/crouched-conscious carrier protection and controlled-NPC provider lifecycle."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +23,7 @@ def test_carrier_is_force_restored_if_patient_wakes_and_stands_or_crouches_durin
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
     watchdog = acquire.split("// Custody watchdog.", 1)[1].split("// Animation is allowed", 1)[0]
 
-    # B183 computes awake once because the same watchdog now owns both the persistent manual-return path
+    # B184 computes awake once because the same watchdog now owns both the persistent manual-return path
     # and the historical temporary standing/crouched safety return.
     assert 'private _awake = alive _patient' in watchdog
     assert 'getVariable ["ACE_isUnconscious", false]' in watchdog
@@ -94,4 +94,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B183 controlled-NPC and standing-carrier regression: PASS")
+    print("stable B184 controlled-NPC and standing-carrier regression: PASS")
