@@ -8,7 +8,11 @@ Updated 26 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B176 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B177 with no RC or hotfix suffix in the debug menu.
+- Accepted medical-menu treatments now start native treatment/progress immediately on the click frame. Provider weapon/stance preparation is presentation-only and can no longer hold a clinical button for 0.5–3 seconds before anything happens.
+- Suture Chest Tube no longer inherits the Thoracostomy launcher's one-second treatment delay; it uses a 0.001 s ACE treatment window so the state commit is effectively immediate while retaining the normal treatment callback path.
+- Intentionally timed transfusion assembly buttons repaint their active state on the click frame before their assembly timer begins. Existing deferred menu transitions already close the current UI or start the native move flow first.
+- Conscious patients retain ownership of their own body animation during native treatment. A conscious prone casualty may use the normal downed-target provider animation, but ACME/ACM no longer starts an `animationPatient` state on that conscious casualty.
 - Conscious casualties who are independently standing or crouched retain their worn plate carrier during chest-access interventions; if they wake and return to either stance while a carrier is already parked, it is restored immediately.
 - Chest Seal, NAR SPEAR, Thoracostomy and shared chest-access preparation recognize locally controlled NPC/Zeus medics through ACE's player-control predicate rather than requiring the provider object to equal the cached ACE_player object.
 - Conscious independently standing or crouched casualties use provider-only ambulatory treatment presentation instead of downed-casualty poses. Explicit treatments select validated vanilla `AinvPknl...medicUp0-5` empty-hands states and fall back safely if a state is unavailable.
