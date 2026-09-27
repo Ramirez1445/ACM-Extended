@@ -1468,7 +1468,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         scope = 2;
         author = "mavis";
         displayName = "NAR HPMK";
-        descriptionShort = "Hypothermia Prevention & Management Kit. Reusable warming blanket.";
+        descriptionShort = "Hypothermia Prevention &amp; Management Kit. Reusable warming blanket.";
         picture = "\acm_extended\ui\items\HPMK_ca.paa";
         nameSound = "";
         ACE_isMedicalItem = 1;
@@ -1534,7 +1534,7 @@ class ACM_Vial_Fentanyl: ACE_ItemCore {
         author = "mavis";
         model = "\z\ace\addons\medical_treatment\data\bandage.p3d";
         displayName = "NAR AAJT-S";
-        descriptionShort = "Abdominal Aortic & Junctional Tourniquet (Stabilized). Inguinal placement occludes one selected leg; axillary placement occludes one selected arm; Zone 3 REBOA placement occludes both lower extremities. Bulky (~7.5 x 6.5 x 2 in, ~17 oz).";
+        descriptionShort = "Abdominal Aortic &amp; Junctional Tourniquet (Stabilized). Inguinal placement occludes one selected leg; axillary placement occludes one selected arm; Zone 3 REBOA placement occludes both lower extremities. Bulky (~7.5 x 6.5 x 2 in, ~17 oz).";
         picture = "\acm_extended\ui\items\aajt-s_ca.paa";
         ACE_isMedicalItem = 1;
         class ItemInfo: CBA_MiscItem_ItemInfo {
