@@ -1,3 +1,7 @@
+// Atomic patient-owner Direct Pressure claim replies are provider-local. Register once with the other treatment
+// lifecycle handlers so same-site multiplayer starts can never race a replicated marker.
+["ACME_directPressureClaimAck", {_this call ACME_fnc_directPressureClaimAck}] call CBA_fnc_addEventHandler;
+
 // B72 provider stance release. ACME starts ordinary on-foot treatments from empty-hands crouch, but setUnitPos is
 // only an entry guard, never a permanent player lock. Once ACE reports success/failure, release AUTO after the
 // native crouched end-animation handoff. Do not interfere with head-lift or another ACME-owned finite pose.

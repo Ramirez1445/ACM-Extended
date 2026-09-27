@@ -74,9 +74,13 @@ def test_exact_chest_roll_provider_animation_is_forced():
     r = txt('functions/fn_rollProviderStart.sqf')
     f = txt('functions/fn_chestSealFlip.sqf')
     assert 'case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};' in s
-    assert '[_medic, _main, 1] call ACME_fnc_doAnim;' in s
-    assert '[_medic, "roll", _duration, _patient] call ACME_fnc_treatmentPoseStart' in r
-    assert 'ACME_fnc_rollProviderStart' in f
+    assert 'private _hardOverride = (_state param [18, false]) && {(_state param [1, ""]) == "roll"};' in s
+    assert '[_medic, _main, [1, 2] select _hardOverride] call ACME_fnc_doAnim;' in s
+    assert 'if (currentWeapon _medic != "") then {_medic selectWeapon "";};' in s
+    assert '["_forceImmediate", false, [false]]' in s
+    assert '[_medic, "roll", _duration, _patient, _forceImmediate] call ACME_fnc_treatmentPoseStart' in r
+    assert '[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart' in f
+    assert '[_provider, "chestSealFlip", _patient, true] call ACME_fnc_rollProviderStart' not in f
     launch = block(txt('config.cpp'), 'ACME_ApplyChestSeal')
     for key in ['animationMedic = "";', 'animationMedicProne = "";', 'animationMedicSelf = "";', 'animationMedicSelfProne = "";']:
         assert key in launch

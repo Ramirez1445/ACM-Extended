@@ -131,16 +131,17 @@ def test_selected_carousel_syringe_has_only_one_live_hitbox():
     assert '_activeHit ctrlShow _activeUsable' in render
 
 
-def test_provider_roll_uses_crouch_connected_wrapper_and_no_switchmove_fallback():
-    # Historical identity retained. Current provider theatre uses the literal BI medic4 state
-    # after the shared crouch/empty-hands preflight; no priority-two provider entry is used.
+def test_chestseal_flip_reuses_standard_provider_roll_interpolation():
     pose = txt('functions/fn_treatmentPoseStart.sqf')
     flip = txt('functions/fn_chestSealFlip.sqf')
     assert 'case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};' in pose
     assert '[_medic, _transition, 1] call ACME_fnc_doAnim;' in pose
-    assert '[_medic, _main, 1] call ACME_fnc_doAnim;' in pose
+    assert 'private _hardOverride = (_state param [18, false]) && {(_state param [1, ""]) == "roll"};' in pose
+    assert '[_medic, _main, [1, 2] select _hardOverride] call ACME_fnc_doAnim;' in pose
+    assert 'if (currentWeapon _medic != "") then {_medic selectWeapon "";};' in pose
     assert 'ACME_fnc_medicAnimationPrep' in pose
-    assert 'ACME_fnc_rollProviderStart' in flip
+    assert '[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart' in flip
+    assert '[_provider, "chestSealFlip", _patient, true] call ACME_fnc_rollProviderStart' not in flip
 
 def test_chest_seal_patient_roll_interpolates_without_priority_two():
     # Historical name retained. Normal entry is priority one; forbidding the
@@ -185,7 +186,8 @@ def test_other_current_medical_transition_entries_use_priority_one():
     ]:
         assert state in seq
     assert 'call ACME_fnc_patientAnimRequest' in roll
-    assert '_trans, 1, "chest-seal-roll"' in roll
+    assert '["_immediate", false, [false]]' in roll
+    assert 'private _animPriority = [1, 2] select _immediate;' in roll
 
 def test_animation_helpers_default_to_interpolated_priority_one():
     held = txt('functions/fn_doAnimHeld.sqf')
@@ -197,15 +199,16 @@ def test_animation_helpers_default_to_interpolated_priority_one():
     assert '(_x param [2, 2])' not in queue
 
 
-def test_no_acme_medical_animation_entry_uses_priority_two_switchmove_fallback():
-    # Historical identity retained. Priority two is allowed only as a scoped exact-state repair/lock,
-    # never as the ordinary provider-work entry path.
+def test_priority_two_entry_is_scoped_to_explicit_immediate_chest_procedure_paths():
     pose = txt('functions/fn_treatmentPoseStart.sqf')
     roll = txt('functions/fn_chestSealRoll.sqf')
     sync = txt('functions/fn_treatmentPoseSync.sqf')
-    assert '[_medic, _main, 1] call ACME_fnc_doAnim;' in pose
     assert '[_medic, _transition, 1] call ACME_fnc_doAnim;' in pose
-    assert '_trans, 1, "chest-seal-roll"' in roll
+    assert 'private _hardOverride = (_state param [18, false]) && {(_state param [1, ""]) == "roll"};' in pose
+    assert '[_medic, _main, [1, 2] select _hardOverride] call ACME_fnc_doAnim;' in pose
+    assert 'private _animPriority = [1, 2] select _immediate;' in roll
+    assert 'private _lockPriority = [3, 100] select _immediate;' in roll
+    assert 'if (!_immediate) then {' in roll
     assert '[_p, _trans, 2] call ACME_fnc_doAnim;' in roll
     assert '_medic switchMove [_main, _phase, 1, false];' in sync
 

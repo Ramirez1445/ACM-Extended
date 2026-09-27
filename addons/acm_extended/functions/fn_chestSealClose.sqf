@@ -20,6 +20,14 @@ private _flipPFH = uiNamespace getVariable ["ACME_CS_FlipPFH",-1];
 if (_flipPFH isEqualType 0 && {_flipPFH >= 0}) then {[_flipPFH] call CBA_fnc_removePerFrameHandler;};
 uiNamespace setVariable ["ACME_CS_FlipPFH",-1];
 uiNamespace setVariable ["ACME_CS_FlipPendingToken",""];
+
+// Retire a seal-placement medic3 worker before any close theatre can begin. Incrementing the generation makes
+// every delayed/current placement callback inert even if it was already queued on this frame.
+private _applyPFH = uiNamespace getVariable ["ACME_CS_ApplyPFH",-1];
+if (_applyPFH isEqualType 0 && {_applyPFH >= 0}) then {[_applyPFH] call CBA_fnc_removePerFrameHandler;};
+uiNamespace setVariable ["ACME_CS_ApplyPFH",-1];
+uiNamespace setVariable ["ACME_CS_ApplyAnimSerial",(uiNamespace getVariable ["ACME_CS_ApplyAnimSerial",0]) + 1];
+uiNamespace setVariable ["ACME_CS_ApplyGestureUntil",0];
 private _flipMedic = uiNamespace getVariable ["ACME_CS_Medic",objNull];
 private _closingPatient = uiNamespace getVariable ["ACME_CS_Patient",objNull];
 

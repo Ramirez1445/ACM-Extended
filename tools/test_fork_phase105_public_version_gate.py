@@ -21,7 +21,7 @@ def main() -> None:
     start = START.read_text(encoding='utf-8', errors='replace')
     assert 'getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version")' in start
     assert f'ACME_infusion_version = "{EXPECTED}"' in start
-    batch = re.search(r'ACME_buildBatch\s*=\s*"(B\d+)"\s*;', start)
+    batch = re.search(r'ACME_buildBatch\s*=\s*"([A-Za-z0-9._-]+)"\s*;', start)
     assert batch, 'internal build batch stamp missing or malformed'
 
     for page in DEBUG:

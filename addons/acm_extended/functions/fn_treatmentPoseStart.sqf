@@ -6,7 +6,8 @@ params [
     ["_medic", objNull, [objNull]],
     ["_mode", "inspect", [""]],
     ["_window", -1, [0]],
-    ["_patient", objNull, [objNull]]
+    ["_patient", objNull, [objNull]],
+    ["_forceImmediate", false, [false]]
 ];
 if (isNull _medic || {!local _medic} || {!alive _medic}
     || {_medic getVariable ["ACE_isUnconscious", false]}
@@ -30,8 +31,8 @@ private _main = switch (_mode) do {
     case "chestSealWorkspace": {"ACME_ChestSealWorkspace"};
     case "junctional": {"ACME_JunctionalWork"};
     case "stethoscope": {"ACME_StethoscopeWork"};
-    case "chestSeal": {"AinvPknlMstpSnonWrflDnon_medic3"};
-    case "ncdSeat": {"AinvPknlMstpSnonWrflDnon_medic1"};
+    case "chestSeal": {"AinvPknlMstpSnonWnonDnon_medic3"};
+    case "ncdSeat": {"AinvPknlMstpSnonWnonDnon_medic1"};
     case "pulse": {"ACME_StethoscopeWork"};
     case "torsoBandage": {"AinvPknlMstpSnonWrflDnon_medic4"};
     case "headBandageLeft": {"AinvPknlMstpSnonWrflDnon_medic0"};
@@ -70,12 +71,21 @@ private _dpPoseHandoff = (_medic getVariable ["ACME_DP_Active", false])
 // A physical Flip is still a real medical animation and must wait for a sidearm to finish holstering. The former
 // roll fast-path used selectWeapon "" and could start medic4 under a pistol that was still visibly in the hands.
 // Direct Pressure remains the one exception because its existing authored hold already owns empty-hand theatre.
-private _prepDelay = if (_dpPoseHandoff) then {
+private _prepDelay = if (_forceImmediate) then {
+    // Immediate chest-procedure handoffs already own empty-hands theatre visually. Clear the logical weapon
+    // selection too, otherwise Arma can reassert the selected rifle/pistol as soon as the finite medical RTM
+    // changes state. This is selection-only: do not enqueue another holster animation inside the live procedure.
     if (currentWeapon _medic != "") then {_medic selectWeapon "";};
     _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
     0
 } else {
-    [_medic] call ACME_fnc_medicAnimationPrep
+    if (_dpPoseHandoff) then {
+        if (currentWeapon _medic != "") then {_medic selectWeapon "";};
+        _medic setVariable ["ACME_medicAnimationPrep", ["empty_hands_ready", CBA_missionTime, ""], false];
+        0
+    } else {
+        [_medic] call ACME_fnc_medicAnimationPrep
+    }
 };
 if !(_prepDelay isEqualType 0) then {_prepDelay = 0;};
 private _prepUntil = _actionStarted + (_prepDelay max 0);
@@ -83,11 +93,12 @@ private _prepUntil = _actionStarted + (_prepDelay max 0);
 // State layout:
 //  0 epoch, 1 mode, 2 main, 3 stage, 4 stageStarted, 5 pfh, 6 owner, 7 exclusion,
 //  8 waitUntil, 9 finiteWindow (informational), 10 actionStarted, 11 holdAt, 12 holdPhase,
-//  13 lastHoldAssert, 14 holdStarted, 15 stopAfterHold, 16 upright (standing medicUp state in use), 17 moving animation rate
+//  13 lastHoldAssert, 14 holdStarted, 15 stopAfterHold, 16 upright (standing medicUp state in use), 17 moving animation rate,
+ //  18 forceImmediate (skip redundant weapon/crouch prep; hard priority-2 overwrite is roll/Flip only)
 // Stages: -1 waiting for the one weapon stow, -2 playing the BI stance transition into the crouch,
 //          0 legacy immediate start, 1 requested state entering, 2 running, 3 frozen hold.
 private _state = [_epoch, _mode, _main, -1, _actionStarted, -1, clientOwner, _exclusion,
-    _prepUntil, _window, _actionStarted, _holdAt, -1, -1, -1, _stopAfterHold, _upright, _rate];
+    _prepUntil, _window, _actionStarted, _holdAt, -1, -1, -1, _stopAfterHold, _upright, _rate, _forceImmediate];
 _medic setVariable ["ACME_treatmentPoseState", _state];
 // An accepted physical examination/preparation is actual care; merely viewing
 // the initial medical menu never reaches this controller.
@@ -107,9 +118,10 @@ if (!isNil "ace_advanced_fatigue_setAnimExclusions") then {
 private _fnStartMain = {
     params ["_medic", "_main", "_state"];
     _medic setUnitPos (["MIDDLE", "UP"] select (_state param [16, false]));
-    // B73: priority 1 is playMoveNow only. It walks the move graph and can never fall through to switchMove,
-    // so provider work always interpolates into the authored state instead of teleporting into frame zero.
-    [_medic, _main, 1] call ACME_fnc_doAnim;
+    // Chest-seal placement must keep the normal interpolated motion; only physical Flip needs the hard overwrite.
+    // Both may skip redundant prep because the live chest workspace already owns empty-hands crouch theatre.
+    private _hardOverride = (_state param [18, false]) && {(_state param [1, ""]) == "roll"};
+    [_medic, _main, [1, 2] select _hardOverride] call ACME_fnc_doAnim;
     _state set [3, 1];
     _state set [4, CBA_missionTime];
 };
@@ -120,6 +132,8 @@ private _fnEnter = {
     params ["_medic", "_main", "_state", "_fnStartMain"];
     private _transition = "";
     private _length = 0;
+    // Procedure-critical immediate handoffs must not wait for a crouch-transition RTM to complete.
+    if (_state param [18, false]) exitWith {[_medic, _main, _state] call _fnStartMain;};
     // B72 leaves the upright slot false for medical work. Keep this branch only as hot-reload compatibility.
     if (_state param [16, false]) exitWith {[_medic, _main, _state] call _fnStartMain;};
     switch (stance _medic) do {

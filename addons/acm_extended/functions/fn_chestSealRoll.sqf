@@ -5,12 +5,13 @@ params [
     ["_target", "front", [""]],
     ["_force", false, [false]],
     ["_provider", objNull, [objNull]],
-    ["_preserveSuspendedHeadElevation", false, [false]]
+    ["_preserveSuspendedHeadElevation", false, [false]],
+    ["_immediate", false, [false]]
 ];
 if (isNull _patient || {!(_target in ["front", "back"])}) exitWith {};
 
 if (!local _patient) exitWith {
-    [_patient, "chestSealRoll", [_patient, _target, _force, _provider, _preserveSuspendedHeadElevation]] call ACME_fnc_ownerDispatch;
+    [_patient, "chestSealRoll", [_patient, _target, _force, _provider, _preserveSuspendedHeadElevation, _immediate]] call ACME_fnc_ownerDispatch;
 };
 
 // Owner-authoritative final gate. A provider cannot force a physical patient animation merely because
@@ -45,27 +46,31 @@ private _hold = if (_target isEqualTo "back") then {
     missionNamespace getVariable ["ACME_uncon_faceUp", "ACM_LyingState"]
 };
 
-// Ask for the smooth priority-1 transition first. ACM_LyingState is intentionally isolated and can swallow
-// playMoveNow, so verify the requested roll actually began. If it did not, use ACE priority 2 once as a narrowly
-// scoped state-graph repair. The token prevents an old fallback from overriding a newer flip.
+// Ordinary callers keep the smooth priority-1 transition plus the scoped fallback. The chest-seal Flip button
+// passes _immediate=true: that path deliberately uses priority 2 and a higher lease priority on the first request,
+ // because a requested physical flip must overwrite an existing casualty animation with no 0.15 s dead period.
 private _token = format ["%1:%2:%3", clientOwner, CBA_missionTime, random 1];
 private _rollTime = missionNamespace getVariable ["ACME_CS_rollTime", 1.85 / (call ACME_fnc_choreographyRate)];
 if (!(_rollTime isEqualType 0) || {!finite _rollTime} || {_rollTime <= 0}) then {_rollTime = 1.85 / (call ACME_fnc_choreographyRate);};
-private _leaseToken = [_patient, _trans, 1, "chest-seal-roll", _provider, _rollTime + 0.45, 3, _token] call ACME_fnc_patientAnimRequest;
+private _animPriority = [1, 2] select _immediate;
+private _lockPriority = [3, 100] select _immediate;
+private _leaseToken = [_patient, _trans, _animPriority, "chest-seal-roll", _provider, _rollTime + 0.45, _lockPriority, _token] call ACME_fnc_patientAnimRequest;
 if (_leaseToken == "") exitWith {_patient setVariable ["ACME_CS_rollUntil", -1, false];};
 _patient setVariable ["ACME_CS_rollToken", _token, false];
 _patient setVariable ["ACME_CS_rollUntil", CBA_missionTime + _rollTime, false];
-[{
-    params ["_p", "_tok", "_trans"];
-    if (isNull _p || {!local _p} || {!alive _p} || {!isNull objectParent _p}) exitWith {};
-    if ((_p getVariable ["ACME_CS_rollToken", ""]) != _tok) exitWith {};
-    private _lock = _p getVariable ["ACME_patientAnimLock", []];
-    if ((_lock param [0, ""]) != _tok) exitWith {};
-    if !([_p] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};
-    if ((toLower animationState _p) != (toLower _trans)) then {
-        [_p, _trans, 2] call ACME_fnc_doAnim;
-    };
-}, [_patient, _token, _trans], 0.15] call CBA_fnc_waitAndExecute;
+if (!_immediate) then {
+    [{
+        params ["_p", "_tok", "_trans"];
+        if (isNull _p || {!local _p} || {!alive _p} || {!isNull objectParent _p}) exitWith {};
+        if ((_p getVariable ["ACME_CS_rollToken", ""]) != _tok) exitWith {};
+        private _lock = _p getVariable ["ACME_patientAnimLock", []];
+        if ((_lock param [0, ""]) != _tok) exitWith {};
+        if !([_p] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};
+        if ((toLower animationState _p) != (toLower _trans)) then {
+            [_p, _trans, 2] call ACME_fnc_doAnim;
+        };
+    }, [_patient, _token, _trans], 0.15] call CBA_fnc_waitAndExecute;
+};
 
 [{
     params ["_p", "_tok", "_hold", "_needsHold", "_target"];

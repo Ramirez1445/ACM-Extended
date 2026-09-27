@@ -274,6 +274,10 @@ switch (_operation) do {
         [_medic, _patient, _part] call ACME_fnc_xstatApply;
     };
     case "aajtFlow": {_args call ACME_fnc_aajtSetLegTQ;};
+    case "directPressureClaim": {
+        _args params [["_op","claim",[""]],["_claimArgs",[],[[]]]];
+        [_patient,_op,_claimArgs] call ACME_fnc_directPressureClaimLocal;
+    };
     case "directPressureMarker": {
         _args params [["_medic", objNull, [objNull]], ["_bodyPart", "", [""]], ["_active", false, [false]]];
         private _part = toLower _bodyPart;

@@ -29,9 +29,13 @@ def assert_nonexclusive_contract(start, regions):
     has(start, '[_patient] call ACM_core_fnc_cprActive')
     has(start, '[_patient] call ACM_core_fnc_bvmActive')
     has(start, 'if (_providerManeuver) exitWith')
-    has(start, 'if (_bodyPart == "body") then')
+    # Entry is now two-phase: start requests an owner-serialized site claim and only the accepted ACK selects
+    # torso/self/limb activation. This prevents two clients from overwriting the same patient/body-part marker.
+    has(start, '[_patient,"directPressureClaim",["claim"')
+    has(start, 'ACME_DP_ClaimPending')
+    ack = read('directPressureClaimAck')
     for name in ('directPressureTorso', 'directPressureSelf', 'directPressureLimb'):
-        has(start, 'call ACME_fnc_' + name)
+        has(ack, 'call ACME_fnc_' + name)
     for source in regions:
         has(source, '_medic setVariable ["ACME_DP_OwnsContinuous",false];')
         # The controller variable may be READ, but not assigned/acquired by DP.

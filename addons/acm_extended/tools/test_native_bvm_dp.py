@@ -50,16 +50,31 @@ def setup():
         ACME_fnc_bodyPartName = {_this select 0};
         ACME_fnc_medLog = {_pressureLogs pushBack _this;};
         ACME_fnc_directPressureHasFracture = {false};
+        ACME_fnc_clinicalEpoch = {0};
         ACM_damage_fnc_clotWoundsOnBodyPart = {};
         ace_medical_status_fnc_updateWoundBloodLoss = {};
         CBA_fnc_execNextFrame = {_waits pushBack [_this select 0,_this select 1];};
     '''
-    # The BVM fixture simulates only the breath command. Execute the current
-    # owner-side DP marker branch too, rather than letting the mock drop it.
+    # The BVM fixture simulates only the breath command. Execute the current owner-side DP marker branch,
+    # and synchronously acknowledge the new patient-owner site claim so this single-process SQF-VM fixture models
+    # the accepted multiplayer round trip before asserting the active hold.
     marker=switch_case_body(read("ownerDispatch"),"directPressureMarker")
     source += ('private _originalOwnerDispatch = ACME_fnc_ownerDispatch; '
                'ACME_fnc_ownerDispatch = {params ["_patient","_command","_args"]; '
                'if (_command == "directPressureMarker") exitWith {' + adapt(marker) + '}; '
+               'if (_command == "directPressureClaim") exitWith { '
+               '_args params ["_op","_claimArgs"]; '
+               '_claimArgs params ["_m","_part","_token","_epoch","_providerOwner"]; '
+               'if (_op == "claim") then { '
+               '_m setVariable ["ACME_DP_ClaimPending",[]]; '
+               '_m setVariable ["ACME_DP_ClaimToken",_token]; '
+               '_m setVariable ["ACME_DP_ClaimEpoch",_epoch]; '
+               'if (_part == "body") then {[_m,_patient,_part] call ACME_fnc_directPressureTorso} else { '
+               'if (_patient isEqualTo _m) then {[_m,_patient,_part] call ACME_fnc_directPressureSelf} else {[_m,_patient,_part] call ACME_fnc_directPressureLimb};}; '
+               '} else { '
+               '_patient setVariable [format ["ACME_DP_claim_%1",_part],[]]; '
+               'if ((_patient getVariable [format ["ACME_DP_press_%1",_part],objNull]) isEqualTo _m) then {_patient setVariable [format ["ACME_DP_press_%1",_part],objNull];}; '
+               '};}; '
                '_this call _originalOwnerDispatch;};')
     for name in ("doAnimHeld", "directPressureStop", "directPressurePose", "directPressureTick", "directPressureLimb", "directPressureTorso", "directPressureStart"):
         source += f"ACME_fnc_{name} = {{" + pressure_source(name) + "};"

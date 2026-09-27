@@ -19,16 +19,15 @@ if (_providerManeuver) exitWith {
 if (_medic getVariable ["ACME_DP_Active", false]) exitWith {
     ["You're already holding direct pressure.", 2, _medic] call ace_common_fnc_displayTextStructured;
 };
-
-// Clear any stale PFH/key/patient markers left by an interrupted prior hold before starting a new one.
-[true, _medic] call ACME_fnc_directPressureStop;
-
-if (_bodyPart == "body") then {
-    [_medic, _patient, _bodyPart] call ACME_fnc_directPressureTorso;
-} else {
-    if (_patient isEqualTo _medic) then {
-        [_medic, _patient, _bodyPart] call ACME_fnc_directPressureSelf;
-    } else {
-        [_medic, _patient, _bodyPart] call ACME_fnc_directPressureLimb;
-    };
+if !((_medic getVariable ["ACME_DP_ClaimPending", []]) isEqualTo []) exitWith {
+    ["Direct pressure is already being started.", 1.5, _medic] call ace_common_fnc_displayTextStructured;
 };
+
+// Clear stale provider-local presentation from an interrupted prior episode, then atomically reserve this patient
+// body part on the casualty owner. No pressure pose or clinical effect begins until that owner accepts the claim.
+[true, _medic] call ACME_fnc_directPressureStop;
+private _epoch = [_patient] call ACME_fnc_clinicalEpoch;
+private _token = format ["%1:%2:%3:%4", owner _medic, netId _medic, diag_frameNo, serverTime];
+_medic setVariable ["ACME_DP_ClaimPending", [_patient, _bodyPart, _token, _epoch], false];
+_medic setVariable ["ACME_DP_ClaimRequestedAt", diag_tickTime, false];
+[_patient, "directPressureClaim", ["claim", [_medic, _bodyPart, _token, _epoch, owner _medic]]] call ACME_fnc_ownerDispatch;

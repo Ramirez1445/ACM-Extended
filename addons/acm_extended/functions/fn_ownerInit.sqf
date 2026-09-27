@@ -173,8 +173,15 @@ ACME_NA2_ownerInstalled = true;
     [{ _this call ACME_fnc_ownerRegister; }, [_this select 0]] call CBA_fnc_execNextFrame;
 }, true, [], true] call CBA_fnc_addClassEventHandler;
 [{
-    ACME_clinical_ownedUnits = allUnits select {local _x && {alive _x}};
-    {[_x] call ACME_fnc_ownerRegister;} forEach ACME_clinical_ownedUnits;
+    // Provider stale-state repair and registry pruning stay responsive at 1 Hz. The expensive allUnits owner recovery
+    // sweep is only a failsafe for missed locality/init events, so run it every four seconds instead of rebuilding
+    // every local healthy unit's clinical schedulers once per second.
+    private _nextRecovery = missionNamespace getVariable ["ACME_ownerRecoveryNextAt", -1];
+    if (_nextRecovery < 0 || {CBA_missionTime >= _nextRecovery}) then {
+        missionNamespace setVariable ["ACME_ownerRecoveryNextAt", CBA_missionTime + 4];
+        ACME_clinical_ownedUnits = allUnits select {local _x && {alive _x}};
+        {[_x] call ACME_fnc_ownerRegister;} forEach ACME_clinical_ownedUnits;
+    };
     if (hasInterface && {!isNil "ACE_player"} && {!isNull ACE_player}) then {
         [] call ACME_fnc_providerStateReconcile;
     };

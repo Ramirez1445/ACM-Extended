@@ -4,6 +4,11 @@ private _oldPFH = uiNamespace getVariable ["ACME_CS_PFH", -1];
 if (_oldPFH >= 0) then {[_oldPFH] call CBA_fnc_removePerFrameHandler;};
 uiNamespace setVariable ["ACME_CS_PFH", -1];
 uiNamespace setVariable ["ACME_CS_FlipPFH", -1];
+private _oldApplyPFH = uiNamespace getVariable ["ACME_CS_ApplyPFH", -1];
+if (_oldApplyPFH isEqualType 0 && {_oldApplyPFH >= 0}) then {[_oldApplyPFH] call CBA_fnc_removePerFrameHandler;};
+uiNamespace setVariable ["ACME_CS_ApplyPFH", -1];
+uiNamespace setVariable ["ACME_CS_ApplyAnimSerial", (uiNamespace getVariable ["ACME_CS_ApplyAnimSerial", 0]) + 1];
+uiNamespace setVariable ["ACME_CS_ApplyGestureUntil", 0];
 uiNamespace setVariable ["ACME_CS_DLG", _display];
 uiNamespace setVariable ["ACME_minigame_open", true];
 

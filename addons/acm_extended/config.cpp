@@ -2308,6 +2308,8 @@ class CfgFunctions {
             class skFlushSite {};
             class skToggleRoute {};
             class directPressureStart {};
+            class directPressureClaimLocal {};
+            class directPressureClaimAck {};
             class directPressureHasFracture {};
             class directPressureFracturePain {};
             class directPressureSelf {};
@@ -8184,9 +8186,10 @@ class ace_medical_treatment_actions {
         medicRequired = 0;
         treatmentTime = 0.1;
         allowedSelections[] = {"Head","Body","LeftArm","RightArm","LeftLeg","RightLeg"};
-        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {!(_medic getVariable ['ACME_DP_Active', false])} && {!(_medic getVariable ['ACME_hang_Active', false])} && {(toLower _bodyPart != 'body') || {!(missionNamespace getVariable ['ACM_core_ContinuousAction_Active', false])}}";
-        // one-shot sfx the moment the button is pressed, for hands on the wound.
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 0.85] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_DirectPressure'] remoteExec ['say3D', 0]}";
+        condition = "(missionNamespace getVariable ['ACME_sys_dp', true]) && {!(_medic getVariable ['ACME_DP_Active', false])} && {(_medic getVariable ['ACME_DP_ClaimPending', []]) isEqualTo []} && {!(_medic getVariable ['ACME_hang_Active', false])} && {(toLower _bodyPart != 'body') || {!(missionNamespace getVariable ['ACM_core_ContinuousAction_Active', false])}}";
+        // The sound is emitted only after the patient owner grants the site claim, so a losing simultaneous
+        // provider never sounds/animates as though pressure was successfully established.
+        callbackStart = "";
         callbackSuccess = "_this call ACME_fnc_directPressureStart";
         callbackFailure = "";
         callbackProgress = "";

@@ -92,6 +92,22 @@ if (_medic getVariable ["ACME_treatmentPreflightActive", false]) then {
     };
 };
 
+// A lost owner-command ACK must not leave the Direct Pressure action permanently disabled for this medic.
+private _dpPending = _medic getVariable ["ACME_DP_ClaimPending", []];
+if (_dpPending isEqualType [] && {count _dpPending >= 4}) then {
+    private _requestedAt = _medic getVariable ["ACME_DP_ClaimRequestedAt", -1];
+    if (!(_requestedAt isEqualType 0 && {finite _requestedAt}) || {_requestedAt < 0} || {(diag_tickTime - _requestedAt) > 4}) then {
+        _dpPending params ["_patient", "_part", "_token", "_epoch"];
+        if (!isNull _patient && {_token != ""}) then {
+            [_patient, "directPressureClaim", ["release", [_medic, _part, _token, _epoch, owner _medic]]] call ACME_fnc_ownerDispatch;
+        };
+        _medic setVariable ["ACME_DP_ClaimPending", [], false];
+        _medic setVariable ["ACME_DP_ClaimRequestedAt", -1, false];
+        _repairs = _repairs + 1;
+        diag_log "[ACME STATE RECONCILE] Cleared stale Direct Pressure claim request.";
+    };
+};
+
 if !(_medic getVariable ["ACME_DP_Active", false]) then {
     if ((_medic getVariable ["ACME_DP_TreatmentBusy", false])
         || {_medic getVariable ["ACME_DP_Paused", false]}
