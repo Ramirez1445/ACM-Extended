@@ -8,7 +8,8 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B180 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B181 with no RC or hotfix suffix in the debug menu.
+- Deferred provider gestures now capture the treatment patient explicitly in the next-frame callback arguments. This removes the HEMTT undefined-`_patient` warning and prevents the gesture from depending on an out-of-scope local variable.
 - Applied bandages are now mechanically stable: platelet count, coagulopathy and ACE wound-reopen probability no longer schedule a dressing to fail or move a bandaged wound back to open state.
 - Clot popping now acts only on unsecured clotted wounds. One event can affect only one selected clot and can reopen at most 0.15 of one wound by default, hard-capped at 0.25.
 - The dilutional clot-pop roll is now genuinely rare: 0.1% base chance per 60-second evaluation, 0.3% hard ceiling after severity scaling, with a shared 10-minute casualty cooldown.
