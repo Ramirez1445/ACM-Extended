@@ -15,6 +15,13 @@ private _body = _view == "body";
 private _carousel = false; // B60 retired standalone carousel view.
 private _infusion = !((_d getVariable ["ACME_SK_Return", []]) isEqualTo []);
 private _stage = uiNamespace getVariable ["ACME_SK_WasteStage", ""];
+
+// B189 keyboard-focus lease. While Seconds to Push over owns input, no hidden list/stock refresh may mutate
+// controls underneath it. MouseButtonDown sets the namespace lease before Arma resolves SetFocus, so this also
+// covers the exact first-open frame where another ctrlCreate/lbSetCurSel could otherwise steal the click.
+private _focusSensitiveCtrl = focusedCtrl _d;
+private _durationEditOwnsFocus = (uiNamespace getVariable ["ACME_SK_PushDurationEditing", false])
+    || {!isNull _focusSensitiveCtrl && {(ctrlIDC _focusSensitiveCtrl) == 84831}};
 // B62 explicit held-key repeat. A/D owns promotion while browsing. The expanded carousel cannot collapse while
 // the pointer is anywhere inside the full-width lower retention zone, over the active syringe, or inside tag UI.
 // Dedicated Edit Tag mode disables collapse completely until Done is pressed.
@@ -144,7 +151,7 @@ if (_stage == "") then {
 // authoritative row builder used by the visible overlay. Do not independently compare config-order medication
 // keys against the alphabetically sorted hidden list: that would make an unchanged list appear stale every 0.5 s
 // and repeatedly repaint/reset native selection state.
-if (!_infusion && {_now >= (_d getVariable ["ACME_SK_NextStockRefresh", 0])}) then {
+if (!_durationEditOwnsFocus && {!_infusion} && {_now >= (_d getVariable ["ACME_SK_NextStockRefresh", 0])}) then {
     _d setVariable ["ACME_SK_NextStockRefresh", _now + 0.5];
     if !(uiNamespace getVariable ["ACME_SK_WasteMoving", false]) then {
         [_d] call ACME_fnc_skMedicationSync;
@@ -153,13 +160,13 @@ if (!_infusion && {_now >= (_d getVariable ["ACME_SK_NextStockRefresh", 0])}) th
 
 // B25: no custom return resistance. ACM owns normal plunger feel in the plain/native path.
 
-if (_now >= (_d getVariable ["ACME_SK_NextRefresh", 0])) then {
+if (!_durationEditOwnsFocus && {_now >= (_d getVariable ["ACME_SK_NextRefresh", 0])}) then {
     _d setVariable ["ACME_SK_NextRefresh", _now + 0.2];
     call ACME_fnc_skListRefresh;
 };
 // B48: stock text lives inside the native medication row. Refresh it often enough to follow the plunger
 // without rebuilding the list or disturbing selection.
-if (_now >= (_d getVariable ["ACME_SK_NextMedStock", 0])) then {
+if (!_durationEditOwnsFocus && {_now >= (_d getVariable ["ACME_SK_NextMedStock", 0])}) then {
     _d setVariable ["ACME_SK_NextMedStock", _now + 0.10];
     [_d] call ACME_fnc_skMedicationStockRefresh;
 };
