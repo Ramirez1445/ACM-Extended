@@ -1,6 +1,6 @@
 ACME_infusion_version = getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version");
 if (ACME_infusion_version == "") then { ACME_infusion_version = "1.2.4"; };
-ACME_buildBatch = "B185";
+ACME_buildBatch = "B186";
 ACME_debugRevision = "";
 ACME_networkAuditRevision = "NA2-1.2.4-stable";
 call ACME_fnc_chestSealNetInit;
