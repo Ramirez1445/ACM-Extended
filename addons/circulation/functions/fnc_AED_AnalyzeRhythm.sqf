@@ -22,7 +22,12 @@ _patient setVariable ["ACM_circulation_AED_Analyze_Busy", true, true];
 [{
     params ["_medic", "_patient"];
 
-    !([_patient, "", 1] call ACM_circulation_fnc_hasAED) || !(_patient getVariable ["ACM_circulation_AED_Analyze_Busy", false]) || (alive (_patient getVariable ["ace_medical_CPR_provider", objNull])) || (alive (_patient getVariable ["ACM_breathing_BVM_provider", objNull]));
+    private _bvmProvider = _patient getVariable ["ACM_breathing_BVM_provider", objNull];
+    private _realBvmMotion = !isNull _bvmProvider && {_bvmProvider isNotEqualTo _patient} && {alive _bvmProvider};
+    !([_patient, "", 1] call ACM_circulation_fnc_hasAED)
+        || {!(_patient getVariable ["ACM_circulation_AED_Analyze_Busy", false])}
+        || {alive (_patient getVariable ["ace_medical_CPR_provider", objNull])}
+        || {_realBvmMotion};
 }, {
     params ["_medic", "_patient"];
 
