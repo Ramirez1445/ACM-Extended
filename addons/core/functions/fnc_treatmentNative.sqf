@@ -98,9 +98,10 @@ if (alive _patient) then {
                 _patientAnim = getText (_config >> "animationPatientUnconscious");
             };
         } else {
-            if (isText (_config >> "animationPatient")) then {
-                _patientAnim = getText (_config >> "animationPatient");
-            };
+            // B177: a conscious casualty owns their own body. Provider treatment may use normal downed-target
+            // theatre when the casualty is prone, but native treatment must never seize the conscious patient's
+            // animation merely because animationPatient is configured on the action.
+            _patientAnim = "";
         };
 
         if (!_isSelf && {isNull objectParent _patient}) then {
