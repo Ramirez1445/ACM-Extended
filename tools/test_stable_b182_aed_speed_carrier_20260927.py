@@ -58,12 +58,14 @@ def test_provider_speed_owner_helper_is_registered_and_narrow():
 
 def test_native_treatment_rate_cleanup_cannot_exit_on_epoch_mismatch_and_leak_speed():
     s = read("addons/acm_extended/functions/fn_registerProviderStanceReleaseRuntime.sqf")
-    block = s.split("// B182: retire this exact native-rate lease first.", 1)[1]
-    block = block.split("Zone 3 posture control", 1)[0]
+    marker = s.index("// B182: retire this exact native-rate lease first.")
+    end = s.index('} forEach ["ace_treatmentSucceded", "ace_treatmentFailed"];', marker)
+    block = s[marker:end]
 
-    assert '_medic setVariable ["ACME_nativeTreatmentRate", [], true];' in block
-    assert "ACME_fnc_providerAnimSpeedOwned" in block
-    assert "_medic setAnimSpeedCoef 1;" in block
+    clear = block.index('_medic setVariable ["ACME_nativeTreatmentRate", [], true];')
+    owner = block.index("ACME_fnc_providerAnimSpeedOwned")
+    reset = block.index("_medic setAnimSpeedCoef 1;")
+    assert clear < owner < reset
     assert "ACME_treatmentPoseEpoch" not in block
 
 
@@ -79,18 +81,18 @@ def test_pose_exit_retires_stale_remote_owner_on_handoff():
 
 def test_head_elevation_handoff_does_not_skip_speed_release():
     s = read("addons/acm_extended/functions/fn_headElevMedicSeq.sqf")
-    block = s.split("// Local bookkeeping above always retires.", 1)[1]
-    block = block.split("if (alive _u", 1)[0]
-
-    assert "ACME_fnc_providerAnimSpeedOwned" in block
-    assert "_u setAnimSpeedCoef 1;" in block
-    assert "if (_handoff) exitWith {};" in block
-    assert block.index("_u setAnimSpeedCoef 1;") < block.index("if (_handoff) exitWith {};")
+    marker = s.index("// Local bookkeeping above always retires.")
+    owner = s.index("ACME_fnc_providerAnimSpeedOwned", marker)
+    reset = s.index("_u setAnimSpeedCoef 1;", owner)
+    handoff = s.index("if (_handoff) exitWith {};", reset)
+    assert marker < owner < reset < handoff
 
 
 def test_head_position_replaces_old_native_rate_with_real_speed_handoff():
     s = read("addons/core/overrides/fnc_treatment.sqf")
-    block = s.split("if (_headOwned && {local _medic}) then {", 1)[1].split("};", 1)[0]
+    marker = s.index("// B182: replacing a native animation-rate lease")
+    end = s.index("// Head positioning is head-selection only.", marker)
+    block = s[marker:end]
     assert 'setVariable ["ACME_nativeTreatmentRate", [], true]' in block
     assert "ACME_fnc_providerAnimSpeedOwned" in block
     assert "_medic setAnimSpeedCoef 1;" in block
