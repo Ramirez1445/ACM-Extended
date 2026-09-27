@@ -157,7 +157,8 @@ uiNamespace setVariable ["ACME_minigame_open", false];
 
 // drop back into the medical menu rather than exiting to the game. it is a no-op during the flashlight close and
 // reopen.
-if (!isNull _flipMedic && {alive _flipMedic} && {_flipMedic isEqualTo ACE_player}
+if (!isNull _flipMedic && {alive _flipMedic} && {local _flipMedic}
+    && {[_flipMedic] call ace_common_fnc_isPlayer}
     && {!(_flipMedic getVariable ["ACE_isUnconscious", false])}) then {
     [uiNamespace getVariable ["ACME_CS_Patient", objNull], "airway"] call ACME_fnc_reopenMedicalMenu;
 };
