@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Stable B172: thoracostomy modal launch must not strand menu/weapon/provider state."""
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+
+def read(rel):
+    return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
+
+def test_thoracostomy_launchers_bypass_generic_timed_treatment_preflight():
+    treatment = read("addons/core/overrides/fnc_treatment.sqf")
+    launcher = treatment.split('if (_classname in [', 1)[1].split('if (_classname != "ACME_ConnectETVent")', 1)[0]
+    for name in ("ACME_PerformThoracostomy", "ACME_AdjustThoracostomy", "ACME_InsertChestTube"):
+        assert f'"{name}"' in launcher
+    assert '[_medic, _patient, _bodyPart] call ACME_fnc_thoraOpen;' in launcher
+    assert 'call ACM_core_fnc_treatmentNative' not in launcher
+
+def test_thoracostomy_click_cannot_arm_medical_menu_reopen():
+    renderer = read("addons/gui/overrides/fnc_updateActions.sqf")
+    for name in ("acme_performthoracostomy", "acme_adjustthoracostomy", "acme_insertchesttube"):
+        assert f"'{name}'" in renderer
+    thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    assert 'ace_medical_gui_pendingReopen = false;' in thora
+    assert 'closeDialog 0;' in thora
+    assert 'call CBA_fnc_execNextFrame;' in thora
+
+def test_thoracostomy_entry_scrubs_stale_generic_provider_preflight():
+    thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    for token in (
+        'ACME_treatmentPreflightActive',
+        'ACME_treatmentPreflightToken',
+        'ACME_treatmentPreflightBypass',
+        'ACME_treatmentPreflightStartedAt',
+        'ACME_nativeTreatmentRate',
+        'treatmentEndInAnim',
+    ):
+        assert token in thora
+    assert '[_medic, "", -1, true] call ACME_fnc_treatmentPoseStop;' in thora
+    assert '[_medic, true] call ACME_fnc_menuPoseStop;' in thora
+
+def test_walkaway_or_lost_provider_contact_aborts_entry_and_open_panel():
+    thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    tick = read("addons/acm_extended/functions/fn_thoraTick.sqf")
+    assert '(_m distance _p) > ace_medical_gui_maxDistance' in thora
+    assert 'objectParent _m isNotEqualTo objectParent _p' in thora
+    assert '_m getVariable ["ACE_isUnconscious", false]' in thora
+    assert '(_thMedic distance _thPatient) > ace_medical_gui_maxDistance' in tick
+    assert 'objectParent _thMedic isNotEqualTo objectParent _thPatient' in tick
+    assert '[86600] call ACME_fnc_minigameClose;' in tick
+
+def test_abort_and_close_restore_free_provider_input_state():
+    thora = read("addons/acm_extended/functions/fn_thoraOpen.sqf")
+    close = read("addons/acm_extended/functions/fn_thoraClose.sqf")
+    assert '[_m,_p,_lease,false] call _releaseProvider;' in thora
+    for src in (thora, close):
+        assert 'setUnitPos "AUTO"' in src
+        assert 'setAnimSpeedCoef 1' in src
+        assert 'ACME_nativeTreatmentRate' in src
+        assert 'treatmentEndInAnim' in src
+
+def test_stable_debug_identity_is_b172_thora1():
+    startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
+    cfg = read("addons/acm_extended/config.cpp")
+    assert 'ACME_buildBatch = "B172";' in startup
+    assert 'ACME_debugRevision = "THORA1";' in startup
+    assert 'version = "1.2.4";' in cfg
+
+if __name__ == "__main__":
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            fn()
+    print("stable thoracostomy modal/input regression: PASS")
