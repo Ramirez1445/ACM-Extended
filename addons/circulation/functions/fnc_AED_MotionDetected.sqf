@@ -53,7 +53,9 @@ _patient setVariable [QGVAR(AED_MotionDetected_LastMotion), CBA_missionTime];
         [_idPFH] call CBA_fnc_removePerFrameHandler;
     };
 
-    if ((alive (_patient getVariable [QACEGVAR(medical,CPR_provider), objNull])) || (alive (_patient getVariable [QEGVAR(breathing,BVM_provider), objNull]))) then {
+    private _bvmProvider = _patient getVariable [QEGVAR(breathing,BVM_provider), objNull];
+    private _realBvmMotion = !isNull _bvmProvider && {_bvmProvider isNotEqualTo _patient} && {alive _bvmProvider};
+    if ((alive (_patient getVariable [QACEGVAR(medical,CPR_provider), objNull])) || {_realBvmMotion}) then {
         _patient setVariable [QGVAR(AED_MotionDetected_LastMotion), CBA_missionTime];
     };
 }, 0.25, [_medic, _patient]] call CBA_fnc_addPerFrameHandler;
