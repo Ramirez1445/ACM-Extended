@@ -28,7 +28,7 @@ private _medic = uiNamespace getVariable ["ACME_CS_Medic", objNull];
 private _patient = uiNamespace getVariable ["ACME_CS_Patient", objNull];
 if (!isNull _patient) then {[_patient, "ui:chest:" + str clientOwner, true] call ACME_fnc_ecgJostleRequest;};
 // Publish interest only on open/close, not for every cursor update.
-private _viewer = ACE_player;
+private _viewer = _medic;
 uiNamespace setVariable ["ACME_CS_presenceViewer", _viewer];
 if (!isNull _viewer) then { _viewer setVariable ["ACME_CS_viewing", _patient, true]; };
 ACME_CS_presence = createHashMap;
