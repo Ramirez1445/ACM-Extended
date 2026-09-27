@@ -38,6 +38,8 @@ def test_flip_waits_for_exact_medic4_then_patient_owner_rechecks_authority():
     dispatch = tick.index('call ACME_fnc_chestSealRoll')
     assert '_work == "ainvpknlmstpsnonwnondnon_medic4"' in tick[:dispatch]
     assert '(toLowerANSI animationState _provider) == _work' in tick[:dispatch]
+    assert '[_patient,_side,false,_provider,false] call ACME_fnc_chestSealRoll;' in tick
+    assert '[_patient,_side,false,_provider,false,true] call ACME_fnc_chestSealRoll;' not in tick
     gate = roll.index('if !([_patient] call ACME_fnc_chestSealCanPhysicalRoll) exitWith {};')
     anim = roll.index('call ACME_fnc_patientAnimRequest')
     assert gate < anim
