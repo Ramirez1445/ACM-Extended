@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B182: LifePak stock/SYNC geometry, provider-speed cleanup, and persistent manual carrier toggle."""
+"""Stable B183: LifePak geometry, provider-speed cleanup, and animated persistent manual carrier toggle."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -115,6 +115,7 @@ def test_manual_plate_carrier_functions_and_actions_are_on_stable_main():
     for name in (
         "manualPlateCarrierCanToggle",
         "manualPlateCarrierCommit",
+        "manualPlateCarrierAutoReturn",
         "registerManualPlateCarrierRuntime",
     ):
         assert f"class {name} {{}};" in cfg
@@ -125,72 +126,82 @@ def test_manual_plate_carrier_functions_and_actions_are_on_stable_main():
     assert 'displayName = "Replace Plate Carrier";' in cfg
     assert "call ACME_fnc_registerManualPlateCarrierRuntime;" in startup
     assert 'case "manualPlateCarrier": {_args call ACME_fnc_manualPlateCarrierCommit;};' in dispatch
+    assert 'case "manualPlateCarrierAutoReturn": {_args call ACME_fnc_manualPlateCarrierAutoReturn;};' in dispatch
 
 
-def test_manual_carrier_custody_is_persistent_and_separate_from_automatic_custody():
+def test_manual_carrier_uses_persistent_shared_chest_access_lease():
     can = read("addons/acm_extended/functions/fn_manualPlateCarrierCanToggle.sqf")
     commit = read("addons/acm_extended/functions/fn_manualPlateCarrierCommit.sqf")
-    restore = read("addons/acm_extended/functions/fn_chestAccessVestRestore.sqf")
+    acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
 
-    assert "ACME_manualPlateCarrierLoadout" in can
-    assert "ACME_manualPlateCarrierLoadout" in commit
-    assert "ACME_manualPlateCarrierRemoved" in commit
-    assert "ACME_manualPlateCarrierLoadout" not in restore
+    assert "ACME_manualPlateCarrierLease" in can
+    assert "ACME_manualPlateCarrierState" in can
+    assert "ACME_chestAccess_leases" in can
 
-    for temporary in (
-        "ACME_chestAccess_vestLoadout",
-        "ACME_CS_vestLoadout",
-        "ACME_chestAccess_vestBusy",
-        "ACME_CS_vestBusy",
-        "ACME_chestAccess_leases",
-    ):
-        assert temporary in can
+    assert '[_patient, _medic, _lease, true, "manualplatecarrier", _lease] call ACME_fnc_chestAccessVestEvent;' in commit
+    assert "ACME_manualPlateCarrierLoadout" not in commit
+    assert "manualplatecarrier" in acquire
+    assert '_class != "manualplatecarrier"' in acquire
 
 
-def test_manual_remove_and_replace_preserve_exact_vest_slot_without_animation():
+def test_manual_remove_uses_normal_provider_and_patient_carrier_choreography():
     cfg = read("addons/acm_extended/config.cpp")
     commit = read("addons/acm_extended/functions/fn_manualPlateCarrierCommit.sqf")
-    treatment = read("addons/core/overrides/fnc_treatment.sqf")
+    provider = read("addons/acm_extended/functions/fn_chestAccessVestProvider.sqf")
+    acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
 
     remove = cfg.split("class ACME_ManualRemovePlateCarrier:", 1)[1].split(
         "class ACME_ManualReplacePlateCarrier:", 1
     )[0]
-    for token in (
-        'animationMedic = "";',
-        'animationMedicProne = "";',
-        'animationMedicSelf = "";',
-        'animationMedicSelfProne = "";',
-        "ACM_rollToBack = 0;",
-    ):
-        assert token in remove
+    assert "allowSelfTreatment = 0;" in remove
 
-    assert 'private _entry = (getUnitLoadout _patient) param [4, [], [[]]];' in commit
-    assert "removeVest _patient;" in commit
-    assert '_loadout set [4, +_saved];' in commit
-    assert '_patient setUnitLoadout [_loadout, false];' in commit
-
-    block = treatment.split(
-        'if (_classname in ["ACME_ManualRemovePlateCarrier", "ACME_ManualReplacePlateCarrier"]) exitWith {',
-        1,
-    )[1].split("// Opening a shared workspace", 1)[0]
-    assert "ACM_core_fnc_treatmentNative" not in block
-    assert "medicAnimationPrep" not in block
-    assert "treatmentPoseStart" not in block
+    # Native ACE animation remains blank because the shared ACME chest-access controller owns medic4.
+    assert 'animationMedic = "";' in remove
+    assert '[_patient, _medic, _lease, true, "manualplatecarrier", _lease] call ACME_fnc_chestAccessVestEvent;' in commit
+    assert 'private _manualEntry = (_preparationToken find "manualpc:") == 0;' in provider
+    assert '_op == "manualstop"' in provider
+    assert '[_p] call ACME_fnc_chestAccessVestPark' in acquire
+    assert '"ACME_HeadElevPatientGrab"' in acquire
+    assert '"ACME_HeadElevPatientRelease"' in acquire
 
 
-def test_automatic_chest_access_skips_carrier_removal_when_manual_toggle_left_it_off():
+def test_manual_carrier_row_is_pinned_above_all_menu_categories():
+    menu = read("addons/gui/overrides/fnc_updateActions.sqf")
+    assert "private _manualCarrier = _menuActions select {" in menu
+    assert "_row set [1, _selectedCategory];" in menu
+    assert "_menuActions = _manualCarrier + _stopPressure + _pressure + _menuActions + _dogTags;" in menu
+
+
+def test_manual_carrier_auto_returns_on_wake_getup_transport_and_movement():
+    runtime = read("addons/acm_extended/functions/fn_registerManualPlateCarrierRuntime.sqf")
+    auto = read("addons/acm_extended/functions/fn_manualPlateCarrierAutoReturn.sqf")
+    getup = read("addons/core/functions/fnc_getUp.sqf")
+
+    assert "ACME_manualPlateCarrierWatchPFH" in runtime
+    assert "_awake || {_transported} || {_moved} || {_externalVest}" in runtime
+    assert '"ace_dragging_setupDrag"' in runtime
+    assert '"ace_dragging_setupCarry"' in runtime
+    assert '[_patient, "getup"] call ACME_fnc_manualPlateCarrierAutoReturn;' in getup
+
+    assert '[_patient, true, _provider, "access", true] call ACME_fnc_chestAccessVestRestore;' in auto
+    assert 'ACME_manualPlateCarrierLease' in auto
+    assert 'ACME_chestAccess_vestBusy' in auto
+    assert 'ACME_patientAnimRelease' in auto
+
+
+def test_automatic_chest_access_reuses_manual_custody_without_replaying_removal():
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
-    no_vest = acquire.index('if (_vestClass == "" || {(count _vestEntry) != 2}) exitWith {')
+    saved = acquire.index('private _saved = +(_patient getVariable [_savedVar, []]);')
+    existing = acquire.index('if ((count _saved) == 2) exitWith {', saved)
     commit = acquire.index("private _commitRemoval = {")
-    lift = acquire.index("private _liftTime =")
-    assert no_vest < commit < lift
+    assert saved < existing < commit
 
 
-def test_build_identity_is_b182_stable():
+def test_build_identity_is_b183_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B182";' in startup
+    assert 'ACME_buildBatch = "B183";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -198,4 +209,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B182 AED/speed/carrier regression: PASS")
+    print("stable B183 AED/speed/carrier regression: PASS")
