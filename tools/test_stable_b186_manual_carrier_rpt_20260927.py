@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B187 build: manual carrier runtime cannot reproduce the B185 RPT spam/stuck-provider failures."""
+"""Stable B188 build: manual carrier runtime cannot reproduce the B185 RPT spam/stuck-provider failures."""
 from pathlib import Path
 import re
 
@@ -78,7 +78,7 @@ def test_b186_stable_identity():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B187";' in startup
+    assert 'ACME_buildBatch = "B188";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -86,4 +86,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B187 manual carrier RPT regression: PASS")
+    print("stable B188 manual carrier RPT regression: PASS")
