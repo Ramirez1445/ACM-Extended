@@ -20,6 +20,18 @@ def test_ambulatory_patient_gate_is_conscious_on_foot_and_standing_or_crouched()
     assert 'ACME_headElev_Suspended' in s
 
 
+def test_conscious_prone_patient_keeps_normal_provider_pose_but_no_patient_settle():
+    upright = read("addons/acm_extended/functions/fn_patientUpright.sqf")
+    settle = read("addons/acm_extended/functions/fn_treatmentPatientSettle.sqf")
+    roll = read("addons/acm_extended/functions/fn_chestSealCanPhysicalRoll.sqf")
+
+    assert '"PRONE"' not in upright
+    assert '(stance _patient) in ["STAND", "CROUCH", "PRONE"]' in settle
+    assert 'if (_independentlyConscious) exitWith {};' in settle
+    assert 'A manual prone stance is NEVER permission to seize a conscious player' in roll
+    assert 'if (_unconscious) exitWith {true};' in roll
+
+
 def test_medicup_map_uses_real_kneeling_empty_hands_family_and_runtime_fallback():
     init = read("addons/acm_extended/functions/fn_initChestSealProcedureRuntime.sqf")
     choose = read("addons/acm_extended/functions/fn_poseUprightState.sqf")
