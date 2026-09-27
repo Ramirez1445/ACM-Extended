@@ -95,6 +95,18 @@ if (_classname == "ACME_StopDirectPressure") exitWith {
 
 if !([_medic, _classname] call ACME_fnc_procedureActionAllowed) exitWith {false};
 
+// Stable B182: manual carrier removal/replacement is an immediate equipment-state toggle, not a timed treatment.
+// Do not close the menu, start a progress bar, holster the provider or enter chest-access animation.
+if (_classname in ["ACME_ManualRemovePlateCarrier", "ACME_ManualReplacePlateCarrier"]) exitWith {
+    if (isNull _medic || {isNull _patient} || {!local _medic}) exitWith {false};
+    if !(_this call ace_medical_treatment_fnc_canTreatCached) exitWith {false};
+
+    private _restore = _classname == "ACME_ManualReplacePlateCarrier";
+    ace_medical_gui_pendingReopen = false;
+    [_patient, "manualPlateCarrier", [_medic, _patient, _restore]] call ACME_fnc_ownerDispatch;
+    true
+};
+
 // Opening a shared workspace must not wait for a free kneeling/holster animation.
 // Each actual intervention inside the panel retains its own checks and animation.
 if (_classname in [
