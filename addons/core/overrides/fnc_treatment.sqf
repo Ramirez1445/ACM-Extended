@@ -601,7 +601,7 @@ if (_classname != "ACME_ConnectETVent") exitWith {
             [{
                 params ["_m", "_mode", "_window"];
                 if (!isNull _m && {alive _m} && {local _m}) then {
-                    [_m, _mode, _window] call ACME_fnc_treatmentGesture;
+                    [_m, _mode, _window, _patient] call ACME_fnc_treatmentGesture;
                 };
             }, [_medic, _mode, _gestureWindow]] call CBA_fnc_execNextFrame;
         } else {
