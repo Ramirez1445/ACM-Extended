@@ -73,5 +73,7 @@ if (_hadCustody || {(vest _patient) != ""}) then {
         call ace_medical_treatment_fnc_addToLog;
 };
 
-["ACME_manualPlateCarrierAck", [_patient, true, true], _provider] call CBA_fnc_targetEvent;
+if (!isNull _provider) then {
+    ["ACME_manualPlateCarrierAck", [_patient, true, true], _provider] call CBA_fnc_targetEvent;
+};
 true
