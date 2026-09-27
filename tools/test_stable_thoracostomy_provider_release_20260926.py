@@ -12,7 +12,7 @@ def test_thoracostomy_releases_chest_access_pose_before_opening_workspace():
     assert '[_patient,_medic,_vestLease,true,"thoracostomy",_vestLease] call ACME_fnc_chestAccessVestEvent;' in open_fn
     assert 'private _releaseProvider = {' in open_fn
     assert '[_m,_p,"stop",_handoff,_token] call ACME_fnc_chestAccessVestProvider;' in open_fn
-    assert '(_entry param [3,""]) != _lease' in open_fn
+    assert 'ACME_chestAccessProviderPrepToken' in open_fn
     assert '[_m,_p,_lease,false] call _releaseProvider;' in open_fn
     assert open_fn.index('[_m,_p,_lease,false] call _releaseProvider;') < open_fn.index('["ACME_Thoracostomy_Dialog"] call ACME_fnc_minigameOpen;')
 
@@ -34,7 +34,8 @@ def test_late_thoracostomy_provider_packet_cannot_reacquire_frozen_medic4():
     assert '(uiNamespace getVariable ["ACME_Thora_ChestAccessLease", ""]) != _preparationToken' in provider
     assert '(uiNamespace getVariable ["ACME_Thora_Medic", objNull]) isNotEqualTo _medic' in provider
     assert '(uiNamespace getVariable ["ACME_Thora_Patient", objNull]) isNotEqualTo _patient' in provider
-    assert '[_patient, _epoch, _episodeToken, _preparationToken]' in provider
+    assert '[_patient, _epoch, _episodeToken]' in provider
+    assert 'ACME_chestAccessProviderPrepToken' in provider
 
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
