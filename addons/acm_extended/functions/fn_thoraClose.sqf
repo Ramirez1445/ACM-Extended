@@ -82,6 +82,6 @@ uiNamespace setVariable ["ACME_minigame_open", false];
 
 ace_medical_gui_pendingReopen = false;
 if (!isNull _patient && {!isNull _medic} && {alive _medic} && {local _medic}
-    && {!(_medic getVariable ["ACE_isUnconscious", false])} && {_medic isEqualTo ACE_player}) then {
+    && {!(_medic getVariable ["ACE_isUnconscious", false])} && {[_medic] call ace_common_fnc_isPlayer}) then {
     [_patient, "airway"] call ACME_fnc_reopenMedicalMenu;
 };
