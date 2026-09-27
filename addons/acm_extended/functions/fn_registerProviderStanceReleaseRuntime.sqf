@@ -157,9 +157,19 @@
             params ["_medic", "_record"];
             if (isNull _medic || {!local _medic}) exitWith {};
             if ((_medic getVariable ["ACME_nativeTreatmentRate", []]) isNotEqualTo _record) exitWith {};
+
+            // B182: retire this exact native-rate lease first. The old code then compared treatmentPoseEpoch
+            // and could exit without restoring anim speed if any later pose had merely incremented the epoch.
+            // That left getAnimSpeedCoef at the choreography rate and made only this unit run/sprint extremely fast.
             _medic setVariable ["ACME_nativeTreatmentRate", [], true];
-            if ((_medic getVariable ["ACME_treatmentPoseEpoch", -1]) != (_record select 4)) exitWith {};
-            if ([_medic] call ACME_fnc_providerStanceOwned) exitWith {};
+
+            // A newer live pose may legitimately own a non-1 coefficient. Preserve only a real current speed owner,
+            // never an epoch mismatch by itself.
+            private _remotePose = _medic getVariable ["ACME_treatmentPoseRemote", []];
+            private _remoteOp = _remotePose param [1, ""];
+            private _remoteOwnsRate = _remoteOp in ["run", "hold", "exit"];
+            if ([_medic] call ACME_fnc_providerStanceOwned || {_remoteOwnsRate}) exitWith {};
+
             _medic setAnimSpeedCoef 1;
             ["ace_common_setAnimSpeedCoef", [_medic, 1]] call CBA_fnc_globalEvent;
         }, [_medic, +_record], 0.85 / (call ACME_fnc_choreographyRate)] call CBA_fnc_waitAndExecute;
