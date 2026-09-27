@@ -8,7 +8,12 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B179 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B180 with no RC or hotfix suffix in the debug menu.
+- Applied bandages are now mechanically stable: platelet count, coagulopathy and ACE wound-reopen probability no longer schedule a dressing to fail or move a bandaged wound back to open state.
+- Clot popping now acts only on unsecured clotted wounds. One event can affect only one selected clot and can reopen at most 0.15 of one wound by default, hard-capped at 0.25.
+- The dilutional clot-pop roll is now genuinely rare: 0.1% base chance per 60-second evaluation, 0.3% hard ceiling after severity scaling, with a shared 10-minute casualty cooldown.
+- ACM native unstable-clot reopening now uses the same single partial-pop function and the same cooldown instead of independently scheduling multiple full-wound reopens.
+- TXA detection in native clot stability now reads the actual TXA medication count instead of an always-positive multiplier.
 - LifePak/AED physical buttons now use the exact same 1.05x background transform as the rendered device artwork, eliminating invisible hitbox drift at 1680x1050 and other nonstandard aspect ratios. Analyze, Charge, NIBP, Speed Dial/Cancel and Shock all resolve the actual monitor operator rather than the legacy casualty sentinel.
 - The Narc Box Seconds to Push over editor now owns an explicit focus lease from mouse-down through KillFocus. Carousel, stock-list and 25 Hz UI refreshes cannot move, hide, disable or rewrite the edit while typing, and the lease is cleared on dialog teardown.
 - Get Up is mutually exclusive with ACE carry ownership. An attached/carried casualty cannot clear lying state or force a new animation underneath the carry transaction, and the Get Up prompt retires while carry ownership is active.
