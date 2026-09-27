@@ -1,5 +1,17 @@
 # ACM Extended patch notes
 
+## 1.2.4
+
+Updated 26 September 2026.
+
+### Stable release identity
+
+- Public and debug version is 1.2.4.
+- HEMTT package version is 1.2.4.0.
+- Stable runtime identity uses internal build B173 with no RC or hotfix suffix in the debug menu.
+- Launcher metadata now identifies the package as ACM Extended rather than the development fork.
+- The current stable thoracostomy preparation lifecycle and its providerless menu handoff are included in this release.
+
 ## 1.2.3
 
 Updated 24 September 2026.
