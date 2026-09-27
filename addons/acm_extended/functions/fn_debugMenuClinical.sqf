@@ -36,55 +36,60 @@ private _ctrlR = ["ACME_DebugMenuCtrlR", false] call _control;
 private _ctrlS = ["ACME_DebugMenuCtrlS", false] call _control;
 private _ctrlM = ["ACME_DebugMenuCtrlMeasure", false] call _control;
 
-// B163 is intentionally a compact diagnostic strip, not a screen-sized dashboard. Keep the same safe-zone
-// proportions on every resolution, but make the typography and padding dense enough for one vertical column.
-private _fontH = safeZoneH * 0.0096;
-{_x ctrlSetFontHeight _fontH;} forEach [_ctrlH, _ctrlT, _ctrlL, _ctrlR, _ctrlS, _ctrlM];
-private _gap = safeZoneH * 0.0025;
-private _marginX = safeZoneWAbs * 0.0025;
+// B176 resolution invariant: the debug overlay is one fixed-proportion strip pinned to the absolute left safe edge.
+// Resolution, aspect ratio and UI scale may change the engine safe-zone coordinates, but every visible dimension below
+// derives from the SAME safe-zone box and every text control receives the SAME final font scale.
+private _baseFontH = safeZoneH * 0.0092;
+private _fontH = _baseFontH;
+private _applyFont = {
+    {_x ctrlSetFontHeight _fontH;} forEach [_ctrlH, _ctrlT, _ctrlL, _ctrlR, _ctrlS, _ctrlM];
+};
+call _applyFont;
+
+private _gapFactor = 0.26;
+private _gap = _fontH * _gapFactor;
+private _marginX = safeZoneWAbs * 0.0015;
+private _marginY = safeZoneH * 0.004;
 private _x = safeZoneXAbs + _marginX;
-private _y = safeZoneY + safeZoneH * 0.004;
-private _panelBottom = safeZoneY + safeZoneH - (safeZoneH * 0.004);
-// B165 deliberately narrows the strip. Long device/revision strings wrap vertically rather than buying more
-// horizontal canvas. This is a diagnostic overlay, not a dashboard.
+private _y = safeZoneY + _marginY;
+private _panelBottom = safeZoneY + safeZoneH - _marginY;
+
+// Fixed horizontal proportion on every display. B176 is intentionally a little wider than B165 so normal values,
+// revision strings and paired columns never need to word-wrap. Width does NOT change based on aspect ratio.
+private _totalW = (safeZoneWAbs * 0.160) min (safeZoneWAbs - (2 * _marginX));
 private _valueW = 11;
+
 private _renderBlock = {
     params ["_ctrl", "_rows"];
     _ctrl ctrlSetStructuredText parseText format ["<t font='EtelkaMonospacePro' shadow='1'>%1</t>", _rows joinString "<br/>"];
 };
-// Subtract two lengths to remove the control's fixed text margins from the glyph width.
-_ctrlM ctrlSetPosition [_x, _y, safeZoneWAbs * 2, safeZoneH * 2];
-_ctrlM ctrlCommit 0;
-[_ctrlM, ["0000000000000000"]] call _renderBlock;
-private _shortW = ctrlTextWidth _ctrlM;
-[_ctrlM, ["00000000000000000000000000000000"]] call _renderBlock;
-private _charW = ((ctrlTextWidth _ctrlM) - _shortW) / 16;
-// One row still carries two label/value pairs, but there is only ONE major vertical column now. B162 multiplied
-// this width by two for left/right clinical columns and then forced a large minimum panel width; that is the unused
-// horizontal space visible in the screenshot.
-private _rowChars = 2 * (8 + 1 + _valueW) + 2;
-private _maxPanelW = (safeZoneWAbs * 0.130) min (safeZoneH * 0.46);
-private _measuredW = (_rowChars * _charW) + (safeZoneWAbs * 0.004);
-private _totalW = ((_measuredW max (safeZoneWAbs * 0.105)) min _maxPanelW)
-    min (safeZoneWAbs - 2 * _marginX);
 private _measureRows = {
     params ["_rows", "_width"];
     _ctrlM ctrlSetPosition [_x, _y, _width, safeZoneH * 4];
     _ctrlM ctrlCommit 0;
     [_ctrlM, _rows] call _renderBlock;
-    (ctrlTextHeight _ctrlM) + _fontH * 0.25
+    (ctrlTextHeight _ctrlM) + (_fontH * 0.18)
+};
+private _measureNaturalWidth = {
+    params ["_rows"];
+    // Give the hidden measurement control deliberately excessive width so this pass measures the natural longest
+    // line rather than a wrapped line. The final common font scale is then reduced until that line fits _totalW.
+    _ctrlM ctrlSetPosition [_x, _y, safeZoneWAbs * 8, safeZoneH * 4];
+    _ctrlM ctrlCommit 0;
+    [_ctrlM, _rows] call _renderBlock;
+    (ctrlTextWidth _ctrlM) + (safeZoneWAbs * 0.003)
 };
 private _layout = {
     params ["_headerH", "_bodyH"];
     private _bodyY = _y + _headerH + _gap;
-    private _panelH = _panelBottom - _y;
-    private _bodyAvail = (_panelBottom - _bodyY) max _bodyH;
+    private _panelH = (_panelBottom - _y) max 0;
+    // Never allow the structured-text control itself to extend below the panel. B165 used max _bodyH here,
+    // which is exactly how 1680x1050 and other short safe areas drew text past the bottom edge.
+    private _bodyAvail = (_panelBottom - _bodyY) max 0;
 
-    // The debug strip always spans the safe-area height. Structured text stays top-aligned inside the body;
-    // section spacing below consumes the available vertical room naturally instead of widening the panel.
     _ctrlB ctrlSetPosition [_x, _y, _totalW, _panelH];
-    _ctrlH ctrlSetPosition [_x, _y, _totalW, _headerH];
-    _ctrlL ctrlSetPosition [_x, _bodyY, _totalW, _bodyAvail];
+    _ctrlH ctrlSetPosition [_x, _y, _totalW, _headerH min _panelH];
+    _ctrlL ctrlSetPosition [_x, _bodyY min _panelBottom, _totalW, _bodyAvail];
 
     // Retire B162's separate top/right/footer regions in-place so an already running mission cannot leave one visible.
     {_x ctrlShow false;} forEach [_ctrlT, _ctrlR, _ctrlS];
@@ -160,15 +165,15 @@ private _formatRow = {
     if (_row isEqualType "") exitWith {_row};
     _row params ["_a", "_av", "_ac"];
     private _aTxt = [([_a, 8] call _padRight)] call _safe;
-    private _avTxt = [([_av] call _alignValue)] call _safe;
+    private _avTxt = [([_av, _valueW] call _alignValue)] call _safe;
     if (count _row == 3) exitWith {
         format ["<t color='%4'>%1</t> <t color='%3'>%2</t>", _aTxt, _avTxt, _ac, _cLabel]
     };
     private _b = _row select 3;
     private _bv = _row select 4;
     private _bc = _row select 5;
-    private _aLines = [([_av] call _alignValue), _valueW] call _wrapValue;
-    private _bLines = [([_bv] call _alignValue), _valueW] call _wrapValue;
+    private _aLines = [([_av, _valueW] call _alignValue), _valueW] call _wrapValue;
+    private _bLines = [([_bv, _valueW] call _alignValue), _valueW] call _wrapValue;
     private _lines = [];
     for "_i" from 0 to (((count _aLines) max (count _bLines)) - 1) do {
         private _aLabel = [([if (_i == 0) then {_a} else {""}, 8] call _padRight)] call _safe;
@@ -216,12 +221,28 @@ private _header = [
 ];
 private _renderAll = {
     // Preserve the existing logical section builders, but serialize them into one compact vertical stream.
-    // This removes the entire second major column and the large B162 gap before runtime/network data.
     private _allRows = [];
     _allRows append _top;
     _allRows append _left;
     _allRows append _right;
     _allRows append _network;
+
+    // Use one value-field width large enough for EVERY paired value in the current snapshot. This keeps the second
+    // label at the same column and prevents value wrapping instead of trying to repair it after formatting.
+    _valueW = 11;
+    {
+        if (_x isEqualType [] && {count _x >= 3}) then {
+            private _vA = _x param [1, ""];
+            private _sA = if (_vA isEqualType "") then {_vA} else {str _vA};
+            _valueW = _valueW max (count _sA);
+            if (count _x >= 6) then {
+                private _vB = _x param [4, ""];
+                private _sB = if (_vB isEqualType "") then {_vB} else {str _vB};
+                _valueW = _valueW max (count _sB);
+            };
+        };
+    } forEach _allRows;
+
     private _bodyRows = _allRows apply {[_x, _valueW] call _formatRow};
     // Section rows intentionally carry one leading break, which plus the row separator creates one empty line
     // between sections. Remove only the very first one so the body starts directly beneath the header.
@@ -229,8 +250,33 @@ private _renderAll = {
         _bodyRows set [0, (_bodyRows select 0) select [5]];
     };
 
+    // Every refresh starts from the exact same reference font. First fit the natural longest line to the fixed
+    // panel width, then fit the complete vertical stream to the fixed panel height. Because both passes multiply
+    // the SAME _fontH, width/height/text/spacing preserve one uniform scale on every resolution.
+    _fontH = _baseFontH;
+    call _applyFont;
+    _gap = _fontH * _gapFactor;
+
+    private _naturalW = ([ _header ] call _measureNaturalWidth) max ([_bodyRows] call _measureNaturalWidth);
+    if (_naturalW > _totalW && {_naturalW > 0}) then {
+        _fontH = _fontH * ((_totalW / _naturalW) min 1);
+        call _applyFont;
+        _gap = _fontH * _gapFactor;
+    };
+
     private _headerH = [_header, _totalW] call _measureRows;
     private _bodyH = [_bodyRows, _totalW] call _measureRows;
+    private _availableH = (_panelBottom - _y) max 0;
+    private _neededH = _headerH + _gap + _bodyH;
+    if (_neededH > _availableH && {_neededH > 0}) then {
+        // Small guard keeps the last descender inside the panel despite engine text-metric rounding.
+        _fontH = _fontH * ((_availableH / _neededH) * 0.992);
+        call _applyFont;
+        _gap = _fontH * _gapFactor;
+        _headerH = [_header, _totalW] call _measureRows;
+        _bodyH = [_bodyRows, _totalW] call _measureRows;
+    };
+
     [_headerH, _bodyH] call _layout;
     [_ctrlH, _header] call _renderBlock;
     [_ctrlL, _bodyRows] call _renderBlock;
