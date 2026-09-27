@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B180: accepted ACME buttons respond immediately; presentation never delays clinical start."""
+"""Stable B181: accepted ACME buttons respond immediately; presentation never delays clinical start."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -84,4 +84,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B180 zero-button-latency regression: PASS")
+    print("stable B181 zero-button-latency regression: PASS")
