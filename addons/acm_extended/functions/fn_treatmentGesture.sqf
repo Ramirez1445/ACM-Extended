@@ -39,6 +39,7 @@ private _entry = if (_resumeChestWorkspace) then {0} else {
 private _epoch = [_medic, _mode, _window, _patient] call ACME_fnc_treatmentPoseStart;
 if !(_epoch isEqualType 0 && {_epoch >= 0}) exitWith {
     if (_resumeChestWorkspace
+        && {!([_patient] call ACME_fnc_patientUpright)}
         && {!isNull (uiNamespace getVariable ["ACME_CS_DLG", displayNull])}
         && {(uiNamespace getVariable ["ACME_CS_Medic", objNull]) isEqualTo _medic}
         && {(uiNamespace getVariable ["ACME_CS_Patient", objNull]) isEqualTo _patient}) then {
@@ -53,15 +54,23 @@ if !(_epoch isEqualType 0 && {_epoch >= 0}) exitWith {
     private _state = _m getVariable ["ACME_treatmentPoseState", []];
     if ((_state param [0,-2]) != _epoch || {(_state param [1,""]) != _mode}) exitWith {};
 
-    [_m,_mode,_epoch,_resume] call ACME_fnc_treatmentPoseStop;
+    // A downed chest workspace is persistent and may be restored after the one-shot. For an ambulatory
+    // casualty, never replay the workspace medicUp animation after NAR SPEAR; let this gesture exit naturally.
+    private _restoreWorkspace = _resume && {!([_p] call ACME_fnc_patientUpright)};
+    [_m,_mode,_epoch,_restoreWorkspace] call ACME_fnc_treatmentPoseStop;
 
-    if (_resume
+    if (_restoreWorkspace
         && {!isNull (uiNamespace getVariable ["ACME_CS_DLG", displayNull])}
         && {(uiNamespace getVariable ["ACME_CS_Medic", objNull]) isEqualTo _m}
         && {(uiNamespace getVariable ["ACME_CS_Patient", objNull]) isEqualTo _p}) then {
         private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
         _m setVariable ["ACME_CS_providerHoldEpoch", _holdEpoch, false];
         uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
+    } else {
+        if (_resume) then {
+            _m setVariable ["ACME_CS_providerHoldEpoch", -1, false];
+            uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", -1];
+        };
     };
 }, [_medic,_patient,_mode,_epoch,_resumeChestWorkspace], _window + _entry] call CBA_fnc_waitAndExecute;
 
