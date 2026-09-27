@@ -38,13 +38,14 @@ def test_flip_preempts_apply_then_uses_standard_medic4_provider_path():
     assert 'if ((uiNamespace getVariable ["ACME_CS_ApplyGestureUntil",0]) > _now) exitWith {};' not in flip
     assert 'ACME_CS_ApplyPFH' in flip and 'ACME_CS_ApplyAnimSerial' in flip
     assert '[_provider, _oldMode, _oldEpoch, true] call ACME_fnc_treatmentPoseStop;' in flip
-    assert 'if (currentWeapon _provider != "") then {_provider selectWeapon "";};' in flip
+    assert 'selectWeapon' not in flip
+    assert 'ACME_medicAnimationPrep' not in flip
     assert '[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart' in flip
     assert '[_provider, "chestSealFlip", _patient, true] call ACME_fnc_rollProviderStart' not in flip
     assert 'call ACME_fnc_chestSealRoll' not in flip
     assert flip.index("ACME_CS_ApplyAnimSerial") < flip.index("call ACME_fnc_rollProviderStart")
     assert flip.index("call ACME_fnc_treatmentPoseStop") < flip.index("call ACME_fnc_rollProviderStart")
-    assert '[_patient,_side,false,_provider,false,true] call ACME_fnc_chestSealRoll;' in tick
+    assert '[_patient,_side,false,_provider,false] call ACME_fnc_chestSealRoll;' in tick
 
 def test_flip_waits_only_for_exact_medic4_state_before_patient_roll():
     tick = read("fn_chestSealFlipTick.sqf")
@@ -57,7 +58,7 @@ def test_flip_waits_only_for_exact_medic4_state_before_patient_roll():
     assert "_providerDone" in tick
     assert "min 3.0" in read("fn_chestSealFlip.sqf")
 
-def test_provider_uses_normal_medic4_path_while_patient_flip_keeps_absolute_precedence():
+def test_provider_and_patient_both_use_normal_interpolated_flip_paths():
     pose = read("fn_treatmentPoseStart.sqf")
     provider = read("fn_rollProviderStart.sqf")
     patient = read("fn_chestSealRoll.sqf")
@@ -66,7 +67,9 @@ def test_provider_uses_normal_medic4_path_while_patient_flip_keeps_absolute_prec
     assert 'case "roll": {"AinvPknlMstpSnonWnonDnon_medic4"};' in pose
     assert '[_medic, "roll", _duration, _patient, _forceImmediate] call ACME_fnc_treatmentPoseStart' in provider
     assert '[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart' in flip
-    assert '[_patient,_side,false,_provider,false,true] call ACME_fnc_chestSealRoll;' in tick
+    assert '[_patient,_side,false,_provider,false] call ACME_fnc_chestSealRoll;' in tick
+    assert '[_provider,"roll",_epoch] call ACME_fnc_treatmentPoseStop;' in tick
+    assert '[_provider,"roll",_epoch,true] call ACME_fnc_treatmentPoseStop;' not in tick
     assert 'private _animPriority = [1, 2] select _immediate;' in patient
     assert 'private _lockPriority = [3, 100] select _immediate;' in patient
 

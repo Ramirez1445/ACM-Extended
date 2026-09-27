@@ -81,7 +81,7 @@ def test_flip_never_turns_provider_failure_into_patient_noop():
     assert '[_provider, "chestSealFlip", _patient] call ACME_fnc_rollProviderStart' in flip
     assert '[_provider, "chestSealFlip", _patient, true] call ACME_fnc_rollProviderStart' not in flip
     assert 'call ACME_fnc_chestSealRoll' not in flip
-    assert '[_patient,_side,false,_provider,false,true] call ACME_fnc_chestSealRoll;' in tick
+    assert '[_patient,_side,false,_provider,false] call ACME_fnc_chestSealRoll;' in tick
     assert '_work == "ainvpknlmstpsnonwnondnon_medic4"' in tick
 
 def test_workspace_handoff_is_valid_empty_hands_source():
