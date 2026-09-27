@@ -1806,6 +1806,7 @@ class CfgFunctions {
             class initMonitorSyncConfig {};
             class registerConsciousnessRuntime {};
             class registerProviderStanceReleaseRuntime {};
+            class providerAnimSpeedOwned {};
             class registerHeadElevationTransportRuntime {};
             class registerRhythmLifecycleRuntime {};
             class registerInfusionProcessingRuntime {};
