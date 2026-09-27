@@ -5,6 +5,13 @@
 private _pHE = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _mHE = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
 
+{
+    if (!(_x isEqualTo -1) && {!(_x isEqualTo "")}) then {[_x,"keydown"] call CBA_fnc_removeKeyHandler;};
+} forEach (uiNamespace getVariable ["ACME_Thora_EntryKeys",[]]);
+uiNamespace setVariable ["ACME_Thora_EntryKeys",[]];
+uiNamespace setVariable ["ACME_Thora_EntryCancelToken",""];
+[false,_mHE,_pHE,uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]] call ACME_fnc_chestAccessPreparing;
+
 // Defensive provider cleanup. Normal entry releases chestAccess before the panel opens, but a close/abort racing
 // a delayed provider packet must still be able to free the player immediately.
 if (!isNull _mHE && {local _mHE}) then {
