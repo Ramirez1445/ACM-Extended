@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B175: standing-conscious carrier protection and controlled-NPC provider lifecycle."""
+"""Stable B176: standing/crouched-conscious carrier protection and controlled-NPC provider lifecycle."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,21 +9,21 @@ def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
 
-def test_conscious_standing_casualty_is_never_stripped_for_chest_access():
+def test_conscious_standing_or_crouched_casualty_is_never_stripped_for_chest_access():
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
     commit = acquire.split("private _commitRemoval = {", 1)[1].split("// Animation is allowed", 1)[0]
     assert 'private _standingConscious = alive _p' in commit
     assert 'getVariable ["ACE_isUnconscious", false]' in commit
     assert 'getVariable ["ace_medical_unconscious", false]' in commit
-    assert '(stance _p) == "STAND"' in commit
+    assert '(stance _p) in ["STAND", "CROUCH"]' in commit
     assert commit.index("if (_standingConscious) exitWith {true};") < commit.index("removeVest _p;")
 
 
-def test_carrier_is_force_restored_if_patient_wakes_and_stands_during_custody():
+def test_carrier_is_force_restored_if_patient_wakes_and_stands_or_crouches_during_custody():
     acquire = read("addons/acm_extended/functions/fn_chestAccessVestAcquire.sqf")
     watchdog = acquire.split("// Custody watchdog.", 1)[1].split("// Animation is allowed", 1)[0]
     assert 'private _standingConscious = alive _patient' in watchdog
-    assert '(stance _patient) == "STAND"' in watchdog
+    assert '(stance _patient) in ["STAND", "CROUCH"]' in watchdog
     assert '[_patient, true, objNull, _ctx, true] call ACME_fnc_chestAccessVestRestore;' in watchdog
 
 
@@ -75,4 +75,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B175 controlled-NPC and standing-carrier regression: PASS")
+    print("stable B176 controlled-NPC and standing-carrier regression: PASS")
