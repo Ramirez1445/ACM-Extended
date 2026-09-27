@@ -17,6 +17,16 @@ if (!local _medic) exitWith {
     -1
 };
 
+if (_op == "manualstop") exitWith {
+    private _entry = _medic getVariable ["ACME_chestAccessProvider", []];
+    private _entryPatient = _entry param [0, objNull];
+    private _token = _entry param [2, ""];
+    private _prep = _medic getVariable ["ACME_chestAccessProviderPrepToken", ""];
+
+    if (_entryPatient isNotEqualTo _patient || {_token == ""} || {_prep != _preparationToken}) exitWith {-1};
+    [_medic, _patient, "stop", false, _token, _preparationToken] call ACME_fnc_chestAccessVestProvider;
+};
+
 if (_op == "stop") exitWith {
     private _entry = _medic getVariable ["ACME_chestAccessProvider", []];
     private _entryPatient = _entry param [0, objNull];
@@ -78,7 +88,9 @@ if (_thoracostomyEntry && {
 // Ordinary chest-access start is routed through the casualty owner as well. Its
 // preflight can be cancelled or handed to clinical work before this packet reaches
 // the provider. Thoracostomy is validated by its own UI lease above.
+private _manualEntry = (_preparationToken find "manualpc:") == 0;
 if (!_thoracostomyEntry
+    && {!_manualEntry}
     && {(_episodeToken find "vest:access:") == 0}
     && {_preparationToken != ""} && {
         !(_medic getVariable ["ACME_chestAccessPreflightActive", false])
