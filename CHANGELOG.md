@@ -8,7 +8,10 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B186 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B187 with no RC or hotfix suffix in the debug menu.
+- Removing an i-gel or extubating an ETT now immediately stops patient-side Ventway ventilation and starts a full custody return of the mounted ventilator to the airway-removing medic.
+- ETT extubation no longer clears only the connected/driving flags; airway loss uses the same complete Ventway patient/custody teardown path for both ETT and i-gel removal.
+- Ventway's patient-as-BVM gas-exchange sentinel no longer counts as AED motion. Analyze can complete while the Ventway is ventilating in CPR mode, while real chest compressions and a real BVM provider still register as motion exactly as before.
 - Fixed a manual plate-carrier completion callback argument mismatch that unpacked the provider object into the lease slot. The resulting string-vs-object comparison threw every scheduler pass and stranded the provider animation.
 - Fixed manual plate-carrier medical log entries to pass ACE a string message instead of an array, eliminating the repeated `isLocalized: Type Array, expected String` medical-log errors.
 - Manual Plate Carrier eligibility now uses valid SQF lazy-evaluation syntax for the medic-awake guard, fixing the HEMTT `SPE2` parse failure in `fn_manualPlateCarrierCanToggle.sqf`.
