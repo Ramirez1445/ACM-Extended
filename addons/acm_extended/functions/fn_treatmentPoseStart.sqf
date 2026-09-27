@@ -279,7 +279,8 @@ private _pfh = [{
                     _state set [4, _now];
                 };
             };
-            if (_current != toLower _main && {_mode != "chestAccess"}) exitWith {
+            private _recoverAmbulatoryHold = (_state param [16,false]) || {_state param [19,false]};
+            if (_current != toLower _main && {_mode != "chestAccess"} && {!_recoverAmbulatoryHold}) exitWith {
                 // A sparse frame can skip the finite roll's held sample entirely.
                 // It was observed running in stage 1; after its authored work time
                 // has elapsed, record completion without replaying that finished RTM.
