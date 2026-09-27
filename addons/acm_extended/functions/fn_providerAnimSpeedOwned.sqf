@@ -19,17 +19,20 @@ if (_unit getVariable ["ACME_headElev_seqActive", false]) exitWith {true};
 private _remote = _unit getVariable ["ACME_treatmentPoseRemote", []];
 private _remoteEpoch = _remote param [0, -1];
 private _remoteOp = _remote param [1, ""];
+private _remoteOwns = false;
+
 if (_remoteEpoch >= 0 && {_remoteEpoch != _ignoreRemoteEpoch} && {_remoteOp in ["run", "hold", "exit"]}) then {
     private _episode = _unit getVariable ["ACME_treatmentPoseEpisode", [-1, false]];
     private _episodeEpoch = _episode param [0, -1];
     private _episodeLive = _episode param [1, false];
 
-    if (_remoteOp in ["run", "hold"]) exitWith {
-        _episodeEpoch == _remoteEpoch && {_episodeLive}
-    };
-    if (_remoteOp == "exit") exitWith {
-        _episodeEpoch == _remoteEpoch
+    if (_remoteOp in ["run", "hold"]) then {
+        _remoteOwns = _episodeEpoch == _remoteEpoch && {_episodeLive};
+    } else {
+        if (_remoteOp == "exit") then {
+            _remoteOwns = _episodeEpoch == _remoteEpoch;
+        };
     };
 };
 
-false
+_remoteOwns
