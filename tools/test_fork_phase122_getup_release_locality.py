@@ -13,4 +13,6 @@ assert idx_clear > idx_gate, 'lying flag is still consumed before release accept
 window=getup[getup.index('private _canRelease'):idx_gate]
 assert '_wasLying' in window
 assert 'stance _patient == "PRONE"' in window
+assert 'attachedTo _patient' in getup
+assert '(_carryAnim find "carried") >= 0' in getup
 print('PASS phase122: Get Up is patient-local and does not consume the lying state before release')
