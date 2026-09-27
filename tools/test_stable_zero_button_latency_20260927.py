@@ -27,9 +27,11 @@ def test_generic_treatment_presentation_never_blocks_native_start():
     assert native > end
 
 
-def test_provider_gestures_get_patient_without_delaying_treatment():
+def test_provider_gestures_capture_patient_without_delaying_treatment():
     treatment = read("addons/core/overrides/fnc_treatment.sqf")
+    assert 'params ["_m", "_mode", "_window", "_patient"];' in treatment
     assert '[_m, _mode, _window, _patient] call ACME_fnc_treatmentGesture;' in treatment
+    assert '[_medic, _mode, _gestureWindow, _patient]] call CBA_fnc_execNextFrame;' in treatment
 
 
 def test_suture_chest_tube_no_longer_inherits_one_second_delay():
