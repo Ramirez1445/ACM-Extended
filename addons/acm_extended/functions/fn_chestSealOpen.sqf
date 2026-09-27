@@ -87,7 +87,7 @@ private _entryPFH = [{
         [_pfh] call CBA_fnc_removePerFrameHandler;
     };
     private _member = _tok in (_p getVariable ["ACME_CS_ProcedureTokens", []]);
-    if (isNull _p || {isNull _m} || {!alive _m} || {!local _m} || {_m isNotEqualTo ACE_player}
+    if (isNull _p || {isNull _m} || {!alive _m} || {!local _m} || {!([_m] call ace_common_fnc_isPlayer)}
         || {_m getVariable ["ACE_isUnconscious", false]}
         || {!isNull objectParent _m} || {!isNull objectParent _p}
         || {_m distance _p > (missionNamespace getVariable ["ace_medical_gui_maxDistance", 3])}
