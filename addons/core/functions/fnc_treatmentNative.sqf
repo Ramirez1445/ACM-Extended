@@ -139,6 +139,11 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
         getText (_config >> ["animationMedic", "animationMedicProne"] select (stance _medic == "PRONE"));
     };
 
+    // B184: custom ACME launchers deliberately blank native animation fields. Some inherited config paths can
+    // surface an empty ARRAY instead of an empty STRING. Normalize at the boundary before any string operation or
+    // duration lookup, so "no native animation" is one canonical state and can never emit ACE's duration warning.
+    if !(_medicAnim isEqualType "") then {_medicAnim = "";};
+
     // ACME can own the provider theatre for an individual treatment. In that case native ACM/ACE still owns the
     // progress bar, item use, callbacks and patient state, but it must not enqueue its generic medic animation or
     // its matching end pose. That generic queue was what overwrote the authored chest/head bandage, NCD and
@@ -187,11 +192,16 @@ if (_medic isNotEqualTo player || {!_isInZeus}) then {
         _medicAnim = "AinvPknlMstpSlayWlnrDnon_medicOther";
     };
 
-    // Determine the animation length
-    private _animDuration = ACEGVAR(medical_treatment,animDurations) get toLowerANSI _medicAnim;
-    if (isNil "_animDuration" && !(isNil _medicAnim)) then {
-        if (_medicAnim != "") then { WARNING_2("animation [%1] for [%2] has no duration defined",_medicAnim,_classname); };
-        _animDuration = 10;
+    // Determine the animation length only when native animation theatre actually exists. Looking up an empty
+    // animation is both pointless and what produced repeated "animation [] ... has no duration defined" warnings
+    // for ACME-owned modal actions such as Chest Seal, Inspect Chest, Thoracostomy and the IV minigame.
+    private _animDuration = 0;
+    if (_medicAnim != "") then {
+        _animDuration = ACEGVAR(medical_treatment,animDurations) get toLowerANSI _medicAnim;
+        if (isNil "_animDuration") then {
+            WARNING_2("animation [%1] for [%2] has no duration defined",_medicAnim,_classname);
+            _animDuration = 10;
+        };
     };
 
     // These animations have transitions that take a bit longer...
