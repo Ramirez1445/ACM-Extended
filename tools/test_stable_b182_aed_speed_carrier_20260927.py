@@ -71,12 +71,21 @@ def test_native_treatment_rate_cleanup_cannot_exit_on_epoch_mismatch_and_leak_sp
 
 def test_pose_exit_retires_stale_remote_owner_on_handoff():
     s = read("addons/acm_extended/functions/fn_treatmentPoseSync.sqf")
-    block = s.split("// B182: an old exit record is retired", 1)[1]
-    block = block.split("}, [_medic, _epoch]", 1)[0]
 
-    assert '[_medic, _epoch] call ACME_fnc_providerAnimSpeedOwned' in block
+    # Validate the complete bounded exit callback. The speed-owner query is intentionally evaluated
+    # immediately BEFORE the B182 explanatory comment, so slicing from that comment drops the line
+    # this regression is supposed to protect.
+    block = s.split('if (_operation == "exit") then {', 1)[1]
+    block = block.split('}, [_medic, _epoch],', 1)[0]
+
+    assert 'private _newerSpeedOwner = local _medic && {[_medic, _epoch] call ACME_fnc_providerAnimSpeedOwned};' in block
+    assert 'if (_newerEpisode || {_newerSpeedOwner}) exitWith {' in block
     assert '_medic setVariable ["ACME_treatmentPoseRemote", [_epoch, "release", -1]];' in block
     assert "_medic setAnimSpeedCoef 1;" in block
+
+    # The newer-owner branch must retire the OLD remote record without resetting the newer controller's rate.
+    newer_owner = block.split('if (_newerEpisode || {_newerSpeedOwner}) exitWith {', 1)[1].split('};', 1)[0]
+    assert 'setAnimSpeedCoef 1' not in newer_owner
 
 
 def test_head_elevation_handoff_does_not_skip_speed_release():
