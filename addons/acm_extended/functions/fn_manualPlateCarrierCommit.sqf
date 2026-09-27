@@ -27,6 +27,7 @@ if (_restore) exitWith {
     };
 
     _patient setVariable ["ACME_manualPlateCarrierState", "restoring", true];
+    _patient setVariable ["ACME_manualPlateCarrierProvider", _medic, true];
     [_patient, false, _medic, "access", true] call ACME_fnc_chestAccessVestRestore;
 
     [{
