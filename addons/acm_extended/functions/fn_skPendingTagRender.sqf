@@ -7,22 +7,27 @@ private _acmeCanvas = call ACME_fnc_uiCanvas;
 _acmeCanvas params ["_uiX", "_uiY", "_uiW", "_uiH"];
 private _d = findDisplay 84000;
 if (isNull _d || {!(_d getVariable ["ACME_SK_PendingTagReady", false])}) exitWith {};
-call ACME_fnc_skPendingTagEnsure;
+
 private _view = uiNamespace getVariable ["ACME_SK_View", "syringe"];
 private _infusion = !((_d getVariable ["ACME_SK_Return", []]) isEqualTo []);
 private _showSetup = (_view == "syringe"); // B68: never let stale infusion context hide the main Draw Syringe tag editor.
+
+// B189 first-open focus invariant: do not create Draw-page tag controls after Body Map already owns the display.
+// The deferred first-frame repair used to call skPendingTagEnsure before checking the page. On a fresh display,
+// those late ctrlCreate calls could steal keyboard focus from Seconds to Push over immediately after the click.
+if (!_showSetup) exitWith {
+    private _listExisting = _d displayCtrl 84611;
+    if (!isNull _listExisting) then {_listExisting lbSetCurSel -1; _listExisting ctrlShow false;};
+    {private _c = _d displayCtrl _x; if (!isNull _c) then {_c ctrlShow false;};} forEach [84600,84601,84602,84603,84610];
+};
+
+call ACME_fnc_skPendingTagEnsure;
 private _button = _d displayCtrl 84610;
 private _list = _d displayCtrl 84611;
 if (isNull _button) exitWith {};
 
-_button ctrlShow _showSetup;
-_button ctrlEnable _showSetup;
-// B72: this must be an outer-scope exitWith. The B71 `then { exitWith {}; };` form does not compile in SQF and
-// prevented every line below it from running, which is why the list stayed at [0,0,0,0] and no live tag appeared.
-if (!_showSetup) exitWith {
-    if (!isNull _list) then {_list lbSetCurSel -1; _list ctrlShow false;};
-    {private _c = _d displayCtrl _x; if (!isNull _c) then {_c ctrlShow false;};} forEach [84600,84601,84602,84603];
-};
+_button ctrlShow true;
+_button ctrlEnable true;
 
 private _color = uiNamespace getVariable ["ACME_SK_PendingTagColor", "none"];
 if !(_color isEqualType "") then {_color = "none";};
