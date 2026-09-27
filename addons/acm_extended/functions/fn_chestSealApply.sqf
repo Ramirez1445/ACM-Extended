@@ -51,60 +51,9 @@ if (!isNull _medic && {local _medic}) then {
     private _placeEpoch = [_medic, "chestSeal", _duration, _patient] call ACME_fnc_treatmentPoseStart;
 
     if (_placeEpoch >= 0) then {
-        private _applyPFH = [{
-            params ["_args", "_pfh"];
-            _args params ["_m", "_p", "_epoch", "_serial", "_endsAt", "_lastAssert", "_asserts"];
-
-            private _currentSerial = uiNamespace getVariable ["ACME_CS_ApplyAnimSerial", -1];
-            private _display = uiNamespace getVariable ["ACME_CS_DLG", displayNull];
-            private _sameSession = _currentSerial == _serial
-                && {!isNull _display}
-                && {(uiNamespace getVariable ["ACME_CS_Medic", objNull]) isEqualTo _m}
-                && {(uiNamespace getVariable ["ACME_CS_Patient", objNull]) isEqualTo _p};
-
-            if (!_sameSession || {isNull _m} || {!local _m} || {!alive _m}) exitWith {
-                [_pfh] call CBA_fnc_removePerFrameHandler;
-                if ((uiNamespace getVariable ["ACME_CS_ApplyPFH", -1]) == _pfh) then {
-                    uiNamespace setVariable ["ACME_CS_ApplyPFH", -1];
-                };
-            };
-
-            private _state = _m getVariable ["ACME_treatmentPoseState", []];
-            private _poseMain = _state param [2, "AinvPknlMstpSnonWnonDnon_medic3"];
-            private _owns = (_state param [0, -2]) == _epoch && {(_state param [1, ""]) == "chestSeal"};
-            if (!_owns) exitWith {
-                // A newer provider action already won. Never reassert medic3 or restore the workspace over it.
-                [_pfh] call CBA_fnc_removePerFrameHandler;
-                if ((uiNamespace getVariable ["ACME_CS_ApplyPFH", -1]) == _pfh) then {
-                    uiNamespace setVariable ["ACME_CS_ApplyPFH", -1];
-                };
-                if ((uiNamespace getVariable ["ACME_CS_ApplyAnimSerial", -1]) == _serial) then {
-                    uiNamespace setVariable ["ACME_CS_ApplyGestureUntil", 0];
-                };
-            };
-
-            private _now = diag_tickTime;
-            if (_now >= _endsAt) exitWith {
-                // The exact 2.65 s owner is the one-shot below. This PFH only keeps the requested state from
-                // being resurfaced-over by an older treatment-end RTM during that bounded window.
-                [_pfh] call CBA_fnc_removePerFrameHandler;
-                if ((uiNamespace getVariable ["ACME_CS_ApplyPFH", -1]) == _pfh) then {
-                    uiNamespace setVariable ["ACME_CS_ApplyPFH", -1];
-                };
-            };
-
-            // Keep the exact selected placement state for the bounded window through the normal interpolated graph.
-            // Downed patients use medic3; an independently standing casualty may use the validated medicUp3 state.
-            // Only physical Flip is allowed to hard-preempt provider animation with priority 2.
-            if ((toLowerANSI animationState _m) != (toLowerANSI _poseMain)
-                && {_now - _lastAssert >= 0.10}
-                && {_asserts < 3}) then {
-                [_m, _poseMain, 1] call ACME_fnc_doAnim;
-                _args set [5, _now];
-                _args set [6, _asserts + 1];
-            };
-        }, 0.05, [_medic, _patient, _placeEpoch, _serial, _endsAt, -1e6, 0]] call CBA_fnc_addPerFrameHandler;
-        uiNamespace setVariable ["ACME_CS_ApplyPFH", _applyPFH];
+        // B178 one-shot placement ownership: treatmentPoseStart issues the selected medic3/medicUp3 exactly once.
+        // Do not run an independent watchdog that reissues the finite RTM when Arma naturally transitions out.
+        uiNamespace setVariable ["ACME_CS_ApplyPFH", -1];
 
         // One bounded timer owns the placement lifetime. It is generation/epoch guarded, so Flip/close/reopen or
         // any newer treatment can pre-empt medic3 immediately and this callback becomes a no-op.
@@ -120,17 +69,25 @@ if (!isNull _medic && {local _medic}) then {
             private _state = _m getVariable ["ACME_treatmentPoseState", []];
             if ((_state param [0, -2]) != _epoch || {(_state param [1, ""]) != "chestSeal"}) exitWith {};
 
-            // Cut medic3 at the requested wall-clock boundary instead of waiting for its authored RTM to finish.
-            [_m, "chestSeal", _epoch, true] call ACME_fnc_treatmentPoseStop;
+            // End this one placement episode. Ambulatory patients do not replay the workspace medicUp motion
+            // after each seal: return naturally to crouch and leave the panel open. Downed patients retain the
+            // persistent hands-on-chest workspace.
+            private _restoreWorkspace = !([_p] call ACME_fnc_patientUpright);
+            [_m, "chestSeal", _epoch, _restoreWorkspace] call ACME_fnc_treatmentPoseStop;
 
             private _display = uiNamespace getVariable ["ACME_CS_DLG", displayNull];
             if (isNull _display
                 || {!((uiNamespace getVariable ["ACME_CS_Medic", objNull]) isEqualTo _m)}
                 || {!((uiNamespace getVariable ["ACME_CS_Patient", objNull]) isEqualTo _p)}) exitWith {};
 
-            private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
-            _m setVariable ["ACME_CS_providerHoldEpoch", _holdEpoch, false];
-            uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
+            if (_restoreWorkspace) then {
+                private _holdEpoch = [_m, _p] call ACME_fnc_chestSealProviderHoldStart;
+                _m setVariable ["ACME_CS_providerHoldEpoch", _holdEpoch, false];
+                uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", _holdEpoch];
+            } else {
+                _m setVariable ["ACME_CS_providerHoldEpoch", -1, false];
+                uiNamespace setVariable ["ACME_CS_ProviderHoldEpoch", -1];
+            };
         }, [_medic, _patient, _placeEpoch, _serial], _duration] call CBA_fnc_waitAndExecute;
     } else {
         uiNamespace setVariable ["ACME_CS_ApplyGestureUntil", 0];
