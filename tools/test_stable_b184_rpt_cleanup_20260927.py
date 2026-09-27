@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B187 build: B184/B185 RPT cleanup remains enforced."""
+"""Stable B188 build: B184/B185 RPT cleanup remains enforced."""
 from pathlib import Path
 import re
 
@@ -134,7 +134,7 @@ def test_build_identity_is_b186_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B187";' in startup
+    assert 'ACME_buildBatch = "B188";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -142,4 +142,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B187 RPT/syntax cleanup regression: PASS")
+    print("stable B188 RPT/syntax cleanup regression: PASS")
