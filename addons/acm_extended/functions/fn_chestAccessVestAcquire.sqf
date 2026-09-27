@@ -36,9 +36,16 @@ if (_context == "chestseal" && {
 // not roll, lift, strip or park equipment from a seated casualty. Publish readiness immediately and let the
 // treatment/minigame proceed without theatre.
 if (!isNull objectParent _patient) exitWith {
-    _patient setVariable [_busyVar, "", false];
-    _patient setVariable [_frontBusyVar, "", false];
-    _patient setVariable [_readyVar, serverTime, true];
+    // If a prior on-foot chest episode still has the carrier in custody, restore it immediately before declaring
+    // vehicle readiness. Vehicle care never inherits a stripped-patient state from old presentation theatre.
+    private _vehicleSaved = +(_patient getVariable [_savedVar, []]);
+    if ((count _vehicleSaved) == 2) then {
+        [_patient, true, _medic, _context, true] call ACME_fnc_chestAccessVestRestore;
+    } else {
+        _patient setVariable [_busyVar, "", false];
+        _patient setVariable [_frontBusyVar, "", false];
+        _patient setVariable [_readyVar, serverTime, true];
+    };
     true
 };
 
