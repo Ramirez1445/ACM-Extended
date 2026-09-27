@@ -8,7 +8,10 @@ Updated 27 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B181 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B182 with no RC or hotfix suffix in the debug menu.
+- LifePak stock button hitboxes have been restored to ACM's native AED pixel grid. The separately tuned SYNC button/LED remains on the 1.05x rendered-background mapping; applying that mapping to the stock controls was what shifted them downward.
+- Provider animation speed now has an explicit ownership contract. Native treatment, treatment-pose and Semi-Fowler rate leases retire without leaving getAnimSpeedCoef above 1, preventing a completed medical action from making that player run/sprint abnormally fast.
+- Remove Plate Carrier / Replace Plate Carrier is now available on stable main under Advanced on the Body. Manual removal is immediate and animation-free, preserves the exact vest slot/loadout, remains off across later chest interventions and can only be restored by the explicit Replace action.
 - Deferred provider gestures now capture the treatment patient explicitly in the next-frame callback arguments. This removes the HEMTT undefined-`_patient` warning and prevents the gesture from depending on an out-of-scope local variable.
 - Applied bandages are now mechanically stable: platelet count, coagulopathy and ACE wound-reopen probability no longer schedule a dressing to fail or move a bandaged wound back to open state.
 - Clot popping now acts only on unsecured clotted wounds. One event can affect only one selected clot and can reopen at most 0.15 of one wound by default, hard-capped at 0.25.
