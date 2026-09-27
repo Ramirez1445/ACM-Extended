@@ -7,7 +7,7 @@ params [
 
 if (isNull _medic || {isNull _patient} || {!(_patient isKindOf "CAManBase")}) exitWith {false};
 if (_medic isEqualTo _patient) exitWith {false};
-if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake}) || {!alive _patient}) exitWith {false};
+if (!alive _medic || {!([_medic] call ace_common_fnc_isAwake)} || {!alive _patient}) exitWith {false};
 
 private _state = _patient getVariable ["ACME_manualPlateCarrierState", ""];
 private _manualLease = _patient getVariable ["ACME_manualPlateCarrierLease", ""];
