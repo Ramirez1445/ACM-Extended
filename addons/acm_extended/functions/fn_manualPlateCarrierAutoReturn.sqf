@@ -69,7 +69,7 @@ _patient setVariable ["ACME_manualPlateCarrierOriginASL", [], true];
 _patient setVariable ["ACME_manualPlateCarrierRemoved", false, true];
 
 if (_hadCustody || {(vest _patient) != ""}) then {
-    [_patient, "activity", [format ["Plate carrier automatically returned (%1)", _reason]], []]
+    [_patient, "activity", format ["Plate carrier automatically returned (%1)", _reason], []]
         call ace_medical_treatment_fnc_addToLog;
 };
 
