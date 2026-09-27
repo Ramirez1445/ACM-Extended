@@ -31,3 +31,21 @@ def test_transfusion_page_buttons_stay_blue():
     assert 'diag_tickTime * 220' in openf
     assert 'ctrlCreate ["ACME_TX_PageButton",86950]' in openf
     assert '(_uiW / 11) * 0.72' in openf
+
+
+def test_transfusion_first_frame_is_reflowed_before_reveal():
+    openf=(ROOT.parent/'circulation/functions/fnc_openTransfusionMenu.sqf').read_text(encoding='utf-8', errors='ignore')
+    # Raw ACME/native reflow controls are visually gated immediately on dialog creation.
+    assert 'private _initialLayoutControls = [' in openf
+    assert '86004, 86005, 86006, 86007, 86008' in openf
+    assert '_ctrl ctrlSetFade 1;' in openf
+    # The normal ACME layout runs synchronously after ACM initializes its lists, rather than waiting for the 0.25 s PFH.
+    native_init = openf.index('[false] call FUNC(TransfusionMenu_UpdateBagList);')
+    sync_layout = openf.index('call ACME_fnc_updateTransfusionControls;', native_init)
+    vehicle_pfh = openf.index('private _inVehicle =', sync_layout)
+    assert native_init < sync_layout < vehicle_pfh
+    # Controls reveal only after updateTransfusionControls has captured this exact display as its layout owner.
+    assert 'ACME_infusion_LayoutDisplay' in openf
+    assert '_ctrl ctrlSetFade 0;' in openf
+    assert 'ACME_txInitialLayoutRevealed' in openf
+    assert 'CBA_fnc_execNextFrame' in openf

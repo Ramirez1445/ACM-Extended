@@ -115,6 +115,40 @@ if (isNull _display) exitWith {
 _display setVariable ["ACM_TX_Generation", _menuGeneration];
 _display setVariable ["ACM_TX_CloseID", _closeID];
 
+// ACME adds a second layer of controls to ACM's transfusion dialog and reflows both native lists at runtime.
+// The config geometry is only a fallback. If it is painted before the first ACME reflow, the player sees one
+// frame of the old/scattered layout. Temporarily fade every control whose geometry ACME owns, including the native
+// list/button anchors that are resized. Fade preserves ctrlShow/ctrlEnable state, unlike ctrlShow false, so controls
+// which are intentionally visible-by-config (Prep Infusion, Give Infusion, Hang Bag, etc.) are not stranded hidden.
+private _initialLayoutControls = [
+    86004, 86005, 86006, 86007, 86008,
+    86120, 86121, 86122, 86123, 86124, 86125, 86126, 86127, 86128, 86129, 86130,
+    86131, 86132, 86133, 86134, 86140, 86141, 86142, 86143, 86144, 86145, 86146,
+    86147, 86148, 86149
+];
+{
+    private _ctrl = _display displayCtrl _x;
+    if (!isNull _ctrl) then {
+        _ctrl ctrlSetFade 1;
+        _ctrl ctrlCommit 0;
+    };
+} forEach _initialLayoutControls;
+
+private _revealInitialLayout = {
+    params ["_d", "_controls"];
+    if (isNull _d) exitWith {false};
+    if ((uiNamespace getVariable ["ACME_infusion_LayoutDisplay", displayNull]) isNotEqualTo _d) exitWith {false};
+    {
+        private _ctrl = _d displayCtrl _x;
+        if (!isNull _ctrl) then {
+            _ctrl ctrlSetFade 0;
+            _ctrl ctrlCommit 0;
+        };
+    } forEach _controls;
+    _d setVariable ["ACME_txInitialLayoutRevealed", true];
+    true
+};
+
 {
     private _ctrl = _display displayCtrl _x;
     if (!isNull _ctrl) then {_ctrl ctrlShow false;};
@@ -186,6 +220,22 @@ call FUNC(TransfusionMenu_SwitchTargetInventory);
 private _ctrlPatientName = _display displayCtrl IDC_TRANSFUSIONMENU_PATIENTNAME;
 
 _ctrlPatientName ctrlSetText ([_patient, false, true] call ACEFUNC(common,getName));
+
+// First-frame layout barrier. ACM's native controls and lists are now initialized, so run ACME's reflow in this
+// same scheduled script instead of waiting for the 0.25 s presentation PFH. If a platform/UI timing edge leaves a
+// native anchor unready, updateTransfusionControls intentionally refuses to cache bad bases. In that case the
+// controls above remain faded and the next-frame retry reveals them only after the layout display has been captured.
+if (!isNil "ACME_fnc_updateTransfusionControls") then {
+    call ACME_fnc_updateTransfusionControls;
+    [_display, _initialLayoutControls] call _revealInitialLayout;
+
+    [{
+        params ["_d", "_controls", "_reveal"];
+        if (isNull _d || {_d isNotEqualTo (findDisplay IDC_TRANSFUSIONMENU)}) exitWith {};
+        call ACME_fnc_updateTransfusionControls;
+        [_d, _controls] call _reveal;
+    }, [_display, _initialLayoutControls, _revealInitialLayout]] call CBA_fnc_execNextFrame;
+};
 
 private _inVehicle = !(isNull objectParent _medic);
 
