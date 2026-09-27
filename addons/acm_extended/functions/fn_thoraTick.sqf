@@ -16,7 +16,7 @@ private _thPatient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _invalidContact = isNull _thMedic || {isNull _thPatient} || {!alive _thMedic} || {!local _thMedic}
     || {!([_thMedic] call ace_common_fnc_isPlayer)}
     || {_thMedic getVariable ["ACE_isUnconscious", false]}
-    || {(_thMedic distance _thPatient) > ace_medical_gui_maxDistance}
+    || {isNull objectParent _thMedic && {(_thMedic distance _thPatient) > ace_medical_gui_maxDistance}}
     || {objectParent _thMedic isNotEqualTo objectParent _thPatient};
 if (_invalidContact) exitWith {
     [86600] call ACME_fnc_minigameClose;
