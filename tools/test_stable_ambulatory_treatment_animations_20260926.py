@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B175: ambulatory treatment presentation uses medicUp and a frozen stethoscope contact reach."""
+"""Stable B176: standing/crouched ambulatory presentation uses medicUp and a frozen stethoscope contact reach."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -9,13 +9,13 @@ def read(rel):
     return (ROOT / rel).read_text(encoding="utf-8", errors="replace")
 
 
-def test_ambulatory_patient_gate_is_conscious_on_foot_and_actually_standing():
+def test_ambulatory_patient_gate_is_conscious_on_foot_and_standing_or_crouched():
     s = read("addons/acm_extended/functions/fn_patientUpright.sqf")
     assert 'getVariable ["ACE_isUnconscious", false]' in s
     assert 'getVariable ["ace_medical_unconscious", false]' in s
     assert 'isNull objectParent _patient' in s
-    assert '(stance _patient) != "STAND"' in s
-    assert '"CROUCH"' not in s
+    assert '(stance _patient) in ["STAND", "CROUCH"]' in s
+    assert '"PRONE"' not in s
     assert 'ACME_headElevated' in s
     assert 'ACME_headElev_Suspended' in s
 
@@ -90,4 +90,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B175 ambulatory treatment animation regression: PASS")
+    print("stable B176 ambulatory treatment animation regression: PASS")
