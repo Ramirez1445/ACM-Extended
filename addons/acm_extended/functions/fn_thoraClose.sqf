@@ -4,6 +4,29 @@
 // same delayed resume the chest seal screen uses, so ACM has finished whatever it was doing first.
 private _pHE = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
 private _mHE = uiNamespace getVariable ["ACME_Thora_Medic", objNull];
+
+private _entryKeyState = uiNamespace getVariable ["ACME_Thora_EntryKeys",[]];
+{
+    if (!(_x isEqualTo -1) && {!(_x isEqualTo "")}) then {[_x,"keydown"] call CBA_fnc_removeKeyHandler;};
+} forEach (_entryKeyState param [1,[]]);
+uiNamespace setVariable ["ACME_Thora_EntryKeys",[]];
+uiNamespace setVariable ["ACME_Thora_EntryCancelToken",""];
+[false,_mHE,_pHE,uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""]] call ACME_fnc_chestAccessPreparing;
+
+// Defensive provider cleanup. Normal entry releases chestAccess before the panel opens, but a close/abort racing
+// a delayed provider packet must still be able to free the player immediately.
+if (!isNull _mHE && {local _mHE}) then {
+    private _providerEntry = _mHE getVariable ["ACME_chestAccessProvider", []];
+    if ((_providerEntry param [0,objNull]) isEqualTo _pHE) then {
+        private _providerToken = _providerEntry param [2,""];
+        private _providerPrep = _mHE getVariable ["ACME_chestAccessProviderPrepToken",""];
+        private _activeLease = uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""];
+        if (_providerToken != "" && {_providerPrep != ""} && {_providerPrep == _activeLease}) then {
+            [_mHE,_pHE,"stop",false,_providerToken] call ACME_fnc_chestAccessVestProvider;
+        };
+    };
+};
+
 private _vestLease = uiNamespace getVariable ["ACME_Thora_ChestAccessLease",""];
 if (_vestLease != "") then {
     uiNamespace setVariable ["ACME_Thora_ChestAccessLease",""];

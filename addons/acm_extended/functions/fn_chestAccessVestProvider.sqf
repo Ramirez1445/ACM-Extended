@@ -38,6 +38,7 @@ if (_op == "stop") exitWith {
 
     if (_entryPatient isEqualTo _patient) then {
         _medic setVariable ["ACME_chestAccessProvider", [], false];
+        _medic setVariable ["ACME_chestAccessProviderPrepToken", "", false];
     };
 
     private _ready = _medic getVariable ["ACME_chestAccessProviderReady", []];
@@ -64,14 +65,26 @@ if (_chestSealEntry && {
     || {(uiNamespace getVariable ["ACME_CS_EntryCancelToken", ""]) == _preparationToken}
 }) exitWith {-1};
 
+// Thoracostomy uses the long-lived UI lease as its presentation generation. If its provider-start packet arrives
+// after the panel entry was cancelled/closed, reject it here instead of starting a new frozen medic4 with no owner.
+private _thoracostomyEntry = (_episodeToken find "vest:access:") == 0
+    && {(_preparationToken find "thora:") == 0};
+if (_thoracostomyEntry && {
+    (uiNamespace getVariable ["ACME_Thora_ChestAccessLease", ""]) != _preparationToken
+    || {(uiNamespace getVariable ["ACME_Thora_Medic", objNull]) isNotEqualTo _medic}
+    || {(uiNamespace getVariable ["ACME_Thora_Patient", objNull]) isNotEqualTo _patient}
+}) exitWith {-1};
+
 // Ordinary chest-access start is routed through the casualty owner as well. Its
 // preflight can be cancelled or handed to clinical work before this packet reaches
-// the provider. Other callers (for example thoracostomy) have no preflight token.
-if ((_episodeToken find "vest:access:") == 0 && {_preparationToken != ""} && {
-    !(_medic getVariable ["ACME_chestAccessPreflightActive", false])
-    || {(_medic getVariable ["ACME_chestAccessPreflightToken", ""]) != _preparationToken}
-    || {((_medic getVariable ["ACME_chestAccess_treatment", []]) param [0, objNull]) isNotEqualTo _patient}
-}) exitWith {-1};
+// the provider. Thoracostomy is validated by its own UI lease above.
+if (!_thoracostomyEntry
+    && {(_episodeToken find "vest:access:") == 0}
+    && {_preparationToken != ""} && {
+        !(_medic getVariable ["ACME_chestAccessPreflightActive", false])
+        || {(_medic getVariable ["ACME_chestAccessPreflightToken", ""]) != _preparationToken}
+        || {((_medic getVariable ["ACME_chestAccess_treatment", []]) param [0, objNull]) isNotEqualTo _patient}
+    }) exitWith {-1};
 
 private _armReadyProbe = {
     params ["_m","_epoch","_token"];
@@ -128,6 +141,7 @@ if ((_existingPatient isEqualTo _patient)
     && {(_pose param [1, ""]) == "chestAccess"}) exitWith {
     if (_episodeToken != "") then {
         _medic setVariable ["ACME_chestAccessProvider", [_patient, _existingEpoch, _episodeToken], false];
+        _medic setVariable ["ACME_chestAccessProviderPrepToken", _preparationToken, false];
         if (_chestSealEntry) then {
             uiNamespace setVariable ["ACME_CS_EntryProvider", [_existingEpoch, _episodeToken]];
         };
@@ -149,6 +163,7 @@ if (_priorMode in ["stethoscope","inspect","chestSealWorkspace","roll"]
 private _epoch = [_medic, "chestAccess", -1, _patient] call ACME_fnc_treatmentPoseStart;
 if (_epoch >= 0) then {
     _medic setVariable ["ACME_chestAccessProvider", [_patient, _epoch, _episodeToken], false];
+    _medic setVariable ["ACME_chestAccessProviderPrepToken", _preparationToken, false];
     if (_chestSealEntry) then {
         uiNamespace setVariable ["ACME_CS_EntryProvider", [_epoch, _episodeToken]];
     };
