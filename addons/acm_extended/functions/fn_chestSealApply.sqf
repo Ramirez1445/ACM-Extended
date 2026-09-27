@@ -70,6 +70,7 @@ if (!isNull _medic && {local _medic}) then {
             };
 
             private _state = _m getVariable ["ACME_treatmentPoseState", []];
+            private _poseMain = _state param [2, "AinvPknlMstpSnonWnonDnon_medic3"];
             private _owns = (_state param [0, -2]) == _epoch && {(_state param [1, ""]) == "chestSeal"};
             if (!_owns) exitWith {
                 // A newer provider action already won. Never reassert medic3 or restore the workspace over it.
@@ -92,12 +93,13 @@ if (!isNull _medic && {local _medic}) then {
                 };
             };
 
-            // Keep the exact medic3 state for the bounded placement window through the normal interpolated graph.
+            // Keep the exact selected placement state for the bounded window through the normal interpolated graph.
+            // Downed patients use medic3; an independently standing casualty may use the validated medicUp3 state.
             // Only physical Flip is allowed to hard-preempt provider animation with priority 2.
-            if ((toLowerANSI animationState _m) != "ainvpknlmstpsnonwnondnon_medic3"
+            if ((toLowerANSI animationState _m) != (toLowerANSI _poseMain)
                 && {_now - _lastAssert >= 0.10}
                 && {_asserts < 3}) then {
-                [_m, "AinvPknlMstpSnonWnonDnon_medic3", 1] call ACME_fnc_doAnim;
+                [_m, _poseMain, 1] call ACME_fnc_doAnim;
                 _args set [5, _now];
                 _args set [6, _asserts + 1];
             };
