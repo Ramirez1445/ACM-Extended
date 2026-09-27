@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B183: LifePak geometry, provider-speed cleanup, and animated persistent manual carrier toggle."""
+"""Stable B184: LifePak geometry, provider-speed cleanup, and animated persistent manual carrier toggle."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -202,7 +202,7 @@ def test_build_identity_is_b183_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4";' in cfg
-    assert 'ACME_buildBatch = "B183";' in startup
+    assert 'ACME_buildBatch = "B184";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -210,4 +210,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B183 AED/speed/carrier regression: PASS")
+    print("stable B184 AED/speed/carrier regression: PASS")
