@@ -26,5 +26,11 @@ if (_nasalAirway) then {
 } else {
     private _airway = _patient getVariable [QGVAR(AirwayItem_Oral), ""];
 
+    // An i-gel/SGA is a valid Ventway airway. Removing it must immediately sever the ventilator circuit and
+    // return the mounted device through its custody transaction before the oral-airway slot is cleared.
+    if (_airway == "SGA" && {!isNil "ACME_fnc_ventAirwayLoss"}) then {
+        [_patient, _medic, "i-gel removed"] call ACME_fnc_ventAirwayLoss;
+    };
+
     _patient setVariable [QGVAR(AirwayItem_Oral), "", true];
 };
