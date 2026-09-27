@@ -269,6 +269,7 @@ if (([ACE_player, _target, _saline] call ACME_fnc_treatmentSupplyCount) < 1) exi
 // fn_updatetransfusioncontrols while ACME_yBuildingActive is in the future, and then the commit below consumes
 // the items and stores the set. the pendings stay set during the beat, so the button state holds.
 missionNamespace setVariable ["ACME_yBuildingActive", diag_tickTime + 2.5];
+call ACME_fnc_updateTransfusionControls;
 ["Building Y set...", 2.5, ACE_player] call ace_common_fnc_displayTextStructured;
 [{
     params ["_blood", "_bloodAction", "_saline", "_salineAction", "_bloodFromCooler", ["_bloodExactVol", 0], ["_salineExactVol", 0], ["_medic", objNull], ["_target", objNull], ["_bloodPersonal", false], ["_salinePersonal", false]];
