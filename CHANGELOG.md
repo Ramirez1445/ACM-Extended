@@ -8,7 +8,9 @@ Updated 26 September 2026.
 
 - Public and debug version is 1.2.4.
 - HEMTT package version is 1.2.4.0.
-- Stable runtime identity uses internal build B173 with no RC or hotfix suffix in the debug menu.
+- Stable runtime identity uses internal build B174 with no RC or hotfix suffix in the debug menu.
+- Conscious casualties who are independently standing retain their worn plate carrier during chest-access interventions; if they wake and stand while a carrier is already parked, it is restored immediately.
+- Chest Seal, NAR SPEAR, Thoracostomy and shared chest-access preparation now recognize locally controlled NPC/Zeus medics through ACE's player-control predicate rather than requiring the provider object to equal the cached ACE_player object.
 - Launcher metadata now identifies the package as ACM Extended rather than the development fork.
 - The current stable thoracostomy preparation lifecycle and its providerless menu handoff are included in this release.
 
