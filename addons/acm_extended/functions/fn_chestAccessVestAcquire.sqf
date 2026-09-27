@@ -196,6 +196,15 @@ private _commitRemoval = {
     if (isNull _p || {!local _p}) exitWith {false};
     if ((count (_p getVariable [_savedVar, []])) == 2) exitWith {true};
 
+    // Never strip an independently standing conscious casualty. Chest access may continue virtually,
+    // but worn protective gear remains physically on the casualty until they are actually down/unconscious.
+    private _standingConscious = alive _p
+        && {!(_p getVariable ["ACE_isUnconscious", false])}
+        && {!(_p getVariable ["ace_medical_unconscious", false])}
+        && {isNull objectParent _p}
+        && {(stance _p) == "STAND"};
+    if (_standingConscious) exitWith {true};
+
     private _class = vest _p;
     private _entry = (getUnitLoadout _p) param [4, [], [[]]];
     if (_class == "" || {(count _entry) != 2}) exitWith {false};
@@ -231,6 +240,17 @@ private _commitRemoval = {
             || {(count (_patient getVariable [_savedVar, []])) != 2}) exitWith {
             [_handle] call CBA_fnc_removePerFrameHandler;
             if (!isNull _patient) then {_patient setVariable [_pfhVar, -1, false];};
+        };
+
+        // If the casualty wakes and returns to independent standing while gear is in custody,
+        // restore it immediately even if the procedure lease is still open.
+        private _standingConscious = alive _patient
+            && {!(_patient getVariable ["ACE_isUnconscious", false])}
+            && {!(_patient getVariable ["ace_medical_unconscious", false])}
+            && {isNull objectParent _patient}
+            && {(stance _patient) == "STAND"};
+        if (_standingConscious) exitWith {
+            [_patient, true, objNull, _ctx, true] call ACME_fnc_chestAccessVestRestore;
         };
 
         if (_ctx == "chestseal") then {
