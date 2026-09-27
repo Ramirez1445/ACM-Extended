@@ -12,10 +12,21 @@ if !(_patient getVariable ["ACME_headElev_Suspended", false]) exitWith {};
 // reclassifying transient body geometry here could spuriously roll the casualty before re-elevation.
 _patient setVariable ["ACME_CS_facing","front",true];
 
-// If the elevated patient uses a backpack, a chest-access action may have temporarily parked the worn carrier.
-// Restore it only when no chest-access owner still needs the chest clear. This is independent of the elevation
-// support carrier, which remains removed for the entire logical Semi-Fowler placement when no backpack exists.
-[_patient] call ACME_fnc_chestAccessVestRestore;
+// If the elevated patient has no backpack and a manually removed carrier is still under persistent custody,
+// borrow that exact carrier as the Semi-Fowler support before resuming. Other chest-access carriers keep their
+// ordinary restore path and never get converted implicitly.
+private _manualSupport = _patient getVariable ["ACME_headElev_manualCarrierBorrowed", false];
+if (!_manualSupport
+    && {(backpack _patient) == ""}
+    && {(_patient getVariable ["ACME_manualPlateCarrierState", ""]) == "off"}) then {
+    _manualSupport = [_patient, "borrow"] call ACME_fnc_manualPlateCarrierHeadElevSupport;
+};
+
+if (!_manualSupport) then {
+    // If the elevated patient uses a backpack, a chest-access action may have temporarily parked the worn carrier.
+    // Restore it only when no chest-access owner still needs the chest clear.
+    [_patient] call ACME_fnc_chestAccessVestRestore;
+};
 
 _patient setVariable ["ACME_headElev_suspendKeepVestOut", false, true];
 _patient setVariable ["ACME_headElev_suspendVestLoadout", [], false];
