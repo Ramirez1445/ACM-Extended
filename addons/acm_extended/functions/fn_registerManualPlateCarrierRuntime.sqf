@@ -18,7 +18,7 @@ if (isNil "ACME_manualPlateCarrierWatchPFH") then {
 
             private _origin = _p getVariable ["ACME_manualPlateCarrierOriginASL", []];
             private _moved = _origin isEqualType [] && {count _origin == 3}
-                && {_p distance2D _origin > 0.9};
+                && {_p distance2D _origin > 0.35};
 
             private _externalVest = _state in ["off", "restoring"] && {(vest _p) != ""};
 
