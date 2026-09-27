@@ -33,6 +33,7 @@ uiNamespace setVariable ["ACME_SK_WasteStage", ""];
 uiNamespace setVariable ["ACME_SK_VialHolder",objNull];
 uiNamespace setVariable ["ACME_SK_WasteMoving", false];
 uiNamespace setVariable ["ACME_SK_TagEditMode", false];
+uiNamespace setVariable ["ACME_SK_PushDurationEditing", false];
 uiNamespace setVariable ["ACME_SK_CarouselZoneHover", false];
 uiNamespace setVariable ["ACME_SK_PendingInjection", []];
 uiNamespace setVariable ["ACME_SK_DiscardArmedId", ""];
