@@ -10,7 +10,7 @@ params [
 ];
 if (isNull _medic || {!alive _medic} || {_medic getVariable ["ACE_isUnconscious", false]}) exitWith {};
 _mode = toLowerANSI _mode;
-if !(_mode in ["elevate", "lower"]) exitWith {};
+if !(_mode in ["elevate", "lower", "contactexit"]) exitWith {};
 if (!local _medic) exitWith {
     [_medic, "headElevMedicSeq", [_medic, _mode]] call ACME_fnc_ownerDispatch;
 };
@@ -141,11 +141,22 @@ private _providerPFH = [{
         if (currentWeapon _u != "" && {_now < _prepUntil}) exitWith {};
         if (currentWeapon _u != "") then {_u selectWeapon "";};
         _u setUnitPos "MIDDLE";
-        [_u, _forcePose, 2] call ACME_fnc_doAnim;
-        _u setVariable ["ACME_headElev_medicAnimStage", 0, false];
-        _args set [7, 0];
-        _args set [8, false];
-        _args set [9, _now];
+
+        // B175 standing-casualty auscultation already owns the held hand-out frame of the Putdown entry.
+        // Resume directly into the authored Putdown -> crouch return instead of replaying the reach.
+        if (_mode == "contactexit") then {
+            [_u, _second, 1] call ACME_fnc_doAnim;
+            _u setVariable ["ACME_headElev_medicAnimStage", 2, false];
+            _args set [7, 2];
+            _args set [8, false];
+            _args set [9, _now];
+        } else {
+            [_u, _forcePose, 2] call ACME_fnc_doAnim;
+            _u setVariable ["ACME_headElev_medicAnimStage", 0, false];
+            _args set [7, 0];
+            _args set [8, false];
+            _args set [9, _now];
+        };
     };
 
     if (_stage == 0) exitWith {
