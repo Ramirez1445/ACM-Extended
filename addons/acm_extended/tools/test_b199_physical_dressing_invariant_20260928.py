@@ -76,7 +76,7 @@ def test_naloxone_handler_cannot_directly_create_wounds_or_fractures():
 
 def test_naloxone_never_forces_patient_roll_or_other_posture_change():
     actions = read("addons/core/ACE_Medical_Treatment_Actions.hpp")
-    block = actions.split("class Naloxone: Paracetamol {", 1)[1].split("};", 1)[0]
+    block = actions.split("class Naloxone: Paracetamol {", 1)[1].split("class FentanylLozenge: Paracetamol {", 1)[0]
 
     assert "ACM_rollToBack = 0;" in block
     assert "ACME_neverRollToBack = 1;" in block
