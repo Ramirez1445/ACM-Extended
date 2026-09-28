@@ -6,13 +6,37 @@
 // animations, the carrier stripped back off, the wedge re-seated and the 30 degree hold. it routes through
 // target events, so the work always runs where the patient is local.
 ["ACME_headElev_transportDown", {
-    params ["_patient"];
+    params ["_patient", ["_requestToken", "", [""]]];
     if (isNull _patient) exitWith {};
-    if !(_patient getVariable ["ACME_headElevated", false]) exitWith {};
+
+    // A pre-carry request waits for this exact token before ACE is allowed to start its carry animation.
+    // This matters because headElevateStop may restore the support plate carrier with setUnitLoadout; if that
+    // happens after ACE has already requested AinjPfal..._carried_Up, Arma drops the carry animation.
+    if !(_patient getVariable ["ACME_headElevated", false]) exitWith {
+        if (_requestToken != "") then {
+            _patient setVariable ["ACME_headElev_TransportReady", _requestToken, true];
+        };
+    };
+
+    // Retire any short Semi-Fowler position pin before ACE begins moving the casualty.
+    _patient setVariable ["ACME_headElev_pinToken", (_patient getVariable ["ACME_headElev_pinToken", 0]) + 1, false];
+
     // Manual support requires a provider again after transport.
     private _passive = (_patient getVariable ["ACME_headElev_hold", []]) isEqualTo [];
     _patient setVariable ["ACME_headElev_TransportPending", _passive, true];
+
     [objNull, _patient, true] call ACME_fnc_headElevateStop;
+
+    // No Semi-Fowler animation lease may survive into ACE carry ownership.
+    private _lock = _patient getVariable ["ACME_patientAnimLock", []];
+    if ((_lock param [1, ""]) in ["head-elev-lift", "head-elev-lower", "head-elev-flat"]) then {
+        private _animToken = _lock param [0, ""];
+        if (_animToken != "") then {[_patient, _animToken] call ACME_fnc_patientAnimRelease;};
+    };
+
+    if (_requestToken != "") then {
+        _patient setVariable ["ACME_headElev_TransportReady", _requestToken, true];
+    };
 }] call CBA_fnc_addEventHandler;
 ["ACME_headElev_transportUp", {
     params ["_patient"];

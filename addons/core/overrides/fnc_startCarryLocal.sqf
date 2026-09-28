@@ -18,7 +18,7 @@
  * Public: No
  */
 
-params ["_unit", "_target", "_claimed", ["_skip", false]];
+params ["_unit", "_target", "_claimed", ["_skip", false], ["_acmeTransportReady", false]];
 TRACE_3("params",_unit,_target,_claimed);
 
 if (!_claimed) exitWith { WARNING_1("already claimed %1",_this) };
@@ -36,6 +36,51 @@ if (_weight > GETMVAR(ACE_maxWeightCarry,1E11)) exitWith {
     [objNull, _target, true] call ACEFUNC(common,claim);
 
     [ACELLSTRING(dragging,UnableToDrag)] call ACEFUNC(common,displayTextStructured);
+};
+
+// Semi-Fowler owns casualty pose and may own a removed support carrier. Its transport teardown can call
+// setUnitLoadout to restore that carrier, and setUnitLoadout clears an already-requested ACE carry animation.
+// Therefore this handoff must finish BEFORE ACE requests AinjPfal..._carried_Up. The patient owner publishes an
+// exact request token only after the complete Semi-Fowler teardown/gear restore has finished.
+if (!_acmeTransportReady
+    && {_target isKindOf "CAManBase"}
+    && {_target getVariable ["ACME_headElevated", false]}) exitWith {
+    private _serial = (missionNamespace getVariable ["ACME_carryHeadElevSerial", 0]) + 1;
+    missionNamespace setVariable ["ACME_carryHeadElevSerial", _serial];
+    private _token = format ["carry:%1:%2:%3", clientOwner, netId _target, _serial];
+
+    ["ACME_headElev_transportDown", [_target, _token], _target] call CBA_fnc_targetEvent;
+
+    [{
+        params ["_unit", "_target", "_claimed", "_skip", "_token"];
+        isNull _unit
+            || {isNull _target}
+            || {!(alive _unit)}
+            || {(_target getVariable ["ACME_headElev_TransportReady", ""]) == _token}
+    }, {
+        params ["_unit", "_target", "_claimed", "_skip", "_token"];
+        if (isNull _target) exitWith {};
+        if (isNull _unit || {!(alive _unit)}) exitWith {
+            [objNull, _target, true] call ACEFUNC(common,claim);
+        };
+        if ((_target getVariable ["ACME_headElev_TransportReady", ""]) != _token) exitWith {
+            [objNull, _target, true] call ACEFUNC(common,claim);
+        };
+        [_unit, _target, _claimed, _skip, true] call ACEFUNC(dragging,startCarryLocal);
+    }, [_unit, _target, _claimed, _skip, _token], 2.5, {
+        params ["_unit", "_target", "_claimed", "_skip", "_token"];
+        if (isNull _target) exitWith {};
+        // If the replicated acknowledgement was lost but the owner visibly completed the teardown, carrying is safe.
+        if (!isNull _unit && {alive _unit} && {!(_target getVariable ["ACME_headElevated", false])}) exitWith {
+            [_unit, _target, _claimed, _skip, true] call ACEFUNC(dragging,startCarryLocal);
+        };
+        [objNull, _target, true] call ACEFUNC(common,claim);
+        if (!isNull _unit && {local _unit}) then {
+            ["Unable to carry until Semi-Fowler's is released.", 2, _unit] call ACEFUNC(common,displayTextStructured);
+        };
+    }] call CBA_fnc_waitUntilAndExecute;
+
+    true
 };
 
 private _timer = CBA_missionTime + 5;
