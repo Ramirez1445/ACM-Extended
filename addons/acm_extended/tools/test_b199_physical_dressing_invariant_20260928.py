@@ -73,10 +73,19 @@ def test_naloxone_handler_cannot_directly_create_wounds_or_fractures():
         assert forbidden not in s
 
 
-def test_b200_keeps_public_stable_version_1241():
+
+def test_naloxone_never_forces_patient_roll_or_other_posture_change():
+    actions = read("addons/core/ACE_Medical_Treatment_Actions.hpp")
+    block = actions.split("class Naloxone: Paracetamol {", 1)[1].split("};", 1)[0]
+
+    assert "ACM_rollToBack = 0;" in block
+    assert "ACME_neverRollToBack = 1;" in block
+    assert "ACM_rollToBack = 1;" not in block
+
+def test_b201_keeps_public_stable_version_1241():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     config = read("addons/acm_extended/config.cpp")
 
     assert 'version = "1.2.4.1";' in config
-    assert 'ACME_buildBatch = "B200";' in startup
+    assert 'ACME_buildBatch = "B201";' in startup
     assert 'ACME_networkAuditRevision = "NA2-1.2.4.1-stable";' in startup
