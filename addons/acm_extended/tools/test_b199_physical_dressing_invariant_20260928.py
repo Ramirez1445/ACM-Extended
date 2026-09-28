@@ -42,7 +42,7 @@ def test_only_unsecured_clot_code_can_create_a_spontaneous_reopen():
     assert 'getVariable ["ACM_damage_ClottedWounds", createHashMap]' in pop
     assert 'setVariable ["ACM_damage_ClottedWounds", _clotted, true]' in pop
     assert "ACME_fnc_popClots" in native
-    assert "ACME_fnc_popClots" in tick
+    assert '"ACME_popClots"' in tick
 
     for forbidden in (
         "GET_BANDAGED_WOUNDS",
