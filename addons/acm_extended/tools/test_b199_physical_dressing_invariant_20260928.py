@@ -29,7 +29,8 @@ def test_native_ace_bandage_reopen_roll_is_hard_disabled_after_cba_settings():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg_functions = read("addons/core/CfgFunctions.hpp")
 
-    assert 'missionNamespace setVariable ["ace_medical_treatment_woundReopenChance", -1, false];' in startup
+    assert startup.count('missionNamespace setVariable ["ace_medical_treatment_woundReopenChance", -1, false];') == 2
+    assert '["CBA_settingsInitialized", {' in startup
     assert "Only ACME's explicit" in startup
     assert "class handleBandageOpening" not in cfg_functions
 
