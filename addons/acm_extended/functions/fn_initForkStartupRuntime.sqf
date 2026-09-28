@@ -12,6 +12,10 @@ ACME_networkAuditRevision = "NA2-1.2.4.1-stable";
  * unsecured-clot path may create a spontaneous reopen.
  */
 missionNamespace setVariable ["ace_medical_treatment_woundReopenChance", -1, false];
+// Re-assert after CBA's server-setting synchronization as well; this keeps JIP clients on the same invariant.
+["CBA_settingsInitialized", {
+    missionNamespace setVariable ["ace_medical_treatment_woundReopenChance", -1, false];
+}] call CBA_fnc_addEventHandler;
 call ACME_fnc_chestSealNetInit;
 [] call ACME_fnc_ventCustodyInit;
 [{ call ACME_fnc_ownerInit; }, []] call CBA_fnc_execNextFrame;
