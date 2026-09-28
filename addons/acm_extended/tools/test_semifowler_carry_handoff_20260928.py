@@ -53,10 +53,10 @@ def test_existing_setup_and_drop_transport_hooks_remain_as_fallbacks():
     assert 'ACME_headElev_TransportPending' in transport
 
 
-def test_stable_public_version_stays_1241_and_internal_build_is_b199():
+def test_stable_public_version_stays_1241_and_internal_build_is_b200():
     config = read("addons/acm_extended/config.cpp")
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
 
     assert 'version = "1.2.4.1";' in config
-    assert 'ACME_buildBatch = "B199";' in startup
+    assert 'ACME_buildBatch = "B200";' in startup
     assert 'ACME_networkAuditRevision = "NA2-1.2.4.1-stable";' in startup

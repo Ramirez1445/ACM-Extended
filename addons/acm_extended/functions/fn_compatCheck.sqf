@@ -60,7 +60,7 @@ private _hasMarker = {
     ["ACM_core_fnc_getUpPrompt", "B106:getUpLifecycle"],
     ["ACM_core_fnc_addVehiclePatientActions", "B106:vehicleUnloadGuard"],
     ["ACM_disability_fnc_handleFracture", "B106:fracturePainChance"],
-    ["ACM_damage_fnc_wrapBodyPartLocal", "B106:wrappedWoundReopen"],
+    ["ACM_damage_fnc_wrapBodyPartLocal", "B199:physicalDressingStable"],
     ["ace_dragging_fnc_canCarry", "B106:ace321Carry"],
     ["ace_dragging_fnc_canDrag", "B106:ace321Drag"],
     ["ace_interact_menu_fnc_compileMenuSelfAction", "B106:ace321SelfMenu"],
@@ -92,7 +92,7 @@ if (_missing isEqualTo []) exitWith {
 // A partial update can leave only ACM_acm_extended.pbo beside the upstream ACM components. Those functions
 // exist, but their fork markers are correctly absent. Keep every failed check and explain the installation
 // check instead of trying to replace another mod's runtime functions or suppressing the warning.
-private _installAdvice = "Verify the complete ACM Extended fork is installed on the server and all clients. Disable the separate Advanced Combat Medicine mod, update every fork PBO, then restart Arma.";
+private _installAdvice = "ACM_* function names are internal fork namespaces used by ACM Extended and do not mean the separate ACM mod is loaded. Verify the complete ACM Extended fork is installed on the server and all clients; if a separate Advanced Combat Medicine mod is also loaded, disable it. Update every fork PBO, then restart Arma.";
 diag_log format ["[ACME COMPAT] FAILED (%1), version %2 batch %3: %4 | %5", count _missing, _version, _batch, _missing joinString " | ", _installAdvice];
 
 if (hasInterface) then {

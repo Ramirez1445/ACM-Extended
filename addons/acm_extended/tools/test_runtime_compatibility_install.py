@@ -32,6 +32,13 @@ def test_expected_fork_markers_exist_in_executable_sources():
         assert marker in [t.value for t in lex(source.read_text()) if t.kind == "string"], name
 
 
+def test_wrap_marker_tracks_current_physical_dressing_reconciliation():
+    checker = CHECKER.read_text()
+    assert '["ACM_damage_fnc_wrapBodyPartLocal", "B199:physicalDressingStable"]' in checker
+    assert "B106:wrappedWoundReopen" not in checker
+    assert "ACM_* function names are internal fork namespaces used by ACM Extended" in checker
+
+
 @pytest.mark.parametrize("state", ["current", "upstream", "missing", "wrong_type"])
 def test_checker_preserves_real_failures_and_never_replaces_a_binding(state):
     source = CHECKER.read_text()
