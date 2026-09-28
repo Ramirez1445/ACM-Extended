@@ -1,8 +1,17 @@
 ACME_infusion_version = getText (configFile >> "CfgPatches" >> "ACM_Extended" >> "version");
 if (ACME_infusion_version == "") then { ACME_infusion_version = "1.2.4.1"; };
-ACME_buildBatch = "B198";
+ACME_buildBatch = "B199";
 ACME_debugRevision = "";
 ACME_networkAuditRevision = "NA2-1.2.4.1-stable";
+
+/*
+ * B199 physical-dressing invariant.
+ * ACE 3.21.2 compiles ace_medical_treatment_fnc_handleBandageOpening as final, so a CfgFunctions
+ * replacement is rejected before gameplay. Keep advanced bandages enabled for ACM's treated-wound
+ * bookkeeping, but make ACE's final reopening roll impossible on every machine. Only ACME's explicit
+ * unsecured-clot path may create a spontaneous reopen.
+ */
+missionNamespace setVariable ["ace_medical_treatment_woundReopenChance", -1, false];
 call ACME_fnc_chestSealNetInit;
 [] call ACME_fnc_ventCustodyInit;
 [{ call ACME_fnc_ownerInit; }, []] call CBA_fnc_execNextFrame;

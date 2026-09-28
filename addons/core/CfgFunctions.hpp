@@ -128,9 +128,8 @@ class CfgFunctions {
             class getTriageStatus { // Deceased -> Expectant
                 file = QPATHTOF(overrides\fnc_getTriageStatus.sqf); //ace/addons/medical_treatment/functions/fnc_getTriageStatus.sqf
             };
-            class handleBandageOpening { // Bandage reopening chance with platelets
-                file = QPATHTOF(overrides\fnc_handleBandageOpening.sqf); //ace/addons/medical_treatment/functions/fnc_handleBandageOpening.sqf
-            };
+            // ACE 3.21.2 marks handleBandageOpening final. Do not register a dead override here.
+            // B199 disables native physical-dressing reopening through the ACE runtime multiplier instead.
             class placeInBodyBag { // Return medical items on body bag use
                 file = QPATHTOF(overrides\fnc_placeInBodyBag.sqf); //ace/addons/medical_treatment/functions/fnc_placeInBodyBag.sqf
             };
