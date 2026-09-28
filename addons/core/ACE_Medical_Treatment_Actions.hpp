@@ -533,7 +533,12 @@ class ACEGVAR(medical_treatment,actions) {
         items[] = {"ACM_Spray_Naloxone"};
         treatmentTime = 4;
         condition = "true";
-        ACM_rollToBack = 1;
+        // B201: intranasal naloxone does not require a casualty posture change. The old ACM_rollToBack=1
+        // forced an unconscious casualty through a whole-body roll before the medication callback. In a
+        // constrained/overlapping position that can hand Arma a real collision/impact, which ACE then turns
+        // into blunt wounds and fractures. Medication administration must never create trauma as a side effect.
+        ACM_rollToBack = 0;
+        ACME_neverRollToBack = 1;
         sounds[] = {};
         ACM_menuIcon = "ACM_Spray_Naloxone";
     };
