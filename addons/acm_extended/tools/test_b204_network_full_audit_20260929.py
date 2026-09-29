@@ -13,6 +13,25 @@ def function(name: str) -> str:
     return read(f"addons/acm_extended/functions/fn_{name}.sqf")
 
 
+def test_approximate_network_helper_rejects_non_finite_scalars():
+    s = function("setVarNetApprox")
+    assert "if !(finite _value) exitWith" in s
+    assert "ACME_net_nonFiniteSuppressed" in s
+    assert "_epsilon = abs _epsilon;" in s
+    assert "_maxAge = _maxAge max 0;" in s
+
+
+def test_jip_events_have_explicit_cleanup_in_same_runtime_module():
+    offenders = []
+    for path in (ACME / "functions").glob("*.sqf"):
+        text = path.read_text(encoding="utf-8-sig", errors="strict")
+        text = re.sub(r"/\\*.*?\\*/", "", text, flags=re.S)
+        code = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+        if "CBA_fnc_globalEventJIP" in code and "CBA_fnc_removeGlobalEventJIP" not in code:
+            offenders.append(path.name)
+    assert offenders == [], offenders
+
+
 def test_network_publication_helpers_dedupe_structured_mutable_state():
     net = function("setVarNet")
     native = read("addons/circulation/functions/fnc_setRuntimeState.sqf")
