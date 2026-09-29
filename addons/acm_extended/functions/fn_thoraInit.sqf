@@ -139,6 +139,15 @@ for "_i" from 1 to 130 do {
 };
 uiNamespace setVariable ["ACME_Thora_PrepDots", _prepDots];
 uiNamespace setVariable ["ACME_Thora_Prepping", false];
+// B204: chlorhexidine cursor painting is provider-local while the mouse is down. Publishing a growing 130-point
+// array every UI frame can saturate a multiplayer client's reliable queue. Seed the local working copy from the
+// durable patient state and commit once on mouse-up.
+private _prepPatient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
+private _prepLocal = createHashMap;
+{
+    _prepLocal set [_x, if (isNull _prepPatient) then {[]} else {+(_prepPatient getVariable [format ["ACME_thora_prep_%1", _x], []])}];
+} forEach ["left", "right"];
+uiNamespace setVariable ["ACME_Thora_PrepLocal", _prepLocal];
 
 // the red incision line pool, drawn first, under the opening.
 private _segs = [];
