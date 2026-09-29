@@ -12,12 +12,12 @@ if (!(missionNamespace getVariable ["ACME_sys_flight", true])
 private _alt = [_patient] call ACME_fnc_altitudeTrue;
 if (!finite _alt) exitWith {_patient setVariable ["ACME_alt_ptxSample", nil, false];};
 _alt = _alt max 0;
-[_patient, "ACME_alt_m", round _alt] call ACME_fnc_setVarNet;
+[_patient, "ACME_alt_m", round _alt, 10, 2] call ACME_fnc_setVarNetApprox;
 // Clamp the tropospheric approximation before exponentiation, avoiding invalid
 // fractional powers on extreme terrain/teleport positions.
 private _pressureAlt = _alt min 11000;
 private _pRatio = (((1 - (0.0000225577 * _pressureAlt)) ^ 5.25588) max 0.2) min 1;
-[_patient, "ACME_alt_pRatio", _pRatio] call ACME_fnc_setVarNet;
+[_patient, "ACME_alt_pRatio", _pRatio, 0.002, 2] call ACME_fnc_setVarNetApprox;
 
 // Owner-local history is cleared by ownerInit on locality transfer. The epoch
 // and short sample age also exclude reset/load/stall catch-up. The first valid
@@ -82,7 +82,7 @@ if (missionNamespace getVariable ["ACME_flightG_enable", true]) then {
         ];
 
         _gDrop = -((missionNamespace getVariable ["ACME_flightG_maxResistDrop", 28]) * _gStress * _hypoFrac);
-        [_patient, "ACME_flightG_stress", _gStress] call ACME_fnc_setVarNet;
+        [_patient, "ACME_flightG_stress", _gStress, 0.02, 1] call ACME_fnc_setVarNetApprox;
     } else {
         [_patient, "ACME_flightG_stress", 0] call ACME_fnc_setVarNet;
     };
@@ -90,7 +90,7 @@ if (missionNamespace getVariable ["ACME_flightG_enable", true]) then {
 // ease it, so the pressure sags into the turn and recovers out of it rather than stepping.
 private _curG = _patient getVariable ["ACME_flightG_resistAdd", 0];
 private _gStep = (missionNamespace getVariable ["ACME_flightG_stepPerSec", 18]) * _dt;
-[_patient, "ACME_flightG_resistAdd", (_curG + (((_gDrop - _curG) max (-_gStep)) min _gStep))] call ACME_fnc_setVarNet;
+[_patient, "ACME_flightG_resistAdd", (_curG + (((_gDrop - _curG) max (-_gStep)) min _gStep)), 0.10, 1] call ACME_fnc_setVarNetApprox;
 
 private _minAlt = missionNamespace getVariable ["ACME_altitude_minMetres", 500];
 if (_alt < _minAlt) exitWith {
@@ -113,7 +113,7 @@ private _targetSat = 99;
 if (_alveolarRatio < 1) then {
     _targetSat = linearConversion [0.55, 1.0, _alveolarRatio, 78, 99, true];
 };
-[_patient, "ACME_alt_hypoxia", (99 - _targetSat)] call ACME_fnc_setVarNet;
+[_patient, "ACME_alt_hypoxia", (99 - _targetSat), 0.20, 2] call ACME_fnc_setVarNetApprox;
 
 // only one function can own the saturation.
 // if a ventilator is driving this patient, the shunt model of the vent, fn_ventoxygenation, owns it, and it
