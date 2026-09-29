@@ -134,8 +134,8 @@ private _afibChance = missionNamespace getVariable ["ACME_rhythm_afibHypoChance"
         [objNull, _u, 100, "AFib with RVR", (missionNamespace getVariable ["ACME_rhythm_afibHR", 150])] call ACME_fnc_rhythmToggle;
         // the activity-log line is removed, because it revealed the condition of the patient.
     };
-} forEach (allUnits select {
-    local _x && {alive _x} && {
+} forEach ((missionNamespace getVariable ["ACME_clinical_ownedUnits", []]) select {
+    alive _x && {
         ((_x getVariable ["ACM_circulation_Blood_Volume", _bloodNormal]) < (_bloodNormal - 0.2))  // bled.
         || {(_x getVariable ["ACM_circulation_TransfusedBlood_Volume", 0]) > 0}  // transfused.
         || {(_x getVariable ["ACME_hypo_temp", 37]) < 36.9}  // already cooling.
