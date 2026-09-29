@@ -3,6 +3,8 @@
  * setAnimSpeedCoef is local on each machine, including joining providers. */
 params ["_medic", "_epoch", "_operation", ["_main", ""], ["_phase", 0], ["_owner", -1], ["_rate", 1]];
 if (isNull _medic) exitWith {};
+// Dedicated servers do not render remote player theatre. The owner/client observers do; server-local AI still runs.
+if (!hasInterface && {!local _medic}) exitWith {};
 if !(_operation in ["run", "hold", "exit", "release"]) exitWith {};
 private _record = _medic getVariable ["ACME_treatmentPoseRemote", [-1, "", -1]];
 if ((_record select 0) > _epoch) exitWith {};
