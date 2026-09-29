@@ -29,7 +29,7 @@ private _dt = diag_deltaTime;
 private _drain = _patient getVariable ["ACME_o2Drain_mainstem", 0];
 private _cap = missionNamespace getVariable ["ACME_ettMainstemSatDrop", 22];
 _drain = (_drain + ((missionNamespace getVariable ["ACME_ettMainstemRate", 0.55]) * _dt)) min _cap;
-[_patient, "ACME_o2Drain_mainstem", _drain] call ACME_fnc_setVarNet;
+[_patient, "ACME_o2Drain_mainstem", _drain, 0.05, 1] call ACME_fnc_setVarNetApprox;
 
 // the same volume into half the lung is half the compliance, so the peak pressure climbs. the ventilator reads this
 // and it is what raises HIGH AIRWAY PRESSURE by itself, with no special case.
