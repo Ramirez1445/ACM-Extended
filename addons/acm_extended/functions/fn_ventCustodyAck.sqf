@@ -26,6 +26,8 @@ if (_op == "take") exitWith {
     _r set ["settings", _settings];
     _r set ["phase", "attached"];
     if (!isNull _patient) then {
+        if (isNil "ACME_vent_serverPatients") then {ACME_vent_serverPatients = [];};
+        ACME_vent_serverPatients pushBackUnique _patient;
         _patient setVariable ["ACME_vent_supplier", _r get "supplier", true];
         _patient setVariable ["ACME_vent_supplierUID", _r get "supplierUID", true];
         _patient setVariable ["ACME_vent_operator", _medic, true];
