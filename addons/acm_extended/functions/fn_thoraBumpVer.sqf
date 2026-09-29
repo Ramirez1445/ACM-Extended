@@ -13,5 +13,8 @@
 // through several exitwith branches. a bump at the end would only ever run for the last of them.
 params ["_patient"];
 if (isNull _patient) exitWith {};
+if (!local _patient) exitWith {
+    [_patient, "thoraBumpVer", [_patient]] call ACME_fnc_ownerDispatch;
+};
 _patient setVariable ["ACME_thora_ver", (_patient getVariable ["ACME_thora_ver", 0]) + 1, true];
 uiNamespace setVariable ["ACME_thora_verSeen", (_patient getVariable ["ACME_thora_ver", 0])];
