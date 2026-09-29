@@ -1,0 +1,254 @@
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[3]
+ACME = ROOT / "addons" / "acm_extended"
+
+
+def read(rel: str) -> str:
+    return (ROOT / rel).read_text(encoding="utf-8-sig", errors="strict")
+
+
+def function(name: str) -> str:
+    return read(f"addons/acm_extended/functions/fn_{name}.sqf")
+
+
+def test_network_publication_helpers_dedupe_structured_mutable_state():
+    net = function("setVarNet")
+    native = read("addons/circulation/functions/fnc_setRuntimeState.sqf")
+    iv = read("addons/circulation/functions/fnc_setIVBagsState.sqf")
+
+    for s in (net, native):
+        assert '"ARRAY", "HASHMAP"' in s
+        assert "str _value" in s
+        assert "Published" in s or "scalarCache" in s
+    assert "ACME_ivBagsPublishedSig" in iv
+    assert "str _bags" in iv
+
+
+def test_large_hot_state_maps_are_owner_local_and_bounded_on_wire():
+    circ = function("circStateCommit")
+    tbi = function("tbiStateCommit")
+    infusion = function("infusionMedicationStateCommit")
+
+    assert '_patient setVariable ["ACME_circ_State", _state, false];' in circ
+    assert 'ACME_circ_stateNetInterval' in circ
+    assert '(_now - _lastAt) >= _interval' in circ
+
+    assert '_patient setVariable ["ACME_tbi_State", _state, false];' in tbi
+    assert 'ACME_tbi_stateNetInterval' in tbi
+    assert '(_now - _lastAt) >= _interval' in tbi
+
+    assert '_patient setVariable ["ACME_infusion_BagMedications", _entries, false];' in infusion
+    assert 'ACME_infusion_stateNetInterval' in infusion
+    assert '(_now - _lastAt) >= _interval' in infusion
+
+
+def test_network_snapshot_cadences_are_bounded():
+    cfg = function("initNetworkSyncConfig")
+    assert "ACME_circ_stateNetInterval = 2.0;" in cfg
+    assert "ACME_tbi_stateNetInterval = 1.0;" in cfg
+    infusion = function("infusionMedicationStateCommit")
+    assert '["ACME_infusion_stateNetInterval", 1.0]' in infusion
+
+
+def test_recovered_casualty_is_not_pinned_in_hot_circulation_registries():
+    owner = function("ownerRegister")
+    circ = function("circHandle")
+
+    assert 'count (_patient getVariable ["ACME_circ_State", createHashMap]) > 0' not in owner
+    assert "{count _circState > 0}" not in circ
+    assert "private _circNeeds =" in owner
+    assert "private _circStateNeedsTick = {" in circ
+    assert 'ACME_circ_activePatients = ACME_circ_activePatients - [_patient];' in circ
+
+
+def test_owner_recovery_is_event_driven_with_only_slow_missing_event_audit():
+    owner = function("ownerInit")
+    register = function("ownerRegister")
+
+    assert 'CBA_missionTime + 30' in owner
+    assert "private _missingOwned = _actualOwned select" in owner
+    assert 'ACME_ownerRegisterSeen' in owner
+    assert 'ACME_clinical_ownedUnits' in register
+    assert 'ACME_ownerRegisterSeen' in register
+
+
+def test_hot_medical_ticks_do_not_world_scan_every_run():
+    allowed = {"fn_bloodColdChainTick.sqf"}  # server cold-chain inventory discovery; registered at 60 s
+    offenders = []
+    for path in (ACME / "functions").glob("fn_*Tick.sqf"):
+        text = path.read_text(encoding="utf-8-sig", errors="strict")
+        if "allUnits" in text and path.name not in allowed:
+            offenders.append(path.name)
+    assert offenders == [], offenders
+
+
+def test_ui_only_high_frequency_runtimes_never_register_on_dedicated_server():
+    for name in (
+        "registerTransfusionUiRuntime",
+        "registerThoracicMenuPresentationRuntime",
+        "registerVentilatorKeybindRuntime",
+        "initMinigameInteractionRuntime",
+    ):
+        s = function(name)
+        assert "if (!hasInterface) exitWith {};" in s, name
+
+    consciousness = function("registerConsciousnessRuntime")
+    emma = function("initEmmaRuntime")
+    bvm = function("registerBvmVentRuntime")
+    pose = function("treatmentPoseSync")
+    post = function("postInit")
+
+    assert "if (hasInterface) then {" in consciousness
+    assert "if (hasInterface) then" in emma
+    assert "if (hasInterface) then" in bvm
+    assert 'if (!hasInterface && {!local _medic}) exitWith {};' in pose
+    assert "if (hasInterface) then {" in post and "ACME_fnc_visualFxTick" in post
+
+
+def test_every_frame_cheyne_stokes_server_worker_was_bounded():
+    runtime = function("registerTbiRuntime")
+    assert '[{call ACME_fnc_cheyneStokesTick}, 0.10, []]' in runtime
+    assert '[{call ACME_fnc_cheyneStokesTick}, 0, []]' not in runtime
+
+
+def test_thoracostomy_painting_never_publishes_a_growing_array_per_frame():
+    tick = function("thoraTick")
+    mouse = function("thoraMouseUp")
+    owner = function("ownerDispatch")
+    side = function("thoraSideStateCommit")
+
+    paint = tick.split('if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) then {', 1)[1]
+    paint = paint.split("// tool cursor", 1)[0]
+    assert "ACME_Thora_PrepLocal" in paint
+    assert "ACME_fnc_setVarNet" not in paint
+    assert "setVariable [_key" not in paint
+
+    assert '"thoraPrepCommit"' in mouse
+    assert 'case "thoraPrepCommit"' in owner
+    assert 'call ACME_fnc_thoraSideStateCommit;' in owner
+    assert 'call ACME_fnc_thoraBumpVer;' in owner
+    assert '!local _patient' in side and '"thoraSideState"' in side
+
+
+def test_laryngoscopy_render_frame_does_not_publish_tube_state_every_frame():
+    tick = function("laryngoTick")
+    migration = function("ettMigrationStateCommit")
+
+    migrated = tick.split('case "migrated": {', 1)[1].split('case "seated": {', 1)[0]
+    assert "ACME_laryngo_migrationSyncNext" in migrated
+    assert "_syncNow + 0.20" in migrated
+    assert 'call ACME_fnc_ettMigrationStateCommit' in migrated
+    for forbidden in (
+        '[_pt, "ACME_ETT_Depth"',
+        '[_pt9, "ACME_ETT_Frame"',
+        '[_pt9, "ACME_ETT_Mainstem"',
+    ):
+        assert forbidden not in migrated
+
+    assert '"placement"' in migration
+    assert "ACME_fnc_setVarNet" in migration
+
+
+def test_chest_seal_presence_is_motion_driven_not_idle_fourteen_hz_heartbeat():
+    s = function("chestSealPresenceSend")
+    assert '["ACME_CS_presenceRate", 0.10]' in s
+    assert '["ACME_CS_presenceHeartbeat", 0.35]' in s
+    assert "private _ptsSig = _pts apply" in s
+    assert "_moved && {_age >= _rate}" in s
+    assert "_age >= _heartbeat" in s
+
+
+def test_iv_and_y_flush_structured_state_are_bounded():
+    native = read("addons/circulation/functions/fnc_getBloodVolumeChange.sqf")
+    y = function("yFlushTick")
+
+    assert "ACME_transfusionUiBagStructSig" in native
+    assert "(CBA_missionTime - _acmeBagUiLastAt) >= 1" in native
+    assert ">= 0.25" not in native.split("ACME_transfusionUiBagStructSig", 1)[1].split("};", 1)[0]
+
+    assert '_p setVariable ["ACME_yFlushJobs", _jobs, false];' in y
+    assert "ACME_yFlushJobsNetAt" in y
+    assert "(_jobsNow - _jobsLast) >= 1" in y
+
+
+def test_continuously_changing_telemetry_uses_threshold_publication():
+    expected = {
+        "altitudeTick": (
+            "ACME_alt_m", "ACME_alt_pRatio", "ACME_flightG_stress",
+            "ACME_flightG_resistAdd", "ACME_alt_hypoxia",
+        ),
+        "ventDriveTick": (
+            "ACME_vent_dyssync", "ACME_vent_spontRR", "ACME_vent_effectiveRR",
+            "ACME_vent_autoPEEP", "ACME_vent_vti", "ACME_vent_vte", "ACME_vent_pip",
+            "ACME_vent_recruit", "ACME_vent_baroInjury", "ACME_vent_mvDelivered",
+            "ACME_vent_mvAdequacy", "ACME_vent_baroDose",
+        ),
+        "suctionPhysiologyTick": (
+            "ACME_suctionExposure", "ACME_o2Drain_suction",
+        ),
+        "tbiApplyVitals": (
+            "ACME_tbi_resistAdd", "ACME_hrTarget_tbi", "ACME_rrDrive_tbi",
+        ),
+    }
+    for fn, fields in expected.items():
+        s = function(fn)
+        for field in fields:
+            rows = [line for line in s.splitlines() if f'"{field}"' in line]
+            assert any("setVarNetApprox" in line for line in rows), (fn, field, rows)
+
+
+def test_hpmk_server_safety_uses_registry_not_repeated_world_scan():
+    tick = function("hpmkBlanketTick")
+    runtime = function("registerHpmkVisualRuntime")
+    state = function("hpmkStateCommit")
+
+    assert "allUnits" not in tick
+    assert "ACME_hpmk_serverPatients" in tick
+    assert "ACME_hpmk_serverPatients" in runtime
+    assert '"ACME_hpmkServerTrack"' in runtime
+    assert '"ACME_hpmkServerTrack"' in state
+
+
+def test_no_acme_treatment_audio_broadcasts_to_every_client():
+    offenders = []
+    for path in list((ACME / "functions").glob("*.sqf")) + [ACME / "config.cpp"]:
+        text = path.read_text(encoding="utf-8-sig", errors="ignore")
+        if re.search(r'remoteExec(?:Call)?\s*\[\s*["\']say3D["\']\s*,\s*0\s*\]', text):
+            offenders.append(str(path.relative_to(ROOT)))
+        if re.search(r'remoteExec(?:Call)?\s*\[\s*["\']ACME_fnc_remoteSay3D["\']\s*,\s*0\s*\]', text):
+            offenders.append(str(path.relative_to(ROOT)))
+    assert offenders == [], offenders
+
+    helper = function("worldSfxNearby")
+    owner = function("ownerInit")
+    assert "allPlayers select" in helper
+    assert '"ACME_worldSfx"' in helper
+    assert '["ACME_worldSfx"' in owner
+
+
+def test_cold_chain_and_fridge_network_requests_are_debounced():
+    init = function("initBloodStorageRuntime")
+    poll = function("bloodFridgeMenuPoll")
+    tick = function("bloodFridgeTick")
+
+    assert "ACME_ccNudgeSentAt" in init
+    assert "_nudgeNow - _nudgeLast >= 0.5" in init
+    assert "(diag_tickTime - _last) < 0.4" in poll
+    assert '["ACME_bf_viewTimeout", 0.9]' in tick
+    assert '"ACME_worldSfx"' in tick
+
+
+def test_no_accidental_literal_newline_escape_in_hpmk_runtime_registration():
+    s = function("registerHpmkVisualRuntime")
+    assert r"\n[{call ACME_fnc_hpmkBlanketTick}" not in s
+    assert "[{call ACME_fnc_hpmkBlanketTick}, 2, []]" in s
+
+
+def test_b204_network_audit_identity():
+    startup = function("initForkStartupRuntime")
+    config = read("addons/acm_extended/config.cpp")
+    assert 'version = "1.2.4.1";' in config
+    assert 'ACME_buildBatch = "B204";' in startup
+    assert 'ACME_networkAuditRevision = "NA4-B204-1.2.4.1-stable";' in startup
