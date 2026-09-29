@@ -33,7 +33,7 @@ if (_acmeLeakMl > 0.001 && {_acmeLeakSite in [0,1,2]}
 };
 private _type = _bag param [0, ""];
 if (_type == "Saline" || {_flush}) then {
-    [_patient, "ACME_circ_salineGivenMl", (_patient getVariable ["ACME_circ_salineGivenMl", 0]) + _admitted] call ACME_fnc_setVarNet;
+    [_patient, "ACME_circ_salineGivenMl", (_patient getVariable ["ACME_circ_salineGivenMl", 0]) + _admitted, 5, 1] call ACME_fnc_setVarNetApprox;
     _patient setVariable ["ACME_circ_salineTrackLastMl", _admitted, false];
     _patient setVariable ["ACME_circ_salineTrackLastAt", CBA_missionTime, false];
     _patient setVariable ["ACME_circ_salineTrackLastSource", "NA3 admitted-flow ledger", false];
