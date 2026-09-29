@@ -260,7 +260,7 @@ if (_targetVasoconstriction > _vasoconstriction) then {
     _vasoconstriction = (_vasoconstriction + _vasoconstrictionChange * (_deltaT min 1.2)) max _targetVasoconstriction;
 };
 
-_unit setVariable [QEGVAR(circulation,Vasoconstriction_State), _vasoconstriction, true];
+[_unit, QEGVAR(circulation,Vasoconstriction_State), _vasoconstriction, 0.25, 2] call ACME_fnc_setVarNetApprox;
 
 _peripheralResistanceAdjustment = _peripheralResistanceAdjustment + _vasoconstriction;
 
