@@ -111,7 +111,7 @@ if (_ards) then {
 }
 else { _sev = _sev max 0; };
 _sev = _sev min 1;
-[_patient, _sev, true, true] call ACME_fnc_blastLungStateCommit;
+[_patient, _sev, true, true, false, 0.002, 1] call ACME_fnc_blastLungStateCommit;
 
 if (_sev <= 0.001) exitWith {
     // resolved, so hand the breathing ability back to ACM.
@@ -168,7 +168,16 @@ if (!_cbrnOn) then {
     private _ability = 1 - ((1 - _floor) * _effSev);
     if (_ventilated) then { _ability = _ability + ((1 - _ability) * 0.6); };  // the vent buys back most of it.
     _ability = (_ability max _floor) min 1;
-    [_patient, _ability, true] call ACM_CBRN_fnc_setBreathingAbilityState;
+    // Native CBRN state writes are public. Gate this continuously changing multiplier locally so the native
+    // setter is not called four times per second for sub-visible changes.
+    private _lastAbility = _patient getVariable ["ACME_blastLung_lastAbilityPublished", -1];
+    private _lastAbilityAt = _patient getVariable ["ACME_blastLung_lastAbilityAt", -1];
+    if (_lastAbility < 0 || {abs (_ability - _lastAbility) >= 0.005}
+        || {_lastAbilityAt < 0 || {CBA_missionTime - _lastAbilityAt >= 1}}) then {
+        [_patient, _ability, true] call ACM_CBRN_fnc_setBreathingAbilityState;
+        _patient setVariable ["ACME_blastLung_lastAbilityPublished", _ability, false];
+        _patient setVariable ["ACME_blastLung_lastAbilityAt", CBA_missionTime, false];
+    };
     [_patient, "ACME_blastLung_ownsBreathVar", true] call ACME_fnc_setVarNet;
 } else {
     // cbrn owns that variable, so act on saturation directly instead. ease SpO2 gently toward a ceiling that also
