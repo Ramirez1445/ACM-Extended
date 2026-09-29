@@ -30,7 +30,7 @@ if !(_pat getVariable ["ACME_vent_connected", false]) exitWith {};
 
 private _now = CBA_missionTime;
 private _last = _pat getVariable ["ACME_vent_battLastT", -1];
-[_pat, "ACME_vent_battLastT", _now] call ACME_fnc_setVarNet;
+_pat setVariable ["ACME_vent_battLastT", _now, false];
 if (_last < 0) exitWith {};
 private _dt = (_now - _last) min 10;  // a clamp, so a lag spike cannot dump the whole battery at once.
 if (_dt <= 0) exitWith {};
@@ -45,7 +45,7 @@ private _onShipPower = !isNull _veh && {isEngineOn _veh};
 if (_onShipPower) then {
     private _rechargeMin = missionNamespace getVariable ["ACME_vent_batteryRechargeMinutes", 90];
     _pct = (_pct + ((_dt / 60) / _rechargeMin) * 100) min 100;
-    [_pat, "ACME_vent_battery", _pct] call ACME_fnc_setVarNet;
+    [_pat, "ACME_vent_battery", _pct, 0.10, 2] call ACME_fnc_setVarNetApprox;
     [_pat, "ACME_vent_battExternal", true] call ACME_fnc_setVarNet;
 } else {
     [_pat, "ACME_vent_battExternal", false] call ACME_fnc_setVarNet;
