@@ -20,5 +20,5 @@ if (_tension) then {
     private _at=_patient getVariable ["ACM_breathing_TensionPneumothorax_Time",CBA_missionTime];
     private _ramp=missionNamespace getVariable ["ACME_ptx_tensionRampSec",90];
     private _sev=if (_ramp<=0) then {1} else {((CBA_missionTime-_at)/_ramp) max 0 min 1};
-    [_patient,"ACME_ptx_tensionSeverity",_sev] call ACME_fnc_setVarNet;
+    [_patient,"ACME_ptx_tensionSeverity",_sev,0.02,1] call ACME_fnc_setVarNetApprox;
 };
