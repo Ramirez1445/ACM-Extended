@@ -82,7 +82,9 @@ def test_hot_medical_ticks_do_not_world_scan_every_run():
     offenders = []
     for path in (ACME / "functions").glob("fn_*Tick.sqf"):
         text = path.read_text(encoding="utf-8-sig", errors="strict")
-        if "allUnits" in text and path.name not in allowed:
+        text = re.sub(r"/\\*.*?\\*/", "", text, flags=re.S)
+        code = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+        if re.search(r"\\ballUnits\\b", code) and path.name not in allowed:
             offenders.append(path.name)
     assert offenders == [], offenders
 
