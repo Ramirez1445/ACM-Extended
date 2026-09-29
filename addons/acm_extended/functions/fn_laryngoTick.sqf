@@ -663,23 +663,33 @@ switch (_state) do {
         uiNamespace setVariable ["ACME_laryngo_tubeCanFeed", true];
         private _d = uiNamespace getVariable ["ACME_laryngo_tubeDepth", 1];
         private _pt = uiNamespace getVariable ["ACME_laryngo_patient", objNull];
-        if (!isNull _pt) then { [_pt, "ACME_ETT_Depth", _d] call ACME_fnc_setVarNet; };
-        // re-evaluate the depth as it is worked, so pulling a mainstem tube back a frame or two fixes it. that is the
-        // whole point of allowing the depth to be adjusted: the medic diagnoses it from the numbers disagreeing and
-        // corrects it here.
+        // B204: the laryngoscopy PFH runs every rendered frame. Tube migration is therefore a local visual until a
+        // bounded owner-authoritative snapshot is due. The old path broadcast depth/frame/mainstem every frame from
+        // the provider, which is catastrophic at 60-144 FPS on a remote-owned casualty.
         private _fr9 = 1 + (round (_d * 7));
-        private _pt9 = uiNamespace getVariable ["ACME_laryngo_patient", objNull];
-        if (!isNull _pt9) then {
-            [_pt9, "ACME_ETT_Frame", _fr9] call ACME_fnc_setVarNet;
-            [_pt9, "ACME_ETT_Mainstem", (_fr9 > (uiNamespace getVariable ["ACME_laryngo_idealFrame", 8]))] call ACME_fnc_setVarNet;
+        private _ideal9 = uiNamespace getVariable ["ACME_laryngo_idealFrame", 8];
+        private _deep9 = _fr9 > _ideal9;
+        private _syncNow = diag_tickTime;
+        private _syncNext = uiNamespace getVariable ["ACME_laryngo_migrationSyncNext", 0];
+        private _syncLast = uiNamespace getVariable ["ACME_laryngo_migrationSyncLast", [-1, -1, false]];
+        private _changed9 = abs (_d - (_syncLast param [0, -1])) >= 0.015
+            || {_fr9 != (_syncLast param [1, -1])}
+            || {_deep9 != (_syncLast param [2, false])};
+        if (!isNull _pt && {_changed9} && {_syncNow >= _syncNext}) then {
+            [_pt, "placement", [_d, _fr9, _deep9]] call ACME_fnc_ettMigrationStateCommit;
+            uiNamespace setVariable ["ACME_laryngo_migrationSyncLast", [_d, _fr9, _deep9]];
+            uiNamespace setVariable ["ACME_laryngo_migrationSyncNext", _syncNow + 0.20];
         };
         if (_d >= 0.999) then {
             uiNamespace setVariable ["ACME_laryngo_state", "collar"];
             uiNamespace setVariable ["ACME_laryngo_tubeInHand", false];
             uiNamespace setVariable ["ACME_laryngo_held", ""];
             if (!isNull _pt) then {
-                [_pt, "ACME_ETT_Depth", 1] call ACME_fnc_setVarNet;
-                [_pt, "ACME_ETT_Obstructing", false] call ACME_fnc_setVarNet;
+                private _finalFrame = 8;
+                private _finalDeep = _finalFrame > (uiNamespace getVariable ["ACME_laryngo_idealFrame", 8]);
+                [_pt, "placement", [1, _finalFrame, _finalDeep]] call ACME_fnc_ettMigrationStateCommit;
+                [_pt, "obstruction", [false]] call ACME_fnc_ettMigrationStateCommit;
+                uiNamespace setVariable ["ACME_laryngo_migrationSyncLast", [1, _finalFrame, _finalDeep]];
             };
             [] call ACME_fnc_laryngoRefreshSlots;
             playSound "ACME_VentClick";
