@@ -46,12 +46,26 @@ private _activeMg = 0;
     } forEach _roc;
     _spent set [_idx, [_id, _used]];
 } forEach _sug;
-[_patient, "ACME_sug_bindings", _bindings] call ACME_fnc_setVarNet;
-[_patient, "ACME_sug_spent", _spent] call ACME_fnc_setVarNet;
+// The binding ledgers change continuously while reversal is active. Keep the exact owner copy every tick but
+// replicate the structured snapshots at most once per second, with immediate refresh if the record identities change.
+_patient setVariable ["ACME_sug_bindings", _bindings, false];
+_patient setVariable ["ACME_sug_spent", _spent, false];
+private _ledgerSig = [
+    _bindings apply {_x param [0, ""]},
+    _spent apply {_x param [0, ""]}
+];
+private _ledgerLastSig = _patient getVariable ["ACME_sug_netSig", []];
+private _ledgerLastAt = _patient getVariable ["ACME_sug_netAt", -1];
+if (_ledgerSig isNotEqualTo _ledgerLastSig || {_ledgerLastAt < 0} || {diag_tickTime - _ledgerLastAt >= 1}) then {
+    [_patient, "ACME_sug_bindings", _bindings] call ACME_fnc_setVarNet;
+    [_patient, "ACME_sug_spent", _spent] call ACME_fnc_setVarNet;
+    _patient setVariable ["ACME_sug_netSig", _ledgerSig, false];
+    _patient setVariable ["ACME_sug_netAt", diag_tickTime, false];
+};
 private _rawRoc = ([_patient, "Rocuronium_IV", false] call ACME_fnc_medicationCountRaw) + ([_patient, "Rocuronium", false] call ACME_fnc_medicationCountRaw);
 private _unboundRoc = [_patient] call ACME_fnc_rocuroniumOnBoard;
-[_patient, "ACME_sug_mgPerKg", _activeMg / _kg] call ACME_fnc_setVarNet;
-[_patient, "ACME_sug_reversalEffective", (_rawRoc - _unboundRoc) max 0] call ACME_fnc_setVarNet;
+[_patient, "ACME_sug_mgPerKg", _activeMg / _kg, 0.05, 1] call ACME_fnc_setVarNetApprox;
+[_patient, "ACME_sug_reversalEffective", (_rawRoc - _unboundRoc) max 0, 0.005, 1] call ACME_fnc_setVarNetApprox;
 [_patient, "ACME_sug_fullReversal", _rawRoc > 0.001 && {_unboundRoc <= 0.001}] call ACME_fnc_setVarNet;
 [_patient, "ACME_sug_boundCapacity", 0] call ACME_fnc_setVarNet; // retire B12 global credit
 [_patient, "ACME_sug_ramp", 1] call ACME_fnc_setVarNet; // native envelope already applied
