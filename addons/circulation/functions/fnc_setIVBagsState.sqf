@@ -3,18 +3,8 @@
  * Author: ACM Extended Fork
  * Circulation-owned mutation endpoint for ACM's IV-bag state map.
  *
- * Extended infusion/Y-line/transfusion systems delegate their final native-state publication here. This keeps
- * the ACM variable under its owning addon while retaining the public ACM state shape for compatibility.
- *
- * Arguments:
- * 0: Patient <OBJECT>
- * 1: IV bag map <HASHMAP>
- * 2: Public <BOOL> (default true)
- *
- * Return Value:
- * Success <BOOL>
- *
- * Public: Yes
+ * B204: structured public writes are deduplicated on the patient owner. The map is mutable by reference, so the
+ * cache stores a serialized fingerprint rather than the HashMap itself.
  */
 params [
     ["_patient", objNull, [objNull]],
@@ -22,5 +12,23 @@ params [
     ["_public", true, [true]]
 ];
 if (isNull _patient) exitWith {false};
-_patient setVariable [QGVAR(IV_Bags), _bags, _public];
+
+if (!_public || {!local _patient}) exitWith {
+    _patient setVariable [QGVAR(IV_Bags), _bags, _public];
+    true
+};
+
+private _sig = str _bags;
+private _old = _patient getVariable [QGVAR(IV_Bags), createHashMap];
+private _published = _patient getVariable ["ACME_ivBagsPublishedSig", ""];
+if ((str _old) isEqualTo _sig && {_published isEqualTo _sig}) exitWith {true};
+
+_patient setVariable ["ACME_ivBagsPublishedSig", _sig, false];
+_patient setVariable [QGVAR(IV_Bags), _bags, true];
+
+if (missionNamespace getVariable ["ACME_net_count", false]) then {
+    private _sent = missionNamespace getVariable ["ACME_net_sent", createHashMap];
+    _sent set ["ACM_circulation_IV_Bags", (_sent getOrDefault ["ACM_circulation_IV_Bags", 0]) + 1];
+    missionNamespace setVariable ["ACME_net_sent", _sent];
+};
 true
