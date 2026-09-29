@@ -14,7 +14,9 @@ private _fnc_killLegacy = {
 
 // If the feature is disabled, tear down any legacy wrapped anchor that may have survived from an older state.
 if !(missionNamespace getVariable ["ACME_sys_hpmk", true]) exitWith {
-    { if (!isNull _x) then { [_x] call _fnc_killLegacy; }; } forEach allUnits;
+    private _tracked = missionNamespace getVariable ["ACME_hpmk_serverPatients", []];
+    { if (!isNull _x) then { [_x] call _fnc_killLegacy; }; } forEach _tracked;
+    missionNamespace setVariable ["ACME_hpmk_serverPatients", []];
 };
 
 {
@@ -58,4 +60,11 @@ if !(missionNamespace getVariable ["ACME_sys_hpmk", true]) exitWith {
             [_p, "activity", "HPMK slipped off (patient became mobile)", []] call ace_medical_treatment_fnc_addToLog;
         };
     };
-} forEach allUnits;
+} forEach (+(missionNamespace getVariable ["ACME_hpmk_serverPatients", []]));
+
+ACME_hpmk_serverPatients = (missionNamespace getVariable ["ACME_hpmk_serverPatients", []]) select {
+    !isNull _x && {
+        (_x getVariable ["ACME_hpmk_state", ""]) != ""
+            || {!isNull (_x getVariable ["ACME_hpmk_blanket", objNull])}
+    }
+};
