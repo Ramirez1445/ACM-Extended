@@ -15,4 +15,7 @@ if ((_patient getVariable ["ACME_patientAnimSpeedToken", ""]) == _token
     _patient setVariable ["ACME_patientAnimSpeedToken", "", true];
     _patient setAnimSpeedCoef 1;
     ["ace_common_setAnimSpeedCoef", [_patient, 1]] call CBA_fnc_globalEvent;
+    // Moving leases also own the low-mass collision window. The helper restores full mass on the next frame,
+    // unless a newer movement generation has already taken ownership.
+    [_patient, true] call ACME_fnc_headElevCollision;
 };
