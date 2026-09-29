@@ -9,7 +9,12 @@ if (count _rect != 4 || {_dots isEqualTo []}) exitWith {};
 _rect params ["_bx", "_by", "_bw", "_bh"];
 private _side = uiNamespace getVariable ["ACME_Thora_Side", "right"];
 private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
-private _pts = if (isNull _patient) then { [] } else { _patient getVariable [format ["ACME_thora_prep_%1", _side], []] };
+private _prepLocal = uiNamespace getVariable ["ACME_Thora_PrepLocal", createHashMap];
+private _pts = if (_prepLocal isEqualType createHashMap && {_side in keys _prepLocal}) then {
+    +(_prepLocal get _side)
+} else {
+    if (isNull _patient) then {[]} else {+(_patient getVariable [format ["ACME_thora_prep_%1", _side], []])}
+};
 private _sz = _bh * 0.05;
 {
     if (_forEachIndex >= (count _pts)) then {
