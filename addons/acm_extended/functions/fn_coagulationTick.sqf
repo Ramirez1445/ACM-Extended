@@ -10,7 +10,7 @@ if (_patients isEqualTo []) then {
     private _lastSweep = missionNamespace getVariable ["ACME_coag_lastSweep", -1];
     if (_lastSweep < 0 || {CBA_missionTime - _lastSweep >= 2}) then {
         missionNamespace setVariable ["ACME_coag_lastSweep", CBA_missionTime];
-        {_patients pushBackUnique _x;} forEach allUnits;
+        {_patients pushBackUnique _x;} forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
     };
 };
 {
