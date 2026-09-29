@@ -37,7 +37,7 @@ if (_automatic) then {
         params ["_p"];
         if (!isNull _p) then { _p setVariable ["ACME_hpmk_returnPending", false, true]; };
     }, [_patient], 1] call CBA_fnc_waitAndExecute;
-    [_patient, "ACM_HPMK_Remove"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+    private _near = allPlayers select {alive _x && {(_x distance _patient) <= 80}}; if !(_near isEqualTo []) then {["ACME_worldSfx", [_patient, "ACM_HPMK_Remove"], _near] call CBA_fnc_targetEvent;};
 } else {
     _patient setVariable ["ACME_hpmk_returnPending", false, true];
     [(["HPMK stowed.", "HPMK removed."] select (_state in ["wrapped", "exposed"])), 2.5, _medic] call ACME_fnc_netNotice;
