@@ -112,4 +112,4 @@ private _fnc_clearLegacyNativeHold = {
 
     [objNull, _u, 104, "SVT", (_hr min _acmHighHR)] call ACME_fnc_rhythmToggle;
     _u setVariable ["ACME_rhythmThresholdForced", "SVT", false];
-} forEach allUnits;
+} forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
