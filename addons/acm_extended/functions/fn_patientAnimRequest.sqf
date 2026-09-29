@@ -57,6 +57,9 @@ private _expires = _now + _leaseSeconds;
 private _moving = _animation in ["ACME_HeadElevPatientGrab", "ACME_HeadElevPatientRelease",
     "AinjPpneMstpSnonWrflDnon_rolltofront", "AinjPpneMstpSnonWrflDnon_rolltoback"];
 private _rate = if (_moving) then {call ACME_fnc_choreographyRate} else {1};
+// Every moving casualty animation owns collision relaxation, including generic treatment roll-to-back. This closes
+// the gap where a full-mass casualty could be moved through terrain by a CPR or other treatment posture change.
+if (_moving) then {[_patient, false] call ACME_fnc_headElevCollision;};
 // Rate and expiry travel in the same record. A new patient owner can reinstall the finite expiry
 // without depending on the old machine's private callback or a separately delivered speed flag.
 _patient setVariable ["ACME_patientAnimLock", [_token, _source, _providerId, _lockPriority, _expires, _rate], true];
