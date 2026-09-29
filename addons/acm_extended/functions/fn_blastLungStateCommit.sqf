@@ -9,7 +9,9 @@ params [
     ["_severity", 0, [0]],
     ["_public", true, [true]],
     ["_deduplicate", true, [true]],
-    ["_clear", false, [true]]
+    ["_clear", false, [true]],
+    ["_epsilon", 0, [0]],
+    ["_maxAge", 0, [0]]
 ];
 if (isNull _patient) exitWith {_severity};
 if (_clear) exitWith {
@@ -18,7 +20,11 @@ if (_clear) exitWith {
 };
 private _value = (_severity max 0) min 1;
 if (_public && {_deduplicate}) then {
-    [_patient, "ACME_blastLung_State", _value] call ACME_fnc_setVarNet;
+    if (_epsilon > 0 || {_maxAge > 0}) then {
+        [_patient, "ACME_blastLung_State", _value, _epsilon, _maxAge] call ACME_fnc_setVarNetApprox;
+    } else {
+        [_patient, "ACME_blastLung_State", _value] call ACME_fnc_setVarNet;
+    };
 } else {
     _patient setVariable ["ACME_blastLung_State", _value, _public];
 };
