@@ -147,8 +147,8 @@ if (_lidoLevel < _cardThresh) then {
         private _base  = _patient getVariable ["ACME_hrRestBaseline", 77];
         private _floor = missionNamespace getVariable ["ACME_lido_cardiacBradyFloor", 30];
         private _drop  = missionNamespace getVariable ["ACME_lido_cardiacResistDrop", 45];
-        [_patient, "ACME_lidoTox_hrTarget", (linearConversion [0, 1, _sev, _base, _floor, true])] call ACME_fnc_setVarNet;
-        [_patient, "ACME_lidoTox_resistDelta", (linearConversion [0, 1, _sev, 0, (-_drop), true])] call ACME_fnc_setVarNet;
+        [_patient, "ACME_lidoTox_hrTarget", (linearConversion [0, 1, _sev, _base, _floor, true]), 0.25, 2] call ACME_fnc_setVarNetApprox;
+        [_patient, "ACME_lidoTox_resistDelta", (linearConversion [0, 1, _sev, 0, (-_drop), true]), 0.10, 2] call ACME_fnc_setVarNetApprox;
         if (_lidoLevel >= _arrestThresh && {!(_patient getVariable ["ACME_lidoTox_arrestFired", false])}) then {
             // lethal toxicity gives a bradyasystolic arrest, through the canonical trigger of the rhythm, the target and
             // fatalvitals. it is a one-shot.
