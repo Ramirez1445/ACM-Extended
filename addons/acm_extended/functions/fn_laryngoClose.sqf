@@ -63,6 +63,8 @@ uiNamespace setVariable ["ACME_laryngo_holding", false];
 uiNamespace setVariable ["ACME_laryngo_lift", 0];
 uiNamespace setVariable ["ACME_laryngo_reveal", 0];
 uiNamespace setVariable ["ACME_laryngo_tubeDepth", 0];
+uiNamespace setVariable ["ACME_laryngo_migrationSyncNext", 0];
+uiNamespace setVariable ["ACME_laryngo_migrationSyncLast", [-1, -1, false]];
 uiNamespace setVariable ["ACME_laryngo_tubeAim", ""];
 uiNamespace setVariable ["ACME_laryngo_pryPressure", 0];
 uiNamespace setVariable ["ACME_laryngo_pryReveal", 0];
