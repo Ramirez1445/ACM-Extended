@@ -1,0 +1,150 @@
+name: B204 network audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "addons/**"
+      - "tools/**"
+      - ".github/workflows/b204-network-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: b204-network-audit-main
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install pinned validation toolchain
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/acme-tools
+          curl -fLsS --retry 2 https://github.com/BrettMayson/HEMTT/releases/download/v1.22.0/linux-x64 -o /tmp/acme-tools/hemtt
+          echo '58c0f2c1d88041ebce24753e920ac80efb7624d28e8af9b7960c669117695770  /tmp/acme-tools/hemtt' | sha256sum --check
+          chmod +x /tmp/acme-tools/hemtt
+          python -m pip install 'pytest==9.0.2' 'numpy==2.3.5' 'Pillow==12.3.0' 'soundfile==0.13.1'
+
+      - name: Focused networking and ownership gates
+        run: |
+          set -euo pipefail
+          python -m pytest             addons/acm_extended/tools/test_b204_network_full_audit_20260929.py             addons/acm_extended/tools/test_bug_audit_batch09_network.py             addons/acm_extended/tools/test_b203_network_backpressure_20260929.py             addons/acm_extended/tools/test_owner_locality_audit_20260920.py             addons/acm_extended/tools/test_build_version_tag.py             tools/test_fork_phase23_runtime_ownership.py             tools/test_fork_phase48_native_iv_bag_owner.py             tools/test_fork_phase49_airway_state_owner.py             tools/test_fork_phase50_core_state_owner.py             tools/test_fork_phase51_breathing_state_owner.py             tools/test_fork_phase52_circulation_state_owner.py             tools/test_fork_phase67_persistent_state_owner_restore.py             tools/test_fork_phase80_ett_migration_owner.py             tools/test_fork_phase84_thora_side_state_owner.py             tools/test_fork_phase85_thora_output_state_owner.py             tools/test_fork_phase135_remoteexec_whitelist_closure.py             tools/test_fork_phase136_remoteexec_target_registration.py             -q
+
+      - name: HEMTT static validation
+        run: /tmp/acme-tools/hemtt check
+
+      - name: Compare full regression outcomes to pre-audit B203 baseline
+        env:
+          BASE: 2ab84cfcb58d1d24d76295e28db8c0b06dd127af
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os, pathlib, subprocess, xml.etree.ElementTree as ET
+          from concurrent.futures import ThreadPoolExecutor
+          from collections import Counter
+
+          root = pathlib.Path.cwd()
+          before = pathlib.Path("/tmp/acme-b204-before")
+          out = pathlib.Path("/tmp/acme-b204-results")
+          out.mkdir(exist_ok=True)
+          base = os.environ["BASE"]
+
+          def cmd(args, cwd=root, timeout=900):
+              return subprocess.run(
+                  args, cwd=cwd, text=True, stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT, timeout=timeout
+              )
+
+          r = cmd(["git", "fetch", "--depth=1", "origin", base], timeout=120)
+          assert r.returncode == 0, r.stdout[-12000:]
+          r = cmd(["git", "worktree", "add", "--detach", str(before), base], timeout=120)
+          assert r.returncode == 0, r.stdout[-12000:]
+
+          diff = cmd(["git", "diff", "--check", base, "HEAD"], timeout=120)
+          assert diff.returncode == 0, diff.stdout[-12000:]
+
+          def suite(label, cwd, target):
+              xml = out / f"{label}.xml"
+              r = cmd([
+                  "python", "-m", "pytest", target, "-q", "--tb=no",
+                  "--continue-on-collection-errors", f"--junitxml={xml}"
+              ], cwd=cwd, timeout=850)
+              (out / f"{label}.log").write_text(r.stdout)
+              assert xml.exists(), r.stdout[-12000:]
+              states = {}
+              for case in ET.parse(xml).iter("testcase"):
+                  key = (case.get("classname", ""), case.get("name", ""))
+                  state = (
+                      "error" if case.find("error") is not None else
+                      "failed" if case.find("failure") is not None else
+                      "skipped" if case.find("skipped") is not None else
+                      "passed"
+                  )
+                  states[key] = state
+              return r.returncode, states, Counter(states.values())
+
+          with ThreadPoolExecutor(max_workers=2) as ex:
+              a = ex.submit(suite, "addon-before", before, "addons/acm_extended/tools")
+              b = ex.submit(suite, "addon-after", root, "addons/acm_extended/tools")
+              rb, db, cb = a.result()
+              ra, da, ca = b.result()
+
+          missing = sorted(set(db) - set(da))
+          regressions = []
+          improvements = []
+          for key, old in db.items():
+              if key not in da:
+                  continue
+              new = da[key]
+              if old == "passed" and new != "passed":
+                  regressions.append((key, old, new))
+              elif old == "skipped" and new in {"failed", "error"}:
+                  regressions.append((key, old, new))
+              elif old in {"failed", "error"} and new == "passed":
+                  improvements.append(key)
+              elif old == "failed" and new == "error":
+                  regressions.append((key, old, new))
+
+          assert not missing, f"missing addon tests: {missing[:30]}"
+          assert not regressions, f"addon regressions: {regressions[:30]}"
+
+          with ThreadPoolExecutor(max_workers=2) as ex:
+              a = ex.submit(suite, "root-before", before, "tools")
+              b = ex.submit(suite, "root-after", root, "tools")
+              _, db2, cb2 = a.result()
+              _, da2, ca2 = b.result()
+
+          missing2 = sorted(set(db2) - set(da2))
+          regressions2 = []
+          for key, old in db2.items():
+              if key not in da2:
+                  continue
+              new = da2[key]
+              if old == "passed" and new != "passed":
+                  regressions2.append((key, old, new))
+              elif old == "skipped" and new in {"failed", "error"}:
+                  regressions2.append((key, old, new))
+              elif old == "failed" and new == "error":
+                  regressions2.append((key, old, new))
+
+          assert not missing2, f"missing root tests: {missing2[:30]}"
+          assert not regressions2, f"root regressions: {regressions2[:30]}"
+
+          print("B204 baseline comparison PASS")
+          print("addon before:", dict(cb), "after:", dict(ca), "improvements:", len(improvements))
+          print("root before:", dict(cb2), "after:", dict(ca2))
+          PY
