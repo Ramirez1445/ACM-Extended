@@ -34,5 +34,10 @@ if (_state && {IN_CRDC_ARRST(_patient)}
     };
     if (_blocked == "" && {_patient getVariable ["ACME_lidoTox_arrestFired", false]}) then {_blocked = "LA TOXICITY";};
 };
-_patient setVariable ["ACME_rosc_blockedBy", _blocked, true];
-_patient setVariable [QGVAR(CirculationState), _state && {_blocked == ""}, true];
+if ((_patient getVariable ["ACME_rosc_blockedBy", ""]) != _blocked) then {
+    _patient setVariable ["ACME_rosc_blockedBy", _blocked, true];
+};
+private _circulationState = _state && {_blocked == ""};
+if ((_patient getVariable [QGVAR(CirculationState), true]) isNotEqualTo _circulationState) then {
+    _patient setVariable [QGVAR(CirculationState), _circulationState, true];
+};
