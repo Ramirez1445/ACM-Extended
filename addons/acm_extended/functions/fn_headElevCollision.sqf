@@ -1,29 +1,37 @@
 // Turn the physics collision of a casualty off while a positioning animation plays, and turn it on again after.
 // Call it as [_patient, false] call ACME_fnc_headElevCollision to turn collision off, and [_patient, true] to
-// turn it on.
+// restore the casualty's ordinary mass.
 //
-// WHY IT EXISTS.
-// A casualty keeps a PhysX mass while an animation moves their body. A provider who stands inside that body is
-// pushed by it, and the push can be hard enough to throw the provider and kill them.
-// ACE has the same problem while it drags a casualty, and it solves it by setting the mass to almost zero, see
-// ace_dragging fnc_startDragLocal. This uses the same method and the same ACE event, so the mass is the same on
-// every machine.
-//
-// The original mass is kept in ACME_headElev_mass, which the teardown paths already read and restore.
+// B202: collision restoration is deferred by one frame and generation-checked. Root-motion patient animations can
+// finish with the model still intersecting terrain for the remainder of the current simulation frame. Restoring full
+// PhysX mass before the neutral lying pose has settled can turn that overlap into a real impact, which ACE then
+// records as blunt wounds/fractures. A newer movement request invalidates the pending restoration automatically.
 params [["_patient", objNull, [objNull]], ["_enabled", true, [true]]];
 if (isNull _patient) exitWith {};
 if (!local _patient) exitWith {[_patient, "headElevCollision", [_patient, _enabled]] call ACME_fnc_ownerDispatch;};
 
+private _epoch = 1 + (_patient getVariable ["ACME_headElev_collisionEpoch", 0]);
+_patient setVariable ["ACME_headElev_collisionEpoch", _epoch, false];
+
 if (_enabled) exitWith {
     private _mass = _patient getVariable ["ACME_headElev_mass", -1];
     if (!(_mass isEqualType 0) || {_mass <= 0}) exitWith {};
-    ["ace_common_setMass", [_patient, _mass]] call CBA_fnc_globalEvent;
-    _patient setVariable ["ACME_headElev_mass", nil, true];
+
+    [{
+        params ["_p", "_epoch"];
+        if (isNull _p || {!local _p}) exitWith {};
+        if ((_p getVariable ["ACME_headElev_collisionEpoch", -1]) != _epoch) exitWith {};
+
+        private _mass = _p getVariable ["ACME_headElev_mass", -1];
+        if (!(_mass isEqualType 0) || {_mass <= 0}) exitWith {};
+        ["ace_common_setMass", [_p, _mass]] call CBA_fnc_globalEvent;
+        _p setVariable ["ACME_headElev_mass", nil, true];
+    }, [_patient, _epoch]] call CBA_fnc_execNextFrame;
 };
 
-// A second request must not record the almost-zero mass as the original.
+// A second disable invalidates a queued restore but must never record the already-relaxed mass as the original.
 if ((_patient getVariable ["ACME_headElev_mass", -1]) > 0) exitWith {};
 private _mass = getMass _patient;
-if (_mass <= 1) exitWith {};  // already weightless, so there is nothing to turn off
+if (_mass <= 1) exitWith {};
 _patient setVariable ["ACME_headElev_mass", _mass, true];
 ["ace_common_setMass", [_patient, 1e-12]] call CBA_fnc_globalEvent;
