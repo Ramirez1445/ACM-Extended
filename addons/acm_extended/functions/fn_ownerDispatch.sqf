@@ -399,6 +399,13 @@ switch (_operation) do {
     case "thoraAftercare": {_args call ACME_fnc_thoraAftercareLocal;};
     case "thoraSideState": {_args call ACME_fnc_thoraSideStateCommit;};
     case "thoraBumpVer": {_args call ACME_fnc_thoraBumpVer;};
+    case "thoraPrepCommit": {
+        _args params [["_p", objNull, [objNull]], ["_side", "right", [""]], ["_points", [], [[]]]];
+        if (_p isEqualTo _patient && {_points isEqualType []}) then {
+            [_patient, _side, "prep", _points] call ACME_fnc_thoraSideStateCommit;
+            [_patient] call ACME_fnc_thoraBumpVer;
+        };
+    };
     case "nrbState": { _args call ACME_fnc_nrbStateLocal; };
     case "nrbAck": { _args call ACME_fnc_nrbOxygenAck; };
     case "chestEffect": { _args call ACME_fnc_chestSealEffectLocal; };
