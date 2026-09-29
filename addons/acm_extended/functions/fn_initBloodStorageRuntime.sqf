@@ -61,7 +61,7 @@ if (isServer) then {
     params ["_menuType"];
     if (_menuType != 1) exitWith {};
     if (!isNil "ACME_bf_pollPFH") exitWith {};
-    ACME_bf_pollPFH = [{ call ACME_fnc_bloodFridgeMenuPoll }, 0.1, []] call CBA_fnc_addPerFrameHandler;
+    ACME_bf_pollPFH = [{ call ACME_fnc_bloodFridgeMenuPoll }, 0.2, []] call CBA_fnc_addPerFrameHandler;
 }] call CBA_fnc_addEventHandler;
 ["ace_interactMenuClosed", {
     if (isNil "ACME_bf_pollPFH") exitWith {};
@@ -138,7 +138,14 @@ if (isServer) then {
 // with no clock, so that path is fine on its own. it tells a full load from looting by counting how many
 // top-level loadout slots change at once. a single pickup touches one and a full load touches several.
 ["loadout", {
-    remoteExecCall ["ACME_fnc_bloodColdChainNudge", 2];
+    // Loadout can fire several times during one arsenal/loadout transaction. Coalesce the client->server cold-chain
+    // nudge before it enters the network; the server already performs its own second-stage coalescing.
+    private _nudgeNow = diag_tickTime;
+    private _nudgeLast = uiNamespace getVariable ["ACME_ccNudgeSentAt", -1];
+    if (_nudgeLast < 0 || {_nudgeNow - _nudgeLast >= 0.5}) then {
+        uiNamespace setVariable ["ACME_ccNudgeSentAt", _nudgeNow];
+        remoteExecCall ["ACME_fnc_bloodColdChainNudge", 2];
+    };
     [] call ACME_fnc_coolerAutoStore;
     private _p = ACE_player;
     if (!isNull _p) then {
