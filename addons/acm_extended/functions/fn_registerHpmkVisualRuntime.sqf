@@ -5,7 +5,23 @@
  * sequencing and CBA registration order are preserved.
  */
 
-// Server-side mobile-state/legacy safety reconciliation is not time-critical; 2 s avoids a 2 Hz allUnits scan.\n[{call ACME_fnc_hpmkBlanketTick}, 2, []] call CBA_fnc_addPerFrameHandler;
+// Server-side HPMK safety reconciliation uses an explicit registry; no recurring allUnits scan.
+if (isServer) then {
+    ACME_hpmk_serverPatients = allUnits select {
+        (_x getVariable ["ACME_hpmk_state", ""]) != ""
+            || {!isNull (_x getVariable ["ACME_hpmk_blanket", objNull])}
+    };
+    ["ACME_hpmkServerTrack", {
+        params [["_patient", objNull, [objNull]], ["_state", "", [""]]];
+        if (isNull _patient) exitWith {};
+        if (_state == "" && {isNull (_patient getVariable ["ACME_hpmk_blanket", objNull])}) then {
+            ACME_hpmk_serverPatients = ACME_hpmk_serverPatients - [_patient];
+        } else {
+            ACME_hpmk_serverPatients pushBackUnique _patient;
+        };
+    }] call CBA_fnc_addEventHandler;
+};
+[{call ACME_fnc_hpmkBlanketTick}, 2, []] call CBA_fnc_addPerFrameHandler;
 
 // the "Pick Up HPMK" ACE object interaction on a dropped blanket, shed when a wrapped patient got up. it
 // registers per client, through addactiontoclass with a hasinterface guard inside createaction, and gates on
