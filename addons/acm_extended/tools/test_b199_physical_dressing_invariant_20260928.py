@@ -82,10 +82,10 @@ def test_naloxone_never_forces_patient_roll_or_other_posture_change():
     assert "ACME_neverRollToBack = 1;" in block
     assert "ACM_rollToBack = 1;" not in block
 
-def test_b203_keeps_public_stable_version_1241():
+def test_b204_keeps_public_stable_version_1241():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     config = read("addons/acm_extended/config.cpp")
 
     assert 'version = "1.2.4.1";' in config
-    assert 'ACME_buildBatch = "B203";' in startup
-    assert 'ACME_networkAuditRevision = "NA2-1.2.4.1-stable";' in startup
+    assert 'ACME_buildBatch = "B204";' in startup
+    assert 'ACME_networkAuditRevision = "NA4-B204-1.2.4.1-stable";' in startup
