@@ -20,9 +20,9 @@ private _keep = [];
     if (_remaining > _dt+0.000001) then {_keep pushBack [_base,(_mass-_delivered) max 0,_remaining-_dt,_source];};
 } forEach _queue;
 _patient setVariable ["ACME_medicationDriveQueue",_keep,true];
-[_patient,"ACME_ketRapidLoad",(_patient getVariable ["ACME_ketRapidLoad",0])*(0.5^(_dt/20))] call ACME_fnc_setVarNet;
+[_patient,"ACME_ketRapidLoad",(_patient getVariable ["ACME_ketRapidLoad",0])*(0.5^(_dt/20)),0.005,1] call ACME_fnc_setVarNetApprox;
 {
     _x params ["_key","_half"];
-    [_patient,_key,(_patient getVariable [_key,0])*(0.5^(_dt/_half))] call ACME_fnc_setVarNet;
+    [_patient,_key,(_patient getVariable [_key,0])*(0.5^(_dt/_half)),0.005,1] call ACME_fnc_setVarNetApprox;
 } forEach [["ACME_hcMed_rapidPropofol",35],["ACME_hcMed_rapidMidazolam",45],["ACME_hcMed_rapidOpioid",45],["ACME_hcMed_rapidRocuronium",60]];
 _rates
