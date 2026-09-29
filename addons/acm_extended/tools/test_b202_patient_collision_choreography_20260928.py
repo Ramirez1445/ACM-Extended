@@ -47,7 +47,7 @@ def test_naloxone_remains_no_roll():
     assert "ACME_neverRollToBack = 1;" in block
 
 
-def test_b204_keeps_public_stable_version_1241():
+def test_b203_keeps_public_stable_version_1241():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     config = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4.1";' in config
