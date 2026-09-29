@@ -75,7 +75,10 @@ def test_owner_recovery_is_event_driven_with_only_slow_missing_event_audit():
 
 
 def test_hot_medical_ticks_do_not_world_scan_every_run():
-    allowed = {"fn_bloodColdChainTick.sqf"}  # server cold-chain inventory discovery; registered at 60 s
+    allowed = {
+        "fn_bloodColdChainTick.sqf",  # server cold-chain inventory discovery; registered at 60 s
+        "fn_clotPopTick.sqf",         # server rare-clot candidate discovery; registered at 60 s
+    }
     offenders = []
     for path in (ACME / "functions").glob("fn_*Tick.sqf"):
         text = path.read_text(encoding="utf-8-sig", errors="strict")
