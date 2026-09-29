@@ -150,10 +150,10 @@ if (_driving) then {
         } else {
             _bad = _bad + (_dt * (if (_simple) then {linearConversion [10, 30, _cprBpm, 0, 1, true]} else {1}));
         };
-        [_patient, "ACME_vent_cprBadTime", _bad] call ACME_fnc_setVarNet;
+        [_patient, "ACME_vent_cprBadTime", _bad, 0.25, 2] call ACME_fnc_setVarNetApprox;
     } else {
         private _bad0 = _patient getVariable ["ACME_vent_cprBadTime", 0];
-        if (_bad0 > 0) then { [_patient, "ACME_vent_cprBadTime", (_bad0 - _dt) max 0] call ACME_fnc_setVarNet; };
+        if (_bad0 > 0) then { [_patient, "ACME_vent_cprBadTime", (_bad0 - _dt) max 0, 0.25, 2] call ACME_fnc_setVarNetApprox; };
     };
 
     // lung compliance, where 1.0 is healthy and lower is stiffer.
@@ -169,7 +169,7 @@ if (_driving) then {
         - (0.30 * _baroInj)  // VILI stiffens the lung further.
         - (0.62 * _blast);  // blast lung, the stiffest of all.
     _comp = (_comp max 0.20) min 1;
-    [_patient, "ACME_vent_compliance", _comp] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_compliance", _comp, 0.01, 1] call ACME_fnc_setVarNetApprox;
 
     // the patient's own respiratory drive.
     // this is what the casualty would breathe if the machine were not here. it cannot be read from
@@ -287,7 +287,7 @@ if (_driving) then {
     private _dysTau = [missionNamespace getVariable ["ACME_vent_dyssyncFallSec", 9], missionNamespace getVariable ["ACME_vent_dyssyncRiseSec", 18]] select (_dysTarget > _dys);
     private _dysFrac = if (_dysTau <= 0) then {1} else {(_dt / _dysTau) min 1};
     _dys = (_dys + ((_dysTarget - _dys) * _dysFrac)) max 0 min 1;
-    [_patient, "ACME_vent_dyssync", _dys] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_dyssync", _dys, 0.01, 1] call ACME_fnc_setVarNetApprox;
 
     // Fighting first causes inefficient ventilation and only a modest, slow sympathetic response. It cannot bank
     // an instant post-ROSC hypertensive/tachycardic spike because arrest drives both stress targets to zero.
@@ -301,7 +301,7 @@ if (_driving) then {
         private _tau = [_fall, _rise] select (_target > _cur);
         private _f = if (_tau <= 0) then {1} else {(_dt / _tau) min 1};
         private _next = _cur + ((_target - _cur) * _f);
-        [_patient, _key, _next] call ACME_fnc_setVarNet;
+        [_patient, _key, _next, 0.10, 1] call ACME_fnc_setVarNetApprox;
         _next
     };
     ["ACME_vent_fightHRAdjust", _fightHRTgt, missionNamespace getVariable ["ACME_vent_fightStressRiseSec", 45], missionNamespace getVariable ["ACME_vent_fightStressFallSec", 14]] call _fightEase;
@@ -312,8 +312,8 @@ if (_driving) then {
     _vtiMand = _vtiMand * (1 - (0.20 * _dys));
     _vtiSpont = _vtiSpont * (1 - (0.10 * _dys));
 
-    [_patient, "ACME_vent_spontRR", _spontBpm] call ACME_fnc_setVarNet;
-    [_patient, "ACME_vent_effectiveRR", _effBpm + _simpleManualRR] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_spontRR", _spontBpm, 0.25, 1] call ACME_fnc_setVarNetApprox;
+    [_patient, "ACME_vent_effectiveRR", _effBpm + _simpleManualRR, 0.25, 1] call ACME_fnc_setVarNetApprox;
     [_patient, "ACME_vent_backupActive", _backup] call ACME_fnc_setVarNet;
 
     // Airway/circuit leak fraction, shared by mandatory and spontaneous breaths.
@@ -343,7 +343,7 @@ if (_driving) then {
         _autoPEEP = _autoPEEP - ((missionNamespace getVariable ["ACME_vent_autoPeepClear", 1.2]) * _dt);
     };
     _autoPEEP = (_autoPEEP max 0) min 20;
-    [_patient, "ACME_vent_autoPEEP", _autoPEEP] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_autoPEEP", _autoPEEP, 0.10, 1] call ACME_fnc_setVarNetApprox;
 
     // Pressure limit is a real delivery limit for both the mandatory and the pressure-supported breath.
     private _pLimit = _effective select 11;
@@ -372,9 +372,9 @@ if (_driving) then {
     private _vti = if (_totalBreaths > 0) then {((_mandatoryBpm * _vtiMand) + (_spontBpm * _vtiSpont)) / _totalBreaths} else {0};
     private _vte = if (_totalBreaths > 0) then {((_mandatoryBpm * _vteMand) + (_spontBpm * _vteSpont)) / _totalBreaths} else {0};
     private _pip = ((_pipMand max _pipSpont) + _autoPEEP) max _peep;
-    [_patient, "ACME_vent_vti", round _vti] call ACME_fnc_setVarNet;
-    [_patient, "ACME_vent_vte", round _vte] call ACME_fnc_setVarNet;
-    [_patient, "ACME_vent_pip", round _pip] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_vti", round _vti, 5, 0.5] call ACME_fnc_setVarNetApprox;
+    [_patient, "ACME_vent_vte", round _vte, 5, 0.5] call ACME_fnc_setVarNetApprox;
+    [_patient, "ACME_vent_pip", round _pip, 1, 0.5] call ACME_fnc_setVarNetApprox;
     private _vtReference = if (_mode == "SIMV PC") then {500 * (((_pinsp - _peep) max 0) / 15)} else {_vtSet};
     [_patient, "ACME_vent_vtReference", _vtReference max 1] call ACME_fnc_setVarNet;
 
@@ -383,7 +383,7 @@ if (_driving) then {
     if (_compEff < 0.95 && {_ie < 1.5}) then {
         _recruit = (linearConversion [0.95, 0.35, _compEff, 0, 1, true]) * (linearConversion [1.5, 0.5, _ie, 0, 1, true]);
     };
-    [_patient, "ACME_vent_recruit", _recruit] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_recruit", _recruit, 0.01, 1] call ACME_fnc_setVarNetApprox;
     private _targetSat = [_patient, _compEff, _peep, _fio2, _recruit] call ACME_fnc_ventOxygenation;
     _targetSat = (_targetSat - (_patient getVariable ["ACME_o2Drain_mainstem", 0]) - (_patient getVariable ["ACME_o2Drain_vili", 0])) max 0;
 
@@ -398,9 +398,9 @@ if (_driving) then {
     if (_mlPerKg > 8 && {_compEff < 0.8}) then {
         private _stretch = (linearConversion [8, 12, _mlPerKg, 0, 1, true]) * (1 - _compEff);
         private _inj = _patient getVariable ["ACME_vent_baroInjury", 0];
-        [_patient, "ACME_vent_baroInjury", ((_inj + (_stretch * 0.010 * _dt)) min 1)] call ACME_fnc_setVarNet;
+        [_patient, "ACME_vent_baroInjury", ((_inj + (_stretch * 0.010 * _dt)) min 1), 0.005, 2] call ACME_fnc_setVarNetApprox;
     };
-    [_patient, "ACME_vent_mlPerKg", _mlPerKg] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_mlPerKg", _mlPerKg, 0.05, 1] call ACME_fnc_setVarNetApprox;
 
     // Exact exhaled and alveolar minute ventilation: mandatory and spontaneous breath volumes are not assumed equal.
     private _mvDelivered = ((_mandatoryBpm * _vteMand) + (_spontBpm * _vteSpont)) / 1000;
@@ -414,8 +414,8 @@ if (_driving) then {
     };
     private _mvTarget = (12 * (500 - 150)) * ((_wtKg / 70) max 0.3);
     private _mvAdequacy = ((_mvAlv / _mvTarget) max 0) min 1.6;
-    [_patient, "ACME_vent_mvDelivered", _mvDelivered max 0] call ACME_fnc_setVarNet;
-    [_patient, "ACME_vent_mvAdequacy", _mvAdequacy] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_mvDelivered", _mvDelivered max 0, 0.05, 1] call ACME_fnc_setVarNetApprox;
+    [_patient, "ACME_vent_mvAdequacy", _mvAdequacy, 0.01, 1] call ACME_fnc_setVarNetApprox;
 
     // Sustained severe dyssynchrony now decompensates in the respiratory direction first: less effective minute
     // ventilation raises EtCO2 through the existing CO2 model, and a bounded target-saturation penalty makes SpO2
@@ -474,7 +474,7 @@ if (_driving) then {
             private _reliefPrev = _patient getVariable ["ACME_hrDrive_ventRelief", -1];
             private _reliefBase = if (_reliefPrev >= 0) then { _reliefPrev } else { _hrTgt };
             private _hrRate = missionNamespace getVariable ["ACME_vent_cpapHRRelief", 1.2];  // bpm per second.
-            [_patient, "ACME_hrDrive_ventRelief", ((_reliefBase - (_hrRate * _dt)) max 80)] call ACME_fnc_setVarNet;
+            [_patient, "ACME_hrDrive_ventRelief", ((_reliefBase - (_hrRate * _dt)) max 80), 0.25, 1] call ACME_fnc_setVarNetApprox;
         } else {
             [_patient, "ACME_hrDrive_ventRelief", -1] call ACME_fnc_setVarNet;
         };
@@ -509,7 +509,7 @@ if (_driving) then {
         // below the ceiling the lung slowly recovers from the insult. the accumulated injury does not.
         _dose = (_dose - (0.004 * _dt)) max 0;
     };
-    [_patient, "ACME_vent_baroDose", _dose] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_baroDose", _dose, 0.01, 1] call ACME_fnc_setVarNetApprox;
 
     // injury milestones. each full dose unit inflicts a discrete barotrauma event.
     private _events = _patient getVariable ["ACME_vent_baroEvents", 0];
@@ -601,7 +601,7 @@ if (_driving) then {
     // a count over a sixty-second window is breaths per minute, by definition. there is no scaling, no smoothing and
     // no floor. until the window has filled it under-reads, which is exactly what a real machine does when you
     // switch it on, so it is left alone.
-    [_patient, "ACME_vent_measRR", _counted] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_measRR", _counted, 0.25, 0.5] call ACME_fnc_setVarNetApprox;
     if (_mandatory) then {
         [_patient, "ACME_vent_rrDrive", (round ((_effBpm + _simpleManualRR) max 0))] call ACME_fnc_setVarNet;
     } else {
@@ -638,9 +638,9 @@ if (_driving) then {
     };
     // No stale fighting response survives a stopped/disconnected circuit.
     private _d0 = _patient getVariable ["ACME_vent_dyssync", 0];
-    if (_d0 > 0) then { [_patient, "ACME_vent_dyssync", (_d0 - (_dt / 6)) max 0] call ACME_fnc_setVarNet; };
+    if (_d0 > 0) then { [_patient, "ACME_vent_dyssync", (_d0 - (_dt / 6)) max 0, 0.01, 1] call ACME_fnc_setVarNetApprox; };
     private _fh = _patient getVariable ["ACME_vent_fightHRAdjust", 0];
-    if (_fh > 0) then { [_patient, "ACME_vent_fightHRAdjust", (_fh - (_dt * 2)) max 0] call ACME_fnc_setVarNet; };
+    if (_fh > 0) then { [_patient, "ACME_vent_fightHRAdjust", (_fh - (_dt * 2)) max 0, 0.10, 1] call ACME_fnc_setVarNetApprox; };
     private _fr = _patient getVariable ["ACME_vent_fightResistAdjust", 0];
-    if (_fr > 0) then { [_patient, "ACME_vent_fightResistAdjust", (_fr - (_dt * 1.2)) max 0] call ACME_fnc_setVarNet; };
+    if (_fr > 0) then { [_patient, "ACME_vent_fightResistAdjust", (_fr - (_dt * 1.2)) max 0, 0.10, 1] call ACME_fnc_setVarNetApprox; };
 };
