@@ -91,5 +91,6 @@ private _now = CBA_missionTime;
 
     [_u,"ACME_preox_reserve",_reserve,0.005,5] call ACME_fnc_setVarNetApprox;
     _u setVariable ["ACME_preox_lastSpO2", _spo2, false];
+    // Publish only the coarse label transition; setVarNet suppresses unchanged state.
     [_u,"ACME_preox_state",if (_reserve >= 0.80) then {"preoxygenated"} else {if (_reserve >= 0.40) then {"partial"} else {"low"}}] call ACME_fnc_setVarNet;
 } forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
