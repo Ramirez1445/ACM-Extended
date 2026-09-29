@@ -20,4 +20,7 @@ if (!_infusion && {!(missionNamespace getVariable ["ACME_hcEff_medications",fals
 };
 private _queue = _patient getVariable ["ACME_medicationDriveQueue",[]];
 _queue pushBack [_base,_amount,_seconds,if (_infusion) then {"infusion"} else {"bolus"}];
-_patient setVariable ["ACME_medicationDriveQueue",_queue,true];
+// A new queue entry is a structural transition, so publish it immediately. The circulation tick keeps later
+// mass/time decay owner-local and snapshots it at a bounded cadence.
+[_patient, "ACME_medicationDriveQueue", _queue] call ACME_fnc_setVarNet;
+_patient setVariable ["ACME_medicationDriveNetAt", diag_tickTime, false];
