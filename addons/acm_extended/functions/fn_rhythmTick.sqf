@@ -130,7 +130,7 @@ private _fnc_release = {params ["_u"]; [_u] call ACME_fnc_rhythmRelease;};
         private _cur = _u getVariable ["ACME_rhythm_painContribution", 0];
         private _step = (missionNamespace getVariable ["ACME_rhythm_painStepPerSec", 0.12]) * _dt;
         if (_u getVariable ["ACE_isUnconscious", false]) then {_targetPain = 0;};
-        [_u, "ACME_rhythm_painContribution", _cur + (((_targetPain - _cur) max (-_step)) min _step)] call ACME_fnc_setVarNet;
+        [_u, "ACME_rhythm_painContribution", _cur + (((_targetPain - _cur) max (-_step)) min _step), 0.01, 1] call ACME_fnc_setVarNetApprox;
         if (_code != 102) then {
             // an obtundation episode: a chance per tick to drop into the lying state, player-only, because obtundedset wakes
             // an unconscious patient into it. it uses a manual flag, so the vitals-driven auto-evaluator leaves it alone,
