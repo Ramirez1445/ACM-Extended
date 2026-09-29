@@ -39,7 +39,7 @@ if (local _obj) then {
         if (!_hasValue) then {
             _same = isNil {_obj getVariable _name} && {_published isEqualTo _fingerprint};
         } else {
-            private _old = _obj getVariable [_name, nil];
+            private _old = _obj getVariable _name;
             private _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {
                 !isNil "_old" && {(str _old) isEqualTo _fingerprint}
             } else {
