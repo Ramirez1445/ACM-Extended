@@ -35,9 +35,27 @@ if (uiNamespace getVariable ["ACME_Thora_KellyArmed", false]) exitWith {
     false
 };
 
-// stop prepping.
+// stop prepping. B204 commits the complete prep trail once, rather than broadcasting the growing array from
+// the every-frame cursor tick. Merge with the latest replicated trail first so two providers cannot erase each other.
 if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) exitWith {
     uiNamespace setVariable ["ACME_Thora_Prepping", false];
+    private _side = uiNamespace getVariable ["ACME_Thora_Side", "right"];
+    private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
+    if (!isNull _patient) then {
+        private _prepLocal = uiNamespace getVariable ["ACME_Thora_PrepLocal", createHashMap];
+        if !(_prepLocal isEqualType createHashMap) then {_prepLocal = createHashMap;};
+        private _localPts = +(_prepLocal getOrDefault [_side, []]);
+        private _merged = +(_patient getVariable [format ["ACME_thora_prep_%1", _side], []]);
+        {_merged pushBackUnique _x;} forEach _localPts;
+        if (count _merged > 130) then {_merged resize 130;};
+        _prepLocal set [_side, _merged];
+        uiNamespace setVariable ["ACME_Thora_PrepLocal", _prepLocal];
+        private _published = _patient getVariable [format ["ACME_thora_prep_%1", _side], []];
+        if !(_merged isEqualTo _published) then {
+            [_patient, _side, "prep", _merged] call ACME_fnc_thoraSideStateCommit;
+            [_patient] call ACME_fnc_thoraBumpVer;
+        };
+    };
     false
 };
 
@@ -80,7 +98,12 @@ if (uiNamespace getVariable ["ACME_Thora_Cutting", false]) exitWith {
         [_patient] call ACME_fnc_thoraBumpVer;
     };
     // the prep gate: cutting through an un-prepped site seeds infection, which needs antibiotics later.
-    private _prep = if (isNull _patient) then { [] } else { _patient getVariable [format ["ACME_thora_prep_%1", _side], []] };
+    private _prepLocal = uiNamespace getVariable ["ACME_Thora_PrepLocal", createHashMap];
+    private _prep = if (_prepLocal isEqualType createHashMap && {_side in keys _prepLocal}) then {
+        +(_prepLocal get _side)
+    } else {
+        if (isNull _patient) then {[]} else {+(_patient getVariable [format ["ACME_thora_prep_%1", _side], []])}
+    };
     private _near = 0;
     {
         _x params ["_pu", "_pv"];
