@@ -1,3 +1,6 @@
+// Roller-clamp drag/vision presentation is client-only. Dedicated servers must not run an empty every-frame UI PFH.
+if (!hasInterface) exitWith {};
+
 [{
     private _display = findDisplay 86200;
     if (isNull _display) exitWith {};
