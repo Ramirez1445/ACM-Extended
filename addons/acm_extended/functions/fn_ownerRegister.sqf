@@ -31,6 +31,8 @@ if (!alive _patient) exitWith {
 // Same-object recovery/debug resurrection must be able to arm a future death freeze again.
 _patient setVariable ["ACME_deadPhysiologyFrozenLocal", false, false];
 if (_patient getVariable ["ACME_headElevated", false]) then {[_patient] call ACME_fnc_headElevWatch;};
+private _hpmkState = _patient getVariable ["ACME_hpmk_state", ""];
+if (_hpmkState != "") then {["ACME_hpmkServerTrack", [_patient, _hpmkState]] call CBA_fnc_serverEvent;};
 {
     _x params ["_listName", "_flag"];
     if (_patient getVariable [_flag, false]) then {
