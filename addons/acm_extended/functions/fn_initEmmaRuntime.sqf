@@ -18,4 +18,4 @@ if (isNil "ACME_emma_contactHooksRegistered") then {
     } forEach ["ace_treatmentStarted", "ace_treatmentSucceeded", "ace_treatmentSucceded"];
 };
 
-[{call ACME_fnc_emmaTick}, 0.1, []] call CBA_fnc_addPerFrameHandler;
+if (hasInterface) then {[{call ACME_fnc_emmaTick}, 0.1, []] call CBA_fnc_addPerFrameHandler;};
