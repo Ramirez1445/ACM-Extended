@@ -150,4 +150,4 @@ private _dwellRe    = missionNamespace getVariable ["ACME_obtunded_dwellReEnter"
             };
         };
     };
-} forEach (allUnits select {local _x && {alive _x} && {isPlayer _x}});
+} forEach ((missionNamespace getVariable ["ACME_clinical_ownedUnits", []]) select {alive _x && {isPlayer _x}});
