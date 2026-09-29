@@ -48,7 +48,7 @@ private _nowGameHours = (dateToNumber date) * _yearHours;
 
 // the viewer-driven open and close.
 private _now = diag_tickTime;
-private _timeout = missionNamespace getVariable ["ACME_bf_viewTimeout", 0.6];
+private _timeout = missionNamespace getVariable ["ACME_bf_viewTimeout", 0.9];
 {
     private _anchor = _x;
     if (!isNull _anchor) then {
@@ -65,13 +65,13 @@ private _timeout = missionNamespace getVariable ["ACME_bf_viewTimeout", 0.6];
             [_anchor, "ACME_bf_open", true] call ACME_fnc_setVarNet;
             if (!isNull _openObj) then { _openObj hideObjectGlobal false; };
             _anchor hideObjectGlobal true;
-            [_anchor, "ACME_BloodFridgeDoorOpen"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+            private _near = allPlayers select {alive _x && {(_x distance _anchor) <= 80}}; if !(_near isEqualTo []) then {["ACME_worldSfx", [_anchor, "ACME_BloodFridgeDoorOpen"], _near] call CBA_fnc_targetEvent;};
         };
         if (!_live && _open) then {
             [_anchor, "ACME_bf_open", false] call ACME_fnc_setVarNet;
             _anchor hideObjectGlobal false;
             if (!isNull _openObj) then { _openObj hideObjectGlobal true; };
-            [_anchor, "ACME_BloodFridgeDoorClose"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+            private _near = allPlayers select {alive _x && {(_x distance _anchor) <= 80}}; if !(_near isEqualTo []) then {["ACME_worldSfx", [_anchor, "ACME_BloodFridgeDoorClose"], _near] call CBA_fnc_targetEvent;};
         };
     };
 } forEach _fridges;
