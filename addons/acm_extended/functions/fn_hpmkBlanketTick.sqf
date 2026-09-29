@@ -55,7 +55,7 @@ if !(missionNamespace getVariable ["ACME_sys_hpmk", true]) exitWith {
         [_p, "", true, true] call ACME_fnc_hpmkStateCommit;
         _p setVariable ["ACME_hpmk_provider", objNull, true];
         _p setVariable ["ACME_hpmk_returnPending", false, true];
-        [_p, "ACM_HPMK_Remove"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+        private _near = allPlayers select {alive _x && {(_x distance _p) <= 80}}; if !(_near isEqualTo []) then {["ACME_worldSfx", [_p, "ACM_HPMK_Remove"], _near] call CBA_fnc_targetEvent;};
         if (!isNil "ace_medical_treatment_fnc_addToLog") then {
             [_p, "activity", "HPMK slipped off (patient became mobile)", []] call ace_medical_treatment_fnc_addToLog;
         };
