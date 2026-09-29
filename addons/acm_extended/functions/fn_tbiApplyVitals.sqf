@@ -81,7 +81,7 @@ if (_vascularOnly) exitWith {
     private _wantTbiResist = (_baseR * _autonomicTone * _gain) max (1 - _baseR);
     private _resistStep = (missionNamespace getVariable ["ACME_tbi_resistStepPerSec", 40]) * _dt;
     private _nextTbiResist = _curTbiResist + (((_wantTbiResist - _curTbiResist) max (-_resistStep)) min _resistStep);
-    [_patient, "ACME_tbi_resistAdd", _nextTbiResist] call ACME_fnc_setVarNet;
+    [_patient, "ACME_tbi_resistAdd", _nextTbiResist, 0.10, 1] call ACME_fnc_setVarNetApprox;
     _state set ["termClock", 0];
 };
 
@@ -155,7 +155,7 @@ if (_stage < 3) then {
 // own easing at ACM's frame cadence. so hr lurched faster than the normal tick and kept getting slammed back
 // down toward the bradycardic target, which is exactly the herniation bug where the vitals update too fast and
 // the hr keeps resetting downward as though overridden. one target, one easer, normal cadence.
-[_patient, "ACME_hrTarget_tbi", _hrT] call ACME_fnc_setVarNet;
+[_patient, "ACME_hrTarget_tbi", _hrT, 0.25, 1] call ACME_fnc_setVarNetApprox;
 
 // blood pressure, from a widened pulse pressure to collapse, eased so it moves visibly rather than
 // instantly.
@@ -173,7 +173,7 @@ _diaT = (_diaT + (_bpWave * 0.4)) max 25 min (_sysT - 12);
 // Native and other systems remain in the baseline; remove only this TBI contribution to prevent feedback.
 private _base = [_patient, true, true] call ACME_fnc_bpCompute;
 _base params [["_bDia", 80], ["_bSys", 120]];
-[_patient, "ACME_tbi_pulsePressureTarget", (_sysT - _diaT) max 0] call ACME_fnc_setVarNet;
+[_patient, "ACME_tbi_pulsePressureTarget", (_sysT - _diaT) max 0, 0.50, 1] call ACME_fnc_setVarNetApprox;
 // Legacy offsets are retired, not stacked on top of the same SVR effect.
 [_patient, "ACME_tbi_bpDiaOffset", 0] call ACME_fnc_setVarNet;
 [_patient, "ACME_tbi_bpSysOffset", 0] call ACME_fnc_setVarNet;
@@ -214,7 +214,7 @@ if (_wantTbiResist >= 0) then {
 // collapse, where the failing brain drops MAP below native and gives vasodilation and hypotension, so
 // decompensation actually tanks the pressure through the same lever.
 private _resistStep = (missionNamespace getVariable ["ACME_tbi_resistStepPerSec", 40]) * _dt;
-[_patient, "ACME_tbi_resistAdd", (_curTbiResist + (((_wantTbiResist - _curTbiResist) max (-_resistStep)) min _resistStep))] call ACME_fnc_setVarNet;
+[_patient, "ACME_tbi_resistAdd", (_curTbiResist + (((_wantTbiResist - _curTbiResist) max (-_resistStep)) min _resistStep)), 0.10, 1] call ACME_fnc_setVarNetApprox;
 
 // respirations.
 // save the real rr target once, so it can be restored when the TBI pattern stands down.
@@ -266,7 +266,7 @@ if (_rrCritical) then {
     // the target must stay nonzero, because ACM's updateoxygen divides by it and would throw a zero divisor, and the
     // live drive may hit 0.
 
-    [_patient, "ACME_rrDrive_tbi", _rr] call ACME_fnc_setVarNet;
+    [_patient, "ACME_rrDrive_tbi", _rr, 0.25, 1] call ACME_fnc_setVarNetApprox;
 
     // cheyne-stokes breath sounds. the critical stage is the cheyne-stokes phase, so the audible breathing must
     // match it. ACME_cs_active gates the cheyne breath-sound pfh, in fn_breathsoundsstart, so it is set here and
@@ -301,7 +301,7 @@ if (_rrCritical) then {
     // now.
     private _rrPublish = round _rrT;
     if (_stage < 3) then {_rrPublish = _rrPublish max (missionNamespace getVariable ["ACME_tbi_nonterminalMinRR", 12]);};
-    [_patient, "ACME_rrDrive_tbi", _rrPublish] call ACME_fnc_setVarNet;
+    [_patient, "ACME_rrDrive_tbi", _rrPublish, 0.25, 1] call ACME_fnc_setVarNetApprox;
 };
 
 // terminal, and real damage. a sustained stage 3, with bilateral fixed pupils, forces a cardiac arrest and sets
