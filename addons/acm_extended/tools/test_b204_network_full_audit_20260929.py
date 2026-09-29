@@ -251,6 +251,67 @@ def test_no_accidental_literal_newline_escape_in_hpmk_runtime_registration():
     assert "[{call ACME_fnc_hpmkBlanketTick}, 2, []]" in s
 
 
+
+def test_ventilator_server_audio_has_no_recurring_world_scan_or_global_log_broadcast():
+    audio = function("registerVentilatorAudioRuntime")
+    alarm = function("ventAlarmTick")
+    ack = function("ventCustodyAck")
+    clear = function("ventPatientClear")
+
+    # One legacy/hot-load seed is acceptable; the 10 Hz worker itself must iterate only the active registry.
+    assert audio.count("allUnits select") == 1
+    hot = audio.split("ACME_vent_soundSources = _keptSources;", 1)[1]
+    assert '} forEach (+(missionNamespace getVariable ["ACME_vent_serverPatients", []]));' in hot
+    assert "allUnits select" not in hot
+    assert '"ACME_ventServerTrack"' in audio
+    assert '"ACME_vent_serverPatients"' in audio
+    assert 'call CBA_fnc_globalEvent;' not in "\n".join(
+        line for line in audio.splitlines() if "ACME_ventSndFade" in line
+    )
+    assert '"ACME_ventAlarmLog"' in alarm
+    log_line = next(line for line in alarm.splitlines() if '"ACME_ventAlarmLog"' in line)
+    assert "CBA_fnc_targetEvent" in log_line
+    assert "CBA_fnc_globalEvent" not in log_line
+    assert "ACME_vent_serverPatients pushBackUnique _patient" in ack
+    assert '"ACME_ventServerTrack"' in clear
+
+
+def test_native_hot_vitals_publications_are_bounded_or_transition_only():
+    vitals = read("addons/core/overrides/fnc_handleUnitVitals.sqf")
+    circ_state = read("addons/circulation/functions/fnc_updateCirculationState.sqf")
+    cbrn = function("medicationCBRNTick")
+
+    assert 'Vasoconstriction_State), _vasoconstriction, 0.25, 2] call ACME_fnc_setVarNetApprox;' in vitals
+    assert 'private _syncValues = (CBA_missionTime - _lastTimeValuesSynced) >= (10 + floor(random 10));' in vitals
+    assert 'if ((_patient getVariable ["ACME_rosc_blockedBy", ""]) != _blocked)' in circ_state
+    assert 'isNotEqualTo _circulationState' in circ_state
+    assert cbrn.count("ACME_fnc_setVarNetApprox") >= 2
+
+
+def test_cbrn_ai_hazard_scan_is_spatially_bounded():
+    s = read("addons/cbrn/functions/fnc_initHazardZone.sqf")
+    worker = s.split("private _PFH = [{", 1)[1]
+    assert 'nearestObjects [getPosATL _hazardRadius, ["CAManBase"], _scanRadius]' in worker
+    assert "allUnits inAreaArray" not in worker
+    assert '"+_radiusDimensions"' not in worker
+    assert '"+_radiusDimensions"' not in s
+    assert '+_radiusDimensions' in s
+
+
+def test_medication_drive_queue_is_local_between_bounded_snapshots():
+    add = function("medicationDriveAdd")
+    tick = function("medicationDriveTick")
+    assert '[_patient, "ACME_medicationDriveQueue", _queue] call ACME_fnc_setVarNet;' in add
+    assert '_patient setVariable ["ACME_medicationDriveQueue", _keep, false];' in tick
+    assert '(_driveNow - _driveLast) >= 1' in tick
+    assert '_patient setVariable ["ACME_medicationDriveQueue",_keep,true];' not in tick
+
+
+def test_network_config_contains_real_newlines_not_escaped_comment_text():
+    cfg = function("initNetworkSyncConfig")
+    assert "\\nACME_" not in cfg
+    assert "ACME_tbi_stateNetInterval = 1.0;" in cfg.splitlines()
+
 def test_b204_network_audit_identity():
     startup = function("initForkStartupRuntime")
     config = read("addons/acm_extended/config.cpp")
