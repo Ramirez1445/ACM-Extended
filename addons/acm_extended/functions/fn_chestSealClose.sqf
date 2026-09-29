@@ -128,6 +128,7 @@ uiNamespace setVariable ["ACME_CS_DLG", displayNull];
 uiNamespace setVariable ["ACME_CS_GhostPool", []];
 uiNamespace setVariable ["ACME_CS_presenceLastT", -1];
 uiNamespace setVariable ["ACME_CS_presenceLastState", ["", ""]];
+uiNamespace setVariable ["ACME_CS_presenceLastPts", []];
 private _viewer = uiNamespace getVariable ["ACME_CS_presenceViewer", objNull];
 if (isNull _viewer) then {_viewer = _flipMedic;};
 if (!isNull _patient) then {
