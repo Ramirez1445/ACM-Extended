@@ -43,8 +43,8 @@ if (_active) then {
     _exposure = (_exposure - 2 * _dt) max 0; // brief mouse releases do not rearm a fresh 10 seconds
     _debt = (_debt - 0.4 * _dt) max 0;
 };
-[_patient, "ACME_suctionExposure", _exposure] call ACME_fnc_setVarNet;
-[_patient, "ACME_o2Drain_suction", _debt] call ACME_fnc_setVarNet;
+[_patient, "ACME_suctionExposure", _exposure, 0.25, 1] call ACME_fnc_setVarNetApprox;
+[_patient, "ACME_o2Drain_suction", _debt, 0.05, 1] call ACME_fnc_setVarNetApprox;
 [_patient, "ACME_sucWarned", _active && {_exposure > _grace}] call ACME_fnc_setVarNet;
 // Retired wall-clock field is only a diagnostic sentinel, never a second integrator.
-[_patient, "ACME_sucRunSince", if (_active) then {_now - _exposure} else {-1}] call ACME_fnc_setVarNet;
+[_patient, "ACME_sucRunSince", if (_active) then {_now - _exposure} else {-1}, 1, 2] call ACME_fnc_setVarNetApprox;
