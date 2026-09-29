@@ -240,6 +240,8 @@ uiNamespace setVariable ["ACME_laryngo_holding", false];
 uiNamespace setVariable ["ACME_laryngo_cur", [_viewX + _viewW/2, _viewY + _viewH/2]];
 uiNamespace setVariable ["ACME_laryngo_done", false];
 uiNamespace setVariable ["ACME_laryngo_tubeDepth", 0];  // 0 to 1 of how far the tube is pushed in, which drives f1 through f6.
+uiNamespace setVariable ["ACME_laryngo_migrationSyncNext", 0];
+uiNamespace setVariable ["ACME_laryngo_migrationSyncLast", [-1, -1, false]];
 uiNamespace setVariable ["ACME_laryngo_tubeAim", ""];  // "" or "cords" or "esoph", locked at the push-start click.
 // technique scoring. see fn_laryngotick.
 uiNamespace setVariable ["ACME_laryngo_pryPressure", 0];  // the integrated off-axis load on the incisors.
