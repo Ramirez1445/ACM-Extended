@@ -53,7 +53,7 @@ private _publish = {
         private _localSame = false;
         if (!isNil "_old") then {
             _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {
-                (str _old) isEqualTo _fingerprint
+                [_type, str _old] isEqualTo _fingerprint
             } else {
                 _old isEqualTo _value
             };
