@@ -58,4 +58,4 @@ private _applyMercyObtunded = {
     } else {
         if ((_u getVariable ["ACME_ko_since", -1]) >= 0) then {[_u, "ACME_ko_since", -1] call ACME_fnc_setVarNet;};
     };
-} forEach (allUnits select {local _x && {alive _x} && {isPlayer _x}});
+} forEach ((missionNamespace getVariable ["ACME_clinical_ownedUnits", []]) select {alive _x && {isPlayer _x}});
