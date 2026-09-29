@@ -96,4 +96,4 @@ private _now = CBA_missionTime;
     [_u,"ACME_shock_phenotype",_type] call ACME_fnc_setVarNet;
     [_u,"ACME_shock_severity",_sev,0.002,2] call ACME_fnc_setVarNetApprox;
     [_u,"ACME_shock_warm",(_type == "distributive" || {_type == "neurogenic"})] call ACME_fnc_setVarNet;
-} forEach allUnits;
+} forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
