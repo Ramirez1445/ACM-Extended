@@ -63,7 +63,7 @@ if (_onShipPower) then {
     _load = _load * (linearConversion [20, 50, _pip, 1, (missionNamespace getVariable ["ACME_vent_battPipMult", 1.40]), true]);
 
     _pct = (_pct - (((_dt / 60) / _capMin) * 100 * _load)) max 0;
-    [_pat, "ACME_vent_battery", _pct] call ACME_fnc_setVarNet;
+    [_pat, "ACME_vent_battery", _pct, 0.10, 2] call ACME_fnc_setVarNetApprox;
 };
 
 // warnings and the cutoff. there are two warnings and then a stop, because a ventilator that dies without having
