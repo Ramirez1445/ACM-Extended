@@ -98,7 +98,7 @@ private _fnc_stopSfx = {
         // the same transaction; after 2 s pause flow/uptake until the owner confirms it.
         private _awaitingTooLong = count _request >= 3 && {_now - (_request select 2) > 2};
         private _pending = (_u getVariable ["ACME_nrb_o2Pending", 0]) + (if (_awaitingTooLong) then {0} else {_flowLPM / 60 * _dt});
-        [_u, "ACME_nrb_o2Pending", _pending] call ACME_fnc_setVarNet;
+        [_u, "ACME_nrb_o2Pending", _pending, 0.20, 1] call ACME_fnc_setVarNetApprox;
         if (count _request == 0 && {_pending >= _litersPerUnit}) then {
             private _sequence = (_u getVariable ["ACME_nrb_drawSeq", 0]) + 1;
             _u setVariable ["ACME_nrb_drawSeq", _sequence, true];
@@ -142,7 +142,7 @@ private _fnc_stopSfx = {
                 private _gain = (_gapGain min _maxGain) * _dt;
                 if (_gain > 0) then {
                     [_u, [["spo2", ((_spo2 + _gain) min _floor), true, true]]] call ACM_core_fnc_setAceMedicalState;
-                    [_u, "ACME_nrb_lastO2Uptake", CBA_missionTime] call ACME_fnc_setVarNet;
+                    [_u, "ACME_nrb_lastO2Uptake", CBA_missionTime, 1, 2] call ACME_fnc_setVarNetApprox;
                 };
             };
 
