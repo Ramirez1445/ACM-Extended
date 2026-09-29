@@ -1,3 +1,6 @@
+// Client presentation/input runtime only. Dedicated servers must not register UI PFHs, controls or keybinds.
+if (!hasInterface) exitWith {};
+
 // every dialog in this addon that a medic can stand inside while the world goes dark around them. the night
 // vision toggle below uses this, so the goggles can be worked from inside any of them.
 ACME_minigameDisplays = [
