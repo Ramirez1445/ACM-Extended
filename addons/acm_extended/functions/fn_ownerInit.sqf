@@ -74,6 +74,9 @@ ACME_NA2_ownerInstalled = true;
 ["ACME_thoraOutput", { if (isServer) then { isNil { _this call ACME_fnc_thoraOutput; }; }; }] call CBA_fnc_addEventHandler;
 ["CAManBase", "Local", {
     params ["_unit", "_isLocal"];
+    private _ownedNow = missionNamespace getVariable ["ACME_clinical_ownedUnits", []];
+    if (_isLocal && {alive _unit}) then {_ownedNow pushBackUnique _unit;} else {_ownedNow = _ownedNow - [_unit];};
+    missionNamespace setVariable ["ACME_clinical_ownedUnits", _ownedNow];
     // IO syncope timers are machine-local. A departed owner's job must neither
     // resume after an away/back transfer nor strand the returning owner's token.
     _unit setVariable ["ACME_ioSyncopeToken", -1, false];
@@ -174,14 +177,19 @@ ACME_NA2_ownerInstalled = true;
     [{ _this call ACME_fnc_ownerRegister; }, [_this select 0]] call CBA_fnc_execNextFrame;
 }, true, [], true] call CBA_fnc_addClassEventHandler;
 [{
-    // Provider stale-state repair and registry pruning stay responsive at 1 Hz. Local/init events are the primary
-    // owner-registration path; the allUnits sweep is only a missed-event failsafe. B204 stretches that expensive
-    // whole-world fallback to 15 s so large AI missions do not pay a repeated enumeration cost on every machine.
+    // Provider stale-state repair and registry pruning stay responsive at 1 Hz. Local/init events maintain the
+    // owner registry directly. The 30 s world sweep is now only a missed-event audit: it calls ownerRegister solely
+    // for units absent from the registry/owner generation, so hundreds of healthy AI never get rebuilt in one spike.
     private _nextRecovery = missionNamespace getVariable ["ACME_ownerRecoveryNextAt", -1];
     if (_nextRecovery < 0 || {CBA_missionTime >= _nextRecovery}) then {
-        missionNamespace setVariable ["ACME_ownerRecoveryNextAt", CBA_missionTime + 15];
-        ACME_clinical_ownedUnits = allUnits select {local _x && {alive _x}};
-        {[_x] call ACME_fnc_ownerRegister;} forEach ACME_clinical_ownedUnits;
+        missionNamespace setVariable ["ACME_ownerRecoveryNextAt", CBA_missionTime + 30];
+        private _actualOwned = allUnits select {local _x && {alive _x}};
+        private _knownOwned = missionNamespace getVariable ["ACME_clinical_ownedUnits", []];
+        private _missingOwned = _actualOwned select {
+            !(_x in _knownOwned) || {(_x getVariable ["ACME_ownerRegisterSeen", -999]) != owner _x}
+        };
+        missionNamespace setVariable ["ACME_clinical_ownedUnits", _actualOwned];
+        {[_x] call ACME_fnc_ownerRegister;} forEach _missingOwned;
     };
     if (hasInterface && {!isNil "ACE_player"} && {!isNull ACE_player}) then {
         [] call ACME_fnc_providerStateReconcile;
