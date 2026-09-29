@@ -28,5 +28,5 @@ if (_t0 == -1) then {
 
 // B13: native effective counts already include onset and washout.
 private _ramp = 1;
-[_patient, "ACME_midaz_sedRamp", _ramp] call ACME_fnc_setVarNet;
+[_patient, "ACME_midaz_sedRamp", _ramp, 0.01, 2] call ACME_fnc_setVarNetApprox;
 [_patient, "ACME_midaz_sedEffective", (_raw * _ramp), 0.01, 2] call ACME_fnc_setVarNetApprox;
