@@ -17,6 +17,8 @@ if ((_patient getVariable ["ACM_breathing_BVM_provider", objNull]) isEqualTo _pa
     [_patient, [["bvmProvider", objNull], ["bvmConnectedOxygen", false]], true] call ACM_breathing_fnc_setRuntimeState;
 };
 [_patient, "ACME_vent_driving", false] call ACME_fnc_setVarNet;
+// Let the server audio registry retain this patient only as long as shutdown/source cleanup still needs it.
+["ACME_ventServerTrack", [_patient, false]] call CBA_fnc_serverEvent;
 if (_final) then {
     {_patient setVariable [_x, nil, true];} forEach ([] call ACME_fnc_ventDeviceFields);
     [_patient, "ACME_vent_powerOn", false] call ACME_fnc_setVarNet;
