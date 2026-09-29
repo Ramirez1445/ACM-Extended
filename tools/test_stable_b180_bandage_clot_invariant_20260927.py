@@ -109,7 +109,7 @@ def test_generic_reopen_helper_is_future_proofed_to_clots_only():
         assert forbidden not in s
 
 
-def test_build_identity_is_b204_stable():
+def test_build_identity_is_b203_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4.1";' in cfg
