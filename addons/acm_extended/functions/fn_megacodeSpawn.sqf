@@ -26,6 +26,8 @@ _u unassignItem "NVGoggles";
 
 // manikin behavior: inert ai, never a threat, and fully damageable so wounds can be applied.
 _u setVariable ["ACME_isMegacode", true, true];
+if (isNil "ACME_megacode_units") then {ACME_megacode_units = [];};
+ACME_megacode_units pushBackUnique _u;
 _u setName "Megacode Kelly";
 _u disableAI "ALL";
 // Keep the skeleton enabled for clinical poses and seizure gestures; autonomous movement stays disabled.
