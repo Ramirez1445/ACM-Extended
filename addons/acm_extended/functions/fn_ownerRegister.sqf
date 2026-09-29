@@ -3,6 +3,13 @@
 params ["_patient"];
 if (isNull _patient || {!local _patient} || {_patient getVariable ["ACME_clinicalRestoring", false]}) exitWith {};
 
+// Event-driven ownership registry. Keeping this current makes the periodic world sweep a cheap missed-event fallback
+// instead of a scheduler rebuild across every local unit.
+private _owned = missionNamespace getVariable ["ACME_clinical_ownedUnits", []];
+_owned pushBackUnique _patient;
+missionNamespace setVariable ["ACME_clinical_ownedUnits", _owned];
+_patient setVariable ["ACME_ownerRegisterSeen", owner _patient, false];
+
 [_patient] call ACME_fnc_transientStateReconcile;
 
 // Migrate old bilateral inguinal AAJT saves exactly once. The physical AAJT-S has one wedge, so an old
