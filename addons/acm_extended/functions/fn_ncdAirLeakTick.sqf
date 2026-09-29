@@ -51,7 +51,7 @@ _patient setVariable ["ACME_ncd_leakLast", _now, false];
 private _perNeedle = missionNamespace getVariable ["ACME_ncd_leakPerNeedle", 0.00035];
 private _leak = (_patient getVariable ["ACME_ncd_leak", 0]) + (_perNeedle * (_n - _free) * _dt);
 _leak = _leak min 1;
-[_patient, "ACME_ncd_leak", _leak] call ACME_fnc_setVarNet;
+[_patient, "ACME_ncd_leak", _leak, 0.005, 5] call ACME_fnc_setVarNetApprox;
 
 // the soft evacuation requirement. it is set once, well before the casualty is in trouble, because the point is
 // that somebody decides to move them rather than discovers they should have.
@@ -71,4 +71,4 @@ if (_leak > (missionNamespace getVariable ["ACME_ncd_evacAt", 0.25])
 // it never tensions. the ceiling is a casualty who is short of breath and hypoxic on exertion, not one who is
 // about to arrest.
 private _pen = _leak * (missionNamespace getVariable ["ACME_ncd_leakMaxPenalty", 0.45]);
-[_patient, "ACME_ncd_breathPenalty", _pen] call ACME_fnc_setVarNet;
+[_patient, "ACME_ncd_breathPenalty", _pen, 0.005, 5] call ACME_fnc_setVarNetApprox;
