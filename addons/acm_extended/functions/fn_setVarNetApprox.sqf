@@ -16,6 +16,19 @@ params [
     ["_maxAge", 5, [0]]
 ];
 if (isNull _obj || {_name isEqualTo ""}) exitWith {};
+// A non-finite scalar must never enter Arma's replicated state. Apart from wasting packets, NaN/Inf can poison
+// downstream comparisons so every later tick appears changed. Preserve the last good value instead.
+if !(finite _value) exitWith {
+    if (missionNamespace getVariable ["ACME_net_count", false]) then {
+        private _bad = missionNamespace getVariable ["ACME_net_nonFiniteSuppressed", createHashMap];
+        _bad set [_name, (_bad getOrDefault [_name, 0]) + 1];
+        missionNamespace setVariable ["ACME_net_nonFiniteSuppressed", _bad];
+    };
+};
+if !(finite _epsilon) then {_epsilon = 0;};
+if !(finite _maxAge) then {_maxAge = 5;};
+_epsilon = abs _epsilon;
+_maxAge = _maxAge max 0;
 
 // This helper is intended for owner-local physiology. Preserve correctness if a
 // caller violates that contract instead of silently keeping a local-only value.
