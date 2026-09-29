@@ -46,6 +46,13 @@ if (!isNull _thPat) then {
         || {!(_closureSeen isEqualTo (_display getVariable ["ACME_Thora_ClosureSeen", []]))}) then {
         uiNamespace setVariable ["ACME_thora_verSeen", _tv];
         _display setVariable ["ACME_Thora_ClosureSeen", _closureSeen];
+        // Pull another provider's committed prep into our local render buffer only while we are not actively painting.
+        if !(uiNamespace getVariable ["ACME_Thora_Prepping", false]) then {
+            private _prepLocal = uiNamespace getVariable ["ACME_Thora_PrepLocal", createHashMap];
+            if !(_prepLocal isEqualType createHashMap) then {_prepLocal = createHashMap;};
+            _prepLocal set [_sideSeen, +(_thPat getVariable [format ["ACME_thora_prep_%1", _sideSeen], []])];
+            uiNamespace setVariable ["ACME_Thora_PrepLocal", _prepLocal];
+        };
         [] call ACME_fnc_thoraRender;
     };
 };
@@ -211,12 +218,15 @@ if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) exitWith {
     private _patient = uiNamespace getVariable ["ACME_Thora_Patient", objNull];
     if (isNull _patient) exitWith {};
     private _key = format ["ACME_thora_prep_%1", _side];
-    private _pts = _patient getVariable [_key, []];
+    private _prepLocal = uiNamespace getVariable ["ACME_Thora_PrepLocal", createHashMap];
+    if !(_prepLocal isEqualType createHashMap) then {_prepLocal = createHashMap;};
+    private _pts = +(_prepLocal getOrDefault [_side, +(_patient getVariable [_key, []])]);
     private _last = uiNamespace getVariable ["ACME_Thora_PrepLast", []];
     private _add = (_pts isEqualTo []) || {count _last != 2} || {(sqrt ((((_cu - (_last select 0)) ^ 2)) + (((_cv - (_last select 1)) ^ 2)))) > 0.010};
     if (_add && {(count _pts) < 130}) then {
         _pts pushBack [_cu, _cv];
-        [_patient, _key, _pts] call ACME_fnc_setVarNet;
+        _prepLocal set [_side, _pts];
+        uiNamespace setVariable ["ACME_Thora_PrepLocal", _prepLocal];
         uiNamespace setVariable ["ACME_Thora_PrepLast", [_cu, _cv]];
         [] call ACME_fnc_thoraRenderPrep;
     };
