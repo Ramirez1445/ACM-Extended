@@ -628,7 +628,7 @@ private _getMedEffect = {
     // The current native magnesium effect suppresses recurrence above the configured threshold.
     // Defibrillation supplies a separate refractory period. No bolus-time suppression clock is used.
     private _amioCum = (_patient getVariable ["ACME_rhythm_amioCum", 0]) + _amioMg;
-    [_patient, "ACME_rhythm_amioCum", _amioCum] call ACME_fnc_setVarNet;
+    [_patient, "ACME_rhythm_amioCum", _amioCum, 1.0, 2] call ACME_fnc_setVarNetApprox;
     if ((_patient getVariable ["ACME_rhythm_active", 0]) == 0
         && {alive _patient} && {!(_patient getVariable ["ace_medical_inCardiacArrest", false])}
         && {CBA_missionTime > (_patient getVariable ["ACME_rhythm_torsadesRefractoryUntil", 0])}
