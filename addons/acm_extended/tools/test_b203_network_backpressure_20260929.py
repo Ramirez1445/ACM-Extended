@@ -42,9 +42,9 @@ def test_circulation_snapshot_default_is_two_seconds():
     assert "ACME_circ_stateNetInterval = 2.0;" in s
 
 
-def test_b203_keeps_public_stable_version_1241():
+def test_b204_keeps_public_stable_version_1241():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     config = read("addons/acm_extended/config.cpp")
 
     assert 'version = "1.2.4.1";' in config
-    assert 'ACME_buildBatch = "B203";' in startup
+    assert 'ACME_buildBatch = "B204";' in startup
