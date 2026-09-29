@@ -95,6 +95,30 @@ def test_owner_recovery_is_event_driven_with_only_slow_missing_event_audit():
     assert 'ACME_ownerRegisterSeen' in register
 
 
+def test_hot_tick_files_do_not_use_global_broadcast_primitives():
+    offenders = []
+    zero_target = re.compile(r'remoteExec(?:Call)?\\s*\\[[^\\]]*,\\s*0(?:\\s*,|\\s*\\])')
+    for path in (ACME / "functions").glob("fn_*Tick.sqf"):
+        text = path.read_text(encoding="utf-8-sig", errors="strict")
+        text = re.sub(r"/\\*.*?\\*/", "", text, flags=re.S)
+        code = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+        if "CBA_fnc_globalEvent" in code or "CBA_fnc_globalEventJIP" in code or zero_target.search(code):
+            offenders.append(path.name)
+    assert offenders == [], offenders
+
+
+def test_acme_networking_does_not_use_raw_publicvariable_commands():
+    offenders = []
+    token = re.compile(r"\\bpublicVariable(?:Server|Client)?\\b", re.I)
+    for path in (ACME / "functions").glob("*.sqf"):
+        text = path.read_text(encoding="utf-8-sig", errors="strict")
+        text = re.sub(r"/\\*.*?\\*/", "", text, flags=re.S)
+        code = "\n".join(line.split("//", 1)[0] for line in text.splitlines())
+        if token.search(code):
+            offenders.append(path.name)
+    assert offenders == [], offenders
+
+
 def test_hot_medical_ticks_do_not_world_scan_every_run():
     allowed = {
         "fn_bloodColdChainTick.sqf",  # server cold-chain inventory discovery; registered at 60 s
