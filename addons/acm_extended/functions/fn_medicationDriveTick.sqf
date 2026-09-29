@@ -19,7 +19,16 @@ private _keep = [];
     _rates set [format ["%1#%2",_base,_source],(_rates getOrDefault [format ["%1#%2",_base,_source],0])+_rate];
     if (_remaining > _dt+0.000001) then {_keep pushBack [_base,(_mass-_delivered) max 0,_remaining-_dt,_source];};
 } forEach _queue;
-_patient setVariable ["ACME_medicationDriveQueue",_keep,true];
+
+// Exact remaining mass/time is owner-local every circulation tick. A structural completion publishes immediately;
+// otherwise one snapshot per second is sufficient for locality migration and diagnostics.
+_patient setVariable ["ACME_medicationDriveQueue", _keep, false];
+private _driveNow = diag_tickTime;
+private _driveLast = _patient getVariable ["ACME_medicationDriveNetAt", -1];
+if ((count _keep) != (count _queue) || {_driveLast < 0} || {_driveNow - _driveLast >= 1}) then {
+    _patient setVariable ["ACME_medicationDriveNetAt", _driveNow, false];
+    [_patient, "ACME_medicationDriveQueue", _keep] call ACME_fnc_setVarNet;
+};
 [_patient,"ACME_ketRapidLoad",(_patient getVariable ["ACME_ketRapidLoad",0])*(0.5^(_dt/20)),0.005,1] call ACME_fnc_setVarNetApprox;
 {
     _x params ["_key","_half"];
