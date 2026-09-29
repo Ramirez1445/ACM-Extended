@@ -12,6 +12,7 @@ def test_moving_patient_leases_own_collision_relaxation():
     rel = read("addons/acm_extended/functions/fn_patientAnimRelease.sqf")
 
     assert 'if (_moving) then {[_patient, false] call ACME_fnc_headElevCollision;};' in req
+    assert 'if (!_moving && {_oldSpeedToken != ""}) then {[_patient, true] call ACME_fnc_headElevCollision;};' in req
     assert '[_patient, true] call ACME_fnc_headElevCollision;' in rel
     for anim in (
         "ACME_HeadElevPatientGrab",
