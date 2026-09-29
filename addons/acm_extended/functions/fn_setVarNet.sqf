@@ -44,7 +44,7 @@ if (local _obj) then {
         } else {
             private _old = _obj getVariable _name;
             private _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {
-                !isNil "_old" && {(str _old) isEqualTo _fingerprint}
+                !isNil "_old" && {[_type, str _old] isEqualTo _fingerprint}
             } else {
                 !isNil "_old" && {_old isEqualTo _value}
             };
