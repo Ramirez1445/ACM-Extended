@@ -70,6 +70,8 @@ uiNamespace setVariable ["ACME_Thora_Held", ""];
 uiNamespace setVariable ["ACME_Thora_Palpating", false];
 uiNamespace setVariable ["ACME_Thora_Cutting", false];
 uiNamespace setVariable ["ACME_Thora_Prepping", false];
+uiNamespace setVariable ["ACME_Thora_PrepLocal", createHashMap];
+uiNamespace setVariable ["ACME_Thora_PrepLast", []];
 uiNamespace setVariable ["ACME_Thora_TubeSnap", false];
 uiNamespace setVariable ["ACME_Thora_KellyArmed", false];
 uiNamespace setVariable ["ACME_Thora_LMBDown", false];
