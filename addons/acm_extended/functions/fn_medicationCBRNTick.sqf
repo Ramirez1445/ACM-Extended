@@ -14,7 +14,7 @@ private _atropine = 0;
 if (_atropine >= 3) then {
     private _buildup = _patient getVariable [QGVAR_BUILDUP(Chemical_Sarin), 0];
     private _reduce = 2 * (_atropine / 3) * _arrestFactor * (_dt / 25);
-    _patient setVariable [QGVAR_BUILDUP(Chemical_Sarin), (_buildup - _reduce) max 0, true];
+    [_patient, QGVAR_BUILDUP(Chemical_Sarin), (_buildup - _reduce) max 0, 0.10, 5] call ACME_fnc_setVarNetApprox;
     if (_atropine >= 4 && {HAS_AIRWAY_SPASM(_patient)} && {_buildup <= 1 || {random 1 < (1 - (0.7 ^ (_dt / 25)))}}) then {
         _patient setVariable [QEGVAR(CBRN,AirwaySpasm), false, true];
     };
@@ -23,5 +23,5 @@ private _dimercaprol = [_patient, "Dimercaprol", false] call ACME_fnc_medication
 if (_dimercaprol >= 0.5) then {
     private _buildup = _patient getVariable [QGVAR_BUILDUP(Chemical_Lewisite), 0];
     private _reduce = 8 * (_dimercaprol min 2) * _arrestFactor * (_dt / 25);
-    _patient setVariable [QGVAR_BUILDUP(Chemical_Lewisite), (_buildup - _reduce) max 0, true];
+    [_patient, QGVAR_BUILDUP(Chemical_Lewisite), (_buildup - _reduce) max 0, 0.10, 5] call ACME_fnc_setVarNetApprox;
 };
