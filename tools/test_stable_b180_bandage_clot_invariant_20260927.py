@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stable B202 build: B180 clot-only reopening plus B199 physical-dressing invariants remain enforced."""
+"""Stable B203 build: B180 clot-only reopening plus B199 physical-dressing invariants remain enforced."""
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,11 +109,11 @@ def test_generic_reopen_helper_is_future_proofed_to_clots_only():
         assert forbidden not in s
 
 
-def test_build_identity_is_b202_stable():
+def test_build_identity_is_b203_stable():
     startup = read("addons/acm_extended/functions/fn_initForkStartupRuntime.sqf")
     cfg = read("addons/acm_extended/config.cpp")
     assert 'version = "1.2.4.1";' in cfg
-    assert 'ACME_buildBatch = "B202";' in startup
+    assert 'ACME_buildBatch = "B203";' in startup
     assert 'ACME_debugRevision = "";' in startup
 
 
@@ -121,4 +121,4 @@ if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
             fn()
-    print("stable B202 bandage/clot invariant regression: PASS")
+    print("stable B203 bandage/clot invariant regression: PASS")
