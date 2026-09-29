@@ -2512,6 +2512,7 @@ class CfgFunctions {
             class hpmkPrep {};
             class hpmkPickUp {};
             class remoteSay3D {};
+            class worldSfxNearby {};
             class remoteDeleteVehicle {};
             class forceWalkLocal {};
             class updateHpmkImage {};
@@ -8896,7 +8897,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 5.699;
         allowedSelections[] = {"Body"};
         condition = "!(_patient isEqualTo _medic) && {(_patient getVariable ['ACE_isUnconscious', false]) || {(stance _patient) == 'PRONE'} || {_patient getVariable ['ACM_core_Lying_State', false]}} && {(missionNamespace getVariable ['ACME_sys_hpmk', true]) && {((_patient getVariable ['ACME_hpmk_state', '']) == '') && {([_medic, _patient, 'ACM_HPMK'] call ACME_fnc_treatmentSupplyCount) > 0}}}";
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 5.699] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACM_HPMK_Wrap'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 5.699] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACM_HPMK_Wrap'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_hpmkPrep";
         callbackFailure = "";
         callbackProgress = "";
@@ -8932,7 +8933,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 1.019;
         allowedSelections[] = {"Body"};
         condition = "!(_patient isEqualTo _medic) && {(_patient getVariable ['ACME_hpmk_state', '']) in ['wrapped', 'exposed']}";
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 1.019] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Unwrap'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 1.019] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Unwrap'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_hpmkUnwrap";
         callbackFailure = "";
         callbackProgress = "";
@@ -8953,7 +8954,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 2.377;
         allowedSelections[] = {"Body"};
         condition = "!(_patient isEqualTo _medic) && {(_patient getVariable ['ACME_hpmk_state', '']) == 'wrapped'}";
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 2.377] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Expose'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 2.377] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Expose'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_hpmkExposeChest";
         callbackFailure = "";
         callbackProgress = "";
@@ -8972,7 +8973,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 2.377;
         allowedSelections[] = {"Body"};
         condition = "!(_patient isEqualTo _medic) && {(_patient getVariable ['ACME_hpmk_state', '']) == 'exposed'}";
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 2.377] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Expose'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 2.377] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACME_HPMK_Expose'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_hpmkCoverChest";
         callbackFailure = "";
         callbackProgress = "";
@@ -8990,7 +8991,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 3.924;
         allowedSelections[] = {"Body"};
         condition = "!(_patient isEqualTo _medic) && {(_patient getVariable ['ACME_hpmk_state', '']) == 'prepped'}";
-        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 3.924] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACM_HPMK_Remove'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic','_patient']; if (!isNull _patient) then {[_patient, 3.924] call ACME_fnc_markImportantSfx}; if (!isNull _medic) then {[_medic, 'ACM_HPMK_Remove'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_hpmkRemove";
         callbackFailure = "";
         callbackProgress = "";
@@ -9008,7 +9009,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.5;
         allowedSelections[] = {"Head","Body","LeftArm","RightArm","LeftLeg","RightLeg"};
         condition = "!(_medic getVariable ['ACME_emma_bvmAttached', false]) && {([_medic, _patient, 'ACM_EMMA'] call ACME_fnc_treatmentSupplyCount) > 0}";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_emmaAttach";
         callbackFailure = "";
         callbackProgress = "";
@@ -9033,7 +9034,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.5;
         allowedSelections[] = {"Head"};
         condition = "[_medic, _patient, 'ett'] call ACME_fnc_emmaCanAttachIGel";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "[_medic, _patient, _bodyPart, 'ett'] call ACME_fnc_emmaAttachIGel";
         callbackFailure = "";
         callbackProgress = "";
@@ -9045,7 +9046,7 @@ class ace_medical_treatment_actions {
         displayName = "Remove EMMA from ETT";
         displayNameProgress = "Removing EMMA...";
         condition = "(_patient isNotEqualTo _medic) && {_patient getVariable ['ACME_ETT_Inserted', false]} && {[_medic, _patient] call ACME_fnc_emmaCanRemoveIGel}";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_emmaRemoveIGel";
     };
     class ACME_AttachEMMAIGel: CheckPulse {
@@ -9058,7 +9059,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.5;
         allowedSelections[] = {"Head"};
         condition = "[_medic, _patient, 'igel'] call ACME_fnc_emmaCanAttachIGel";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Attach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "[_medic, _patient, _bodyPart, 'igel'] call ACME_fnc_emmaAttachIGel";
         callbackFailure = "";
         callbackProgress = "";
@@ -9076,7 +9077,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.5;
         allowedSelections[] = {"Head"};
         condition = "!(_patient getVariable ['ACME_ETT_Inserted', false]) && {[_medic, _patient] call ACME_fnc_emmaCanRemoveIGel}";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_emmaRemoveIGel";
         callbackFailure = "";
         callbackProgress = "";
@@ -9094,7 +9095,7 @@ class ace_medical_treatment_actions {
         treatmentTime = 0.5;
         allowedSelections[] = {"Head","Body","LeftArm","RightArm","LeftLeg","RightLeg"};
         condition = "_medic getVariable ['ACME_emma_bvmAttached', false]";
-        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] remoteExec ['say3D', 0]}";
+        callbackStart = "params ['_medic']; if (!isNull _medic) then {[_medic, 'ACME_EMMA_Detach'] call ACME_fnc_worldSfxNearby}";
         callbackSuccess = "_this call ACME_fnc_emmaRemove";
         callbackFailure = "";
         callbackProgress = "";
