@@ -1,3 +1,6 @@
+// Client presentation/input runtime only. Dedicated servers must not register UI PFHs, controls or keybinds.
+if (!hasInterface) exitWith {};
+
 // chest tube body marker. whenever ACE refreshes the medical menu body image, the mod shows or hides the torso
 // chest tube markers per side, based on whether a tube is in place. it uses the ACE event, so it does not
 // override the function.
