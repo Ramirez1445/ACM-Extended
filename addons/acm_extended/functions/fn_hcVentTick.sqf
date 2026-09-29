@@ -35,7 +35,7 @@ if (_mlkg > _safe) then {
     // the damage rises steeply past the safe band: 10 ml/kg is careless and 14 is destroying lung.
     private _over = (_mlkg - _safe) / _safe;
     _vili = (_vili + ((missionNamespace getVariable ["ACME_hcVent_viliRate", 0.5]) * _over * _over * (_dt / 60))) min 1;
-    [_patient, "ACME_vent_vili", _vili] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_vili", _vili, 0.002, 2] call ACME_fnc_setVarNetApprox;
 };
 
 // the injured lung stiffens. that is the feedback loop: the peak pressure climbs and the obvious fix makes it
@@ -44,9 +44,9 @@ if (_mlkg > _safe) then {
 if (_vili > 0.02) then {
     private _cmp = 1 - (0.55 * _vili);
     private _cur = _patient getVariable ["ACME_vent_complianceMult", 1];
-    [_patient, "ACME_vent_complianceMult", (_cur min _cmp)] call ACME_fnc_setVarNet;
+    [_patient, "ACME_vent_complianceMult", (_cur min _cmp), 0.005, 2] call ACME_fnc_setVarNetApprox;
     // and the shunt it creates costs saturation, published the same way everything else does.
-    [_patient, "ACME_o2Drain_vili", (_vili * (missionNamespace getVariable ["ACME_hcVent_viliSatMax", 14]))] call ACME_fnc_setVarNet;
+    [_patient, "ACME_o2Drain_vili", (_vili * (missionNamespace getVariable ["ACME_hcVent_viliSatMax", 14])), 0.05, 2] call ACME_fnc_setVarNetApprox;
 } else {
     [_patient, "ACME_o2Drain_vili", 0] call ACME_fnc_setVarNet;
 };
