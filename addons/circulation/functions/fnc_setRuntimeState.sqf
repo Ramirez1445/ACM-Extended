@@ -44,7 +44,7 @@ private _publish = {
     private _fingerprint = if (_type in ["ARRAY", "HASHMAP"]) then {str _value} else {_value};
 
     if (_public && {local _unit}) then {
-        private _old = _unit getVariable [_var, nil];
+        private _old = _unit getVariable _var;
         private _published = _cache get _k;
         private _localSame = false;
         if (!isNil "_old") then {
