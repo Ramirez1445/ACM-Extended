@@ -68,6 +68,8 @@ if (_moving || {_oldSpeedToken != ""}) then {
     _patient setVariable ["ACME_patientAnimSpeedToken", ["", _token] select _moving, true];
     _patient setAnimSpeedCoef _rate;
     ["ace_common_setAnimSpeedCoef", [_patient, _rate]] call CBA_fnc_globalEvent;
+    // Replacing a moving lease with a static hold is also the end of the collision-relaxation window.
+    if (!_moving && {_oldSpeedToken != ""}) then {[_patient, true] call ACME_fnc_headElevCollision;};
 };
 
 if (_animation != "") then {
