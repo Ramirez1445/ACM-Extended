@@ -5,13 +5,14 @@ private _jobs = _p getVariable ["ACME_yFlushJobs", createHashMap];
 if (count _jobs == 0) exitWith {};
 private _map = _p getVariable ["ACM_circulation_IV_Bags", createHashMap];
 private _changed = false;
+private _jobsChangedTopology = false;
 {
     private _key = _x; private _job = _jobs get _key;
     _job params ["_part", "_iv", "_site", "_id", "_remaining", "_rate", "_last", "_medic", "_epoch"];
-    if (!alive _p || {_epoch != ([_p] call ACME_fnc_clinicalEpoch)}) then {_jobs deleteAt _key; continue;};
+    if (!alive _p || {_epoch != ([_p] call ACME_fnc_clinicalEpoch)}) then {_jobs deleteAt _key; _jobsChangedTopology = true; continue;};
     private _arr = _map getOrDefault [_part, []];
     private _idx = _arr findIf {(_x param [8, ""]) == _id && {(_x param [3, -1]) == _site} && {(_x param [4, true]) == _iv}};
-    if (_idx < 0 || {!([_p, _part, _iv, _site] call ACME_fnc_isYLineAccess)}) then {_jobs deleteAt _key; [_medic, "Flush stopped: that reserve or access was removed."] call ACME_fnc_clinicalNotice; continue;};
+    if (_idx < 0 || {!([_p, _part, _iv, _site] call ACME_fnc_isYLineAccess)}) then {_jobs deleteAt _key; _jobsChangedTopology = true; [_medic, "Flush stopped: that reserve or access was removed."] call ACME_fnc_clinicalNotice; continue;};
     private _dt = ((CBA_missionTime - _last) max 0) min 5;
     private _partIndex = ACME_infusion_bodyParts find toLowerANSI _part;
     private _blocked = [_p, _partIndex] call ACME_fnc_aajtOccludes;
@@ -42,6 +43,7 @@ private _changed = false;
     _remaining = (_remaining - _drain) max 0;
     if (_remaining <= 0.001) then {
         _jobs deleteAt _key;
+        _jobsChangedTopology = true;
         {private _m = _p getVariable [_x, createHashMap]; _m set [_key, 0]; [_p, _x, _m] call ACME_fnc_setVarNet;} forEach ["ACME_YLineUnitsSinceFlush", "ACME_YLineVolSinceFlush"];
         private _dirty = _p getVariable ["ACME_YLineDirty", createHashMap]; _dirty set [_key, false]; [_p, "ACME_YLineDirty", _dirty] call ACME_fnc_setVarNet;
         [_p, "ACME_bloodLineDirty", ((values _dirty) findIf {_x}) >= 0] call ACME_fnc_setVarNet;
@@ -49,4 +51,20 @@ private _changed = false;
     } else {_job set [4, _remaining]; _job set [6, CBA_missionTime]; _jobs set [_key, _job];};
 } forEach (keys _jobs);
 if (_changed) then {[_p, _map, true] call ACME_fnc_ivBagsCommit;};
-[_p, "ACME_yFlushJobs", _jobs] call ACME_fnc_setVarNet;
+
+// Exact scheduler timestamps/remaining volume are owner-local. Replicate the small job map at most once per second
+// so locality transfer can resume it, and immediately when a job starts/stops. The old code changed the "last" field
+// every 0.25 s, which forced a structured public update every circulation pass.
+_p setVariable ["ACME_yFlushJobs", _jobs, false];
+private _jobsNow = diag_tickTime;
+private _jobsLast = _p getVariable ["ACME_yFlushJobsNetAt", -1];
+if (_jobsChangedTopology || {_jobsLast < 0} || {(_jobsNow - _jobsLast) >= 1}) then {
+    _p setVariable ["ACME_yFlushJobsNetAt", _jobsNow, false];
+    [_p, "ACME_yFlushJobs", _jobs] call ACME_fnc_setVarNet;
+} else {
+    if (missionNamespace getVariable ["ACME_net_count", false]) then {
+        private _saved = missionNamespace getVariable ["ACME_net_saved", createHashMap];
+        _saved set ["ACME_yFlushJobs", (_saved getOrDefault ["ACME_yFlushJobs", 0]) + 1];
+        missionNamespace setVariable ["ACME_net_saved", _saved];
+    };
+};
