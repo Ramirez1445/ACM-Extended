@@ -5,7 +5,7 @@
  * sequencing and CBA registration order are preserved.
  */
 
-[{call ACME_fnc_hpmkBlanketTick}, 0.5, []] call CBA_fnc_addPerFrameHandler;
+// Server-side mobile-state/legacy safety reconciliation is not time-critical; 2 s avoids a 2 Hz allUnits scan.\n[{call ACME_fnc_hpmkBlanketTick}, 2, []] call CBA_fnc_addPerFrameHandler;
 
 // the "Pick Up HPMK" ACE object interaction on a dropped blanket, shed when a wrapped patient got up. it
 // registers per client, through addactiontoclass with a hasinterface guard inside createaction, and gates on
