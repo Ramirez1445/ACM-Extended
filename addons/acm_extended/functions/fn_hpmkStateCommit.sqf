@@ -16,6 +16,9 @@ if (!local _patient) exitWith {
     _state
 };
 private _on = _state in ["wrapped", "exposed"];
+// Server safety/visual maintenance tracks only casualties that actually carry HPMK state. This replaces the old
+// perpetual allUnits scan.
+["ACME_hpmkServerTrack", [_patient, _state]] call CBA_fnc_serverEvent;
 if (_public && {_deduplicate}) then {
     [_patient, "ACME_hpmk_state", _state] call ACME_fnc_setVarNet;
     [_patient, "ACME_hpmk_on", _on] call ACME_fnc_setVarNet;
