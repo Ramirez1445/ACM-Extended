@@ -41,7 +41,11 @@ private _publish = {
     params ["_var", "_value"];
     private _k = toLowerANSI _var;
     private _type = typeName _value;
-    private _fingerprint = if (_type in ["ARRAY", "HASHMAP"]) then {str _value} else {_value};
+    private _fingerprint = if (_type in ["ARRAY", "HASHMAP"]) then {
+        [_type, str _value]
+    } else {
+        [_type, _value]
+    };
 
     if (_public && {local _unit}) then {
         private _old = _unit getVariable _var;
