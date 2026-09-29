@@ -21,7 +21,9 @@ def test_network_publication_helpers_dedupe_structured_mutable_state():
     for s in (net, native):
         assert '"ARRAY", "HASHMAP"' in s
         assert "str _value" in s
+        assert '[_type, str _old] isEqualTo _fingerprint' in s
         assert "Published" in s or "scalarCache" in s
+    assert 'case "NIL": {["NIL"]};' in net
     assert "ACME_ivBagsPublishedSig" in iv
     assert "str _bags" in iv
 
