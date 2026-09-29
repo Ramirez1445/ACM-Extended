@@ -1,35 +1,55 @@
-// Network audit candidate NA1. Exact scalar deduplication; no physiology quantization.
+// B204 network publication gate.
 // Usage: [_object, _variableName, _value] call ACME_fnc_setVarNet.
-// Mutable arrays/HashMaps are ALWAYS forwarded: callers mutate them by reference.
-// A local scalar value alone is not proof it has ever been published. Keep an
-// independent, object-local cache of the last value this helper published.
-// Only the object's current owner may suppress. Non-owner writes pass through.
-// Counters measure helper calls, NOT packets, bytes, delivery or acknowledgement.
+//
+// Owner-local callers suppress a publication only after THIS helper has already published the same value.
+// Scalars and identity types are compared directly. Arrays and HashMaps use a serialized fingerprint so mutable
+// by-reference containers cannot make the cache silently mutate underneath us. Non-owner writes are never
+// suppressed here: those call sites must be owner-dispatched or explicitly rate-limited by their subsystem.
+//
+// Counters measure helper publication requests, not bytes or delivery acknowledgements.
 params [["_obj", objNull, [objNull]], ["_name", "", [""]], "_value"];
 if (isNull _obj || {_name isEqualTo ""}) exitWith {};
 
 private _counting = missionNamespace getVariable ["ACME_net_count", false];
 if (_counting && {isNil "ACME_net_since"}) then { ACME_net_since = diag_tickTime; };
+
 private _hasValue = !isNil "_value";
-private _isScalar = false;
-if (_hasValue) then { _isScalar = (typeName _value) in ["SCALAR", "BOOL", "STRING"]; };
+private _type = if (_hasValue) then {typeName _value} else {"NIL"};
 private _cacheKey = toLowerANSI _name;
 private _cache = _obj getVariable ["ACME_net_scalarCache", createHashMap];
+if !(_cache isEqualType createHashMap) then {_cache = createHashMap;};
 private _ownerStamp = [owner _obj, local _obj];
 if !((_obj getVariable ["ACME_net_cacheOwner", []]) isEqualTo _ownerStamp) then {
     _cache = createHashMap;
-    _obj setVariable ["ACME_net_scalarCache", _cache];
-    _obj setVariable ["ACME_net_cacheOwner", _ownerStamp];
+    _obj setVariable ["ACME_net_scalarCache", _cache, false];
+    _obj setVariable ["ACME_net_cacheOwner", _ownerStamp, false];
+};
+
+private _fingerprint = switch (_type) do {
+    case "ARRAY";
+    case "HASHMAP": {str _value};
+    case "NIL": {"<ACME:NIL>"};
+    default {_value};
 };
 
 private _same = false;
-if (_isScalar && {local _obj}) then {
-    private _old = _obj getVariable _name;
+if (local _obj) then {
     private _published = _cache get _cacheKey;
-    _same = !isNil "_old" && {!isNil "_published"}
-        && {_old isEqualTo _value} && {_published isEqualTo _value};
+    if (!isNil "_published") then {
+        if (!_hasValue) then {
+            _same = isNil {_obj getVariable _name} && {_published isEqualTo _fingerprint};
+        } else {
+            private _old = _obj getVariable [_name, nil];
+            private _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {
+                !isNil "_old" && {(str _old) isEqualTo _fingerprint}
+            } else {
+                !isNil "_old" && {_old isEqualTo _value}
+            };
+            _same = _localSame && {_published isEqualTo _fingerprint};
+        };
+    };
 };
-// This exit MUST be at function scope, not inside a nested 'then' block.
+
 if (_same) exitWith {
     if (_counting) then {
         private _m = missionNamespace getVariable ["ACME_net_saved", createHashMap];
@@ -43,10 +63,8 @@ if (_counting) then {
     _m set [_name, (_m getOrDefault [_name, 0]) + 1];
     missionNamespace setVariable ["ACME_net_sent", _m];
 };
-if (_isScalar && {local _obj}) then {
-    _cache set [_cacheKey, _value];
-} else {
-    _cache deleteAt _cacheKey;
-};
-if (!_hasValue) exitWith { _obj setVariable [_name, nil, true]; };
+
+if (local _obj) then {_cache set [_cacheKey, _fingerprint];};
+
+if (!_hasValue) exitWith {_obj setVariable [_name, nil, true];};
 _obj setVariable [_name, _value, true];
