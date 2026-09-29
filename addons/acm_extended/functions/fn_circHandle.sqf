@@ -455,7 +455,7 @@ private _getMedEffect = {
 
     private _infResistTarget = (-_infResistDrop) + _caResistDelta;
     if ((_patient getVariable ["ACME_infusionTox_resistDelta", 0]) != _infResistTarget) then {
-        [_patient, "ACME_infusionTox_resistDelta", _infResistTarget] call ACME_fnc_setVarNet;
+        [_patient, "ACME_infusionTox_resistDelta", _infResistTarget, 0.10, 2] call ACME_fnc_setVarNetApprox;
     };
     // surface the eased delivery rates and the fast fractions for the debug panel, so the actual mg/min is
     // visible. that is what the thresholds are calibrated against, and a therapeutic drip should read well under
@@ -485,7 +485,7 @@ private _getMedEffect = {
             private _pkK = 0.693 / _pkHalfMin;
             _lvl = (_lvl + (_pkK * (_pkSteady - _lvl) * (_dt / 60))) max 0;
             if (_lvl < 0.00005 && {_pkDrive <= 0}) then { _lvl = 0; };
-            [_patient, _lvlKey, _lvl] call ACME_fnc_setVarNet;
+            [_patient, _lvlKey, _lvl, 0.005, 2] call ACME_fnc_setVarNetApprox;
         };
     } forEach _pkTable;
 
@@ -525,7 +525,7 @@ private _getMedEffect = {
     _state set ["esmololEffect", _esmololEffect];
     // Esmolol distribution and clearance apply to every admitted route, including bolus.
     private _esmClear = missionNamespace getVariable ["ACME_esmolol_clearanceLmin", 3.5];
-    [_patient, "ACME_esmolol_driveMgMin", _esmololInfusionDrive] call ACME_fnc_setVarNet;
+    [_patient, "ACME_esmolol_driveMgMin", _esmololInfusionDrive, 0.005, 2] call ACME_fnc_setVarNetApprox;
     private _esmOld = _patient getVariable ["ACME_esmolol_serumLevel",0];
     private _esmVd = ((_patient getVariable ["ACM_core_BodyWeight",80]) max 30) * 0.5;
     private _esmK = (_esmClear max 0.001) / (_esmVd * 60); // clearance/Vd, per second
@@ -547,7 +547,7 @@ private _getMedEffect = {
         _esmSerum, 0, 1, true];
     private _esmResistTarget = -(_esmOverdose * (missionNamespace getVariable ["ACME_esmolol_overdoseResistDrop", 45]));
     if ((_patient getVariable ["ACME_esmololTox_resistDelta", 0]) != _esmResistTarget) then {
-        [_patient, "ACME_esmololTox_resistDelta", _esmResistTarget] call ACME_fnc_setVarNet;
+        [_patient, "ACME_esmololTox_resistDelta", _esmResistTarget, 0.10, 2] call ACME_fnc_setVarNetApprox;
     };
 
     // magnesium. it terminates torsades only once a therapeutic effect has developed. while the effect is
