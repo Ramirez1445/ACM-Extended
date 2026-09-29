@@ -105,4 +105,4 @@ private _now = CBA_missionTime;
     _u setVariable ["ACME_aspiration_lastRRAdj",_adj,false];
     [_u,"ACME_aspiration_RRDrive",_adj,0.02,5] call ACME_fnc_setVarNetApprox;
     [_u,"ACME_aspiration_shunt",0.30 * _injury,0.0005,5] call ACME_fnc_setVarNetApprox;
-} forEach allUnits;
+} forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
