@@ -6,5 +6,5 @@
  */
 
 [{call ACME_fnc_tbiHandle}, 0.25, []] call CBA_fnc_addPerFrameHandler;
-[{call ACME_fnc_cheyneStokesTick}, 0, []] call CBA_fnc_addPerFrameHandler;
+[{call ACME_fnc_cheyneStokesTick}, 0.10, []] call CBA_fnc_addPerFrameHandler;
 if (hasInterface) then { call ACME_fnc_installRmbCancelGuard; };
