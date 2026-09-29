@@ -1,8 +1,12 @@
-// obtunded vision and voice run every frame, so the darkness oscillation stays smooth.
-[{call ACME_fnc_obtundedTick}, 0, []] call CBA_fnc_addPerFrameHandler;
-// physiological auto-obtundation. this evaluates the vitals of local units on a slow cadence.
-[{call ACME_fnc_obtundedAuto}, 1.5, []] call CBA_fnc_addPerFrameHandler;
-[{call ACME_fnc_consciousnessBudget}, 1, []] call CBA_fnc_addPerFrameHandler;
+// These three controllers are player-facing/local-player physiology. Dedicated servers have no interface and
+// must not carry idle visual/input PFHs for them.
+if (hasInterface) then {
+    // obtunded vision and voice run every frame, so the darkness oscillation stays smooth.
+    [{call ACME_fnc_obtundedTick}, 0, []] call CBA_fnc_addPerFrameHandler;
+    // physiological auto-obtundation evaluates locally owned player units on a slow cadence.
+    [{call ACME_fnc_obtundedAuto}, 1.5, []] call CBA_fnc_addPerFrameHandler;
+    [{call ACME_fnc_consciousnessBudget}, 1, []] call CBA_fnc_addPerFrameHandler;
+};
 
 // Shared wrapping audio follows ACE's actual start/end events on every machine.
 [] call ACME_fnc_wrapSfxInit;
