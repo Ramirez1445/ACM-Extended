@@ -80,7 +80,7 @@ if (_attached) then {
 
 private _PFH = [{
     params ["_args", "_idPFH"];
-    _args params ["_originObject", "_zoneID", "_hazardRadius", "_initEffects", "_attached"];
+    _args params ["_originObject", "_zoneID", "_hazardRadius", "_initEffects", "_attached", "_radiusDimensions"];
 
     private _hazardType = _originObject getVariable [QGVAR(hazardType), ""];
     private _affectAI = _originObject getVariable [QGVAR(affectAI), false];
@@ -110,7 +110,16 @@ private _PFH = [{
         private _unitsInZone = [];
 
         if (_affectAI) then {
-            _unitsInZone = allUnits inAreaArray _hazardRadius;
+            // B204: do not enumerate every mission unit for every active hazard zone once per second. Query only
+            // nearby human entities inside a conservative bounding sphere, then apply the exact trigger geometry.
+            private _a = abs (_radiusDimensions param [0, 5]);
+            private _b = abs (_radiusDimensions param [1, 5]);
+            private _h = abs (_radiusDimensions param [4, 2.5]);
+            private _isRect = _radiusDimensions param [3, false];
+            private _scanRadius = if (_isRect) then {sqrt ((_a * _a) + (_b * _b))} else {_a max _b};
+            _scanRadius = (_scanRadius max _h) + 2;
+            private _nearHumans = (nearestObjects [getPosATL _hazardRadius, ["CAManBase"], _scanRadius]) select {alive _x};
+            _unitsInZone = _nearHumans inAreaArray _hazardRadius;
         } else {
             _unitsInZone = allPlayers inAreaArray _hazardRadius;
         };
@@ -126,7 +135,7 @@ private _PFH = [{
         (getPosATL _hazardRadius) params ["_radiusPosX", "_radiusPosY", "_radiusPosZ"];
         _originObject setPos [_radiusPosX, _radiusPosY, 0];
     };
-}, 1, [_originObject, _zoneID, _hazardRadius, _initEffects, _attached]] call CBA_fnc_addPerFrameHandler;
+}, 1, [_originObject, _zoneID, _hazardRadius, _initEffects, _attached, +_radiusDimensions]] call CBA_fnc_addPerFrameHandler;
 
 _originObject setVariable [QGVAR(HazardEmitter_PFH), _PFH];
 
