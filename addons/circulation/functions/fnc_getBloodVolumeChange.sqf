@@ -594,24 +594,45 @@ if (_hasFluidBags) then {
         [_unit, ""] call EFUNC(circulation,updateActiveFluidBags);
         _unit setVariable [QEGVAR(circulation,IV_Bags_FreshBloodEffect), 0, true];
     } else {
-        // The casualty owner changes bag volume every medical tick, but ACM's normal whole-patient sync cadence
-        // is too sparse for a remote medic who is actively watching the transfusion menu. Keep the exact map local
-        // every tick and publish a changed map at no more than 4 Hz. This makes remote bag volume visibly flow
-        // without returning to per-frame network spam.
-        private _acmeBagUiSig = str _fluidBags;
-        private _acmeBagUiLastSig = _unit getVariable ["ACME_transfusionUiBagSig", ""];
+        // B204: bag volume is continuously changing state. Keep the exact owner map local on every medical tick,
+        // but never broadcast the full nested bag map at 4 Hz. Structural changes publish immediately; ordinary
+        // remaining-volume changes are capped to one full snapshot per second.
+        private _acmeBagStruct = [];
+        {
+            private _bp = _x;
+            {
+                _acmeBagStruct pushBack [
+                    toLowerANSI _bp,
+                    _x param [8, ""],
+                    _x param [0, ""],
+                    _x param [2, -1],
+                    _x param [3, -1],
+                    _x param [4, true],
+                    _x param [5, -1],
+                    _x param [6, 0],
+                    _x param [7, -1]
+                ];
+            } forEach _y;
+        } forEach _fluidBags;
+        _acmeBagStruct sort true;
+        private _acmeBagStructSig = str _acmeBagStruct;
+        private _acmeBagUiLastStruct = _unit getVariable ["ACME_transfusionUiBagStructSig", ""];
         private _acmeBagUiLastAt = _unit getVariable ["ACME_transfusionUiBagSyncAt", -1];
-        private _acmeBagUiChanged = _acmeBagUiSig != _acmeBagUiLastSig;
-        private _acmeBagUiPublish = _syncValues || {
-            _acmeBagUiChanged && {
-                _acmeBagUiLastAt < 0 || {(CBA_missionTime - _acmeBagUiLastAt) >= 0.25}
-            }
-        };
+        private _acmeBagStructural = _acmeBagStructSig != _acmeBagUiLastStruct;
+        private _acmeBagUiPublish = _acmeBagStructural
+            || {_acmeBagUiLastAt < 0}
+            || {(CBA_missionTime - _acmeBagUiLastAt) >= 1};
 
         _unit setVariable [QEGVAR(circulation,IV_Bags), _fluidBags, _acmeBagUiPublish];
         if (_acmeBagUiPublish) then {
-            _unit setVariable ["ACME_transfusionUiBagSig", _acmeBagUiSig, false];
+            _unit setVariable ["ACME_transfusionUiBagStructSig", _acmeBagStructSig, false];
             _unit setVariable ["ACME_transfusionUiBagSyncAt", CBA_missionTime, false];
+        } else {
+            if (missionNamespace getVariable ["ACME_net_count", false]) then {
+                private _saved = missionNamespace getVariable ["ACME_net_saved", createHashMap];
+                _saved set ["ACM_circulation_IV_Bags", (_saved getOrDefault ["ACM_circulation_IV_Bags", 0]) + 1];
+                missionNamespace setVariable ["ACME_net_saved", _saved];
+            };
         };
         _unit setVariable [QEGVAR(circulation,IV_Bags_FreshBloodEffect), _freshBloodEffectiveness, _syncValues];
     };
