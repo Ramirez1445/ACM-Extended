@@ -26,6 +26,27 @@
 // the three are ever audible together.
 if (isServer) then {
     ACME_vent_soundSources = [];
+    // B204: the 10 Hz sound handover loop must never enumerate the whole mission. Seed once for hot-loaded/legacy
+    // state, then maintain a small explicit registry from vent custody/owner lifecycle events.
+    ACME_vent_serverPatients = allUnits select {
+        (_x getVariable ["ACME_vent_onPatient", false])
+            || {_x getVariable ["ACME_vent_configured", false]}
+            || {(_x getVariable ["ACME_vent_sndState", 0]) != 0}
+            || {!isNull (_x getVariable ["ACME_vent_sndSrc", objNull])}
+    };
+    ["ACME_ventServerTrack", {
+        params [["_patient", objNull, [objNull]], ["_active", true, [true]]];
+        if (isNull _patient) exitWith {};
+        if (_active
+            || {_patient getVariable ["ACME_vent_onPatient", false]}
+            || {_patient getVariable ["ACME_vent_configured", false]}
+            || {(_patient getVariable ["ACME_vent_sndState", 0]) != 0}
+            || {!isNull (_patient getVariable ["ACME_vent_sndSrc", objNull])}) then {
+            ACME_vent_serverPatients pushBackUnique _patient;
+        } else {
+            ACME_vent_serverPatients = ACME_vent_serverPatients - [_patient];
+        };
+    }] call CBA_fnc_addEventHandler;
     [{
         private _now = CBA_missionTime;
         private _keptSources = [];
@@ -75,7 +96,7 @@ if (isServer) then {
                             // START. tell every client to play the startup clip, and time the handover to the loop. the handover lands a
                             // small overlap before the startup clip ends, so the turbine spool-up runs into the running loop with no
                             // audible gap between them.
-                            ["ACME_ventSndFade", [_pat, "in"]] call CBA_fnc_globalEvent;
+                            private _audience = allPlayers select {alive _x && {(_x distance _pat) <= 50}}; if !(_audience isEqualTo []) then {["ACME_ventSndFade", [_pat, "in"], _audience] call CBA_fnc_targetEvent;};
                             private _len = missionNamespace getVariable ["ACME_vent_startupSndLen", 2.324];  // must match ventilator_startup_sfx
                             private _ov  = missionNamespace getVariable ["ACME_vent_sndOverlap", 0.11];  // crossfade length
                             _pat setVariable ["ACME_vent_sndLoopAt", _now + (_len - _ov) max 0];
@@ -98,7 +119,7 @@ if (isServer) then {
                         // spool-down with no audible gap. fire the shutdown now and let the loop keep sounding for the overlap window
                         // before it is cut, which sndloopkillat schedules.
                         if (_state == 2) then {
-                            ["ACME_ventSndFade", [_pat, "out"]] call CBA_fnc_globalEvent;
+                            private _audience = allPlayers select {alive _x && {(_x distance _pat) <= 50}}; if !(_audience isEqualTo []) then {["ACME_ventSndFade", [_pat, "out"], _audience] call CBA_fnc_targetEvent;};
                             private _shutLen = missionNamespace getVariable ["ACME_vent_shutdownSndLen", 2.324];
                             private _ov = missionNamespace getVariable ["ACME_vent_sndOverlap", 0.11];
                             _pat setVariable ["ACME_vent_sndQuietUntil", _now + _shutLen];
@@ -124,15 +145,17 @@ if (isServer) then {
                     _pat setVariable ["ACME_vent_sndState", 0, true];
                 };
             };
-        } forEach (allUnits select {
-            // iterate the configured patients, plus any patient that went unconfigured while it still holds a live
-            // ventilator sound, where the state is not 0 or a source object exists. a power-down clears configured on the
-            // same frame it clears driving. without this second clause the patient drops out of the loop before the stop
-            // path can run, the loop is orphaned, and the shutdown clip never plays.
-            (_x getVariable ["ACME_vent_configured", false])
-            || {(_x getVariable ["ACME_vent_sndState", 0]) != 0}
-            || {!isNull (_x getVariable ["ACME_vent_sndSrc", objNull])}
-        });
+        } forEach (+(missionNamespace getVariable ["ACME_vent_serverPatients", []]));
+
+        // Retain only attached/configured patients and patients whose shutdown/source cleanup is still in flight.
+        ACME_vent_serverPatients = (missionNamespace getVariable ["ACME_vent_serverPatients", []]) select {
+            !isNull _x && {
+                (_x getVariable ["ACME_vent_onPatient", false])
+                    || {_x getVariable ["ACME_vent_configured", false]}
+                    || {(_x getVariable ["ACME_vent_sndState", 0]) != 0}
+                    || {!isNull (_x getVariable ["ACME_vent_sndSrc", objNull])}
+            }
+        };
     }, 0.1, []] call CBA_fnc_addPerFrameHandler;  // tight tick: the intro -> loop handover must land on time
 };
 
