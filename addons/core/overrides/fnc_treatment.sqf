@@ -203,7 +203,12 @@ if (_classname != "ACME_ConnectETVent") exitWith {
         && {[_patient] call ACME_fnc_chestSealCanPhysicalRoll}
         && {_actualChestSide == "back"};
     private _bvmChestClass = _nativeContinuousClass in ["usebvm","usebvm_oxygen","usebvm_vehicleoxygen","usebvm_portableoxygen"];
-    private _needsPhysicalPrep = _needsFrontNormalize
+    // A previous CPR/BVM stop can still own the casualty through the reverse carrier lift. Do not start a new
+    // clinical maneuver underneath that patient animation merely because the carrier is temporarily still off.
+    private _chestBusy = _patient getVariable ["ACME_chestAccess_vestBusy", ""];
+    private _restoreInFlight = (_chestBusy find "restore:access:") == 0;
+    private _needsPhysicalPrep = _restoreInFlight
+        || {_needsFrontNormalize}
         || {((vest _patient) != "" && {(count _chestSaved) != 2})}
         || {!_bvmChestClass
             && {_patient getVariable ["ACME_headElevated", false]}
