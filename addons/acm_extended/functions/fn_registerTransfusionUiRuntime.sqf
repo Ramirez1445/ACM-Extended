@@ -1,3 +1,6 @@
+// Client presentation/input runtime only. Dedicated servers must not register UI PFHs, controls or keybinds.
+if (!hasInterface) exitWith {};
+
 // UI refreshers are presentation-only. Never register duplicate PFHs on client re-init/hot reload.
 if (missionNamespace getVariable ["ACME_transfusionUiRuntimeRegistered", false]) exitWith {};
 missionNamespace setVariable ["ACME_transfusionUiRuntimeRegistered", true];
