@@ -15,9 +15,11 @@ params ["_patient", "_side", "_tool", "_pts"];
 if (isNull _patient || {!hasInterface}) exitWith {};
 
 private _now = diag_tickTime;
-private _rate = missionNamespace getVariable ["ACME_CS_presenceRate", 0.07];  // about 14 hz.
+private _rate = missionNamespace getVariable ["ACME_CS_presenceRate", 0.10];  // at most 10 Hz while actually moving.
+private _heartbeat = missionNamespace getVariable ["ACME_CS_presenceHeartbeat", 0.35];
 private _lastT = uiNamespace getVariable ["ACME_CS_presenceLastT", -1];
 private _lastState = uiNamespace getVariable ["ACME_CS_presenceLastState", ["", ""]];
+private _lastPts = uiNamespace getVariable ["ACME_CS_presenceLastPts", []];
 
 private _burp = [];
 private _holes = uiNamespace getVariable ["ACME_CS_Holes", []];
@@ -27,11 +29,22 @@ if (_idx >= 0 && {_idx < count _holes}) then {
         uiNamespace getVariable ["ACME_CS_BurpFrame", 0], uiNamespace getVariable ["ACME_CS_BurpSide", "right"]];
 };
 private _stateNow = [netId _patient, _tool, _side, _burp, count _pts > 0];
-private _forced = !(_stateNow isEqualTo _lastState);  // a tool picked up or put down, or flipped front to back.
-if (!_forced && {_lastT >= 0} && {(_now - _lastT) < _rate}) exitWith {};
+private _semanticChanged = !(_stateNow isEqualTo _lastState);  // tool/side/burp/presence transitions are immediate.
+// Quantize cursor geometry so sub-pixel jitter does not become network traffic. Different screen resolutions still
+// map the normalized coordinates consistently.
+private _ptsSig = _pts apply {
+    [round ((_x param [0, 0]) * 500), round ((_x param [1, 0]) * 500)]
+};
+private _moved = !(_ptsSig isEqualTo _lastPts);
+private _age = if (_lastT < 0) then {1e9} else {_now - _lastT};
+private _send = _semanticChanged
+    || {_moved && {_age >= _rate}}
+    || {_age >= _heartbeat};
+if (!_send) exitWith {};
 
 uiNamespace setVariable ["ACME_CS_presenceLastT", _now];
 uiNamespace setVariable ["ACME_CS_presenceLastState", _stateNow];
+uiNamespace setVariable ["ACME_CS_presenceLastPts", _ptsSig];
 
 
 // Roster changes occur on join/leave, not on every cursor sample. No distance cutoff.
