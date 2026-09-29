@@ -1,3 +1,6 @@
+// Client presentation/input runtime only. Dedicated servers must not register UI PFHs, controls or keybinds.
+if (!hasInterface) exitWith {};
+
 // ventilator SELECT keybind.
 // the engine does not deliver a middle-click MouseButtonDown to dialog handlers reliably, so we also expose a
 // rebindable select key. it acts only while the ventilator dialog, idd 87700, is open, and otherwise does
