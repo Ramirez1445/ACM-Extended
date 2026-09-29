@@ -20,7 +20,7 @@ private _pressor = (_patient getVariable ["ACME_pressorResistAdd", 0]) max 0;
 if (_pressor <= 0.5) exitWith {
     // off pressors: the debt clears slowly, because the tissue that was starved takes time to recover.
     private _d = (_patient getVariable ["ACME_hc_pressorDebt", 0]) - (0.15 * diag_deltaTime);
-    [_patient, "ACME_hc_pressorDebt", (_d max 0)] call ACME_fnc_setVarNet;
+    [_patient, "ACME_hc_pressorDebt", (_d max 0), 0.05, 2] call ACME_fnc_setVarNetApprox;
 };
 if (_pressor <= 0.5) exitWith {};
 
@@ -36,9 +36,9 @@ if (_deficit < (missionNamespace getVariable ["ACME_hcCirc_safeDeficit", 0.15]))
 private _rate = (missionNamespace getVariable ["ACME_hcCirc_debtRate", 0.9]) * _deficit;
 private _debt = ((_patient getVariable ["ACME_hc_pressorDebt", 0]) + (_rate * diag_deltaTime))
     min (missionNamespace getVariable ["ACME_hcCirc_debtMax", 100]);
-[_patient, "ACME_hc_pressorDebt", _debt] call ACME_fnc_setVarNet;
+[_patient, "ACME_hc_pressorDebt", _debt, 0.05, 2] call ACME_fnc_setVarNetApprox;
 
 // the debt is the tissue damage, and it surfaces where tissue damage surfaces: acidosis. it is fed into the
 // existing acidosis model rather than being a separate hidden number, so everything downstream of acidosis, the
 // coagulopathy, the rhythm and the pressor response itself, degrades the way it already knows how to.
-[_patient, "ACME_acidosis_pressorDebt", (_debt / 100)] call ACME_fnc_setVarNet;
+[_patient, "ACME_acidosis_pressorDebt", (_debt / 100), 0.002, 2] call ACME_fnc_setVarNetApprox;
