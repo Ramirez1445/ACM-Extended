@@ -52,8 +52,9 @@ if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) exitWith {
         uiNamespace setVariable ["ACME_Thora_PrepLocal", _prepLocal];
         private _published = _patient getVariable [format ["ACME_thora_prep_%1", _side], []];
         if !(_merged isEqualTo _published) then {
-            [_patient, _side, "prep", _merged] call ACME_fnc_thoraSideStateCommit;
-            [_patient] call ACME_fnc_thoraBumpVer;
+            // One owner command commits the trail and then bumps the revision, so observers can never receive a
+            // revision notification ahead of the state it is supposed to announce.
+            [_patient, "thoraPrepCommit", [_patient, _side, _merged]] call ACME_fnc_ownerDispatch;
         };
     };
     false
