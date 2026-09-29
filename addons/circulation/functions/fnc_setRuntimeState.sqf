@@ -3,8 +3,9 @@
  * Author: ACM Extended Fork
  * Circulation-owned mutation endpoint for native ACM circulation runtime state touched by Extended systems.
  *
- * Public scalar writes retain owner-local publication deduplication. Arrays and object values are always forwarded,
- * matching the former Extended network helper semantics. IV_Bags and CardiacArrest_TargetRhythm deliberately remain
+ * Public writes retain owner-local publication deduplication for scalar, identity and structured values. Arrays and
+ * HashMaps are cached by serialized value so mutable containers cannot bypass suppression. IV_Bags and
+ * CardiacArrest_TargetRhythm deliberately remain
  * outside this generic endpoint because they have dedicated native owner APIs.
  *
  * Arguments:
@@ -38,15 +39,25 @@ if (_public && {local _unit}) then {
 
 private _publish = {
     params ["_var", "_value"];
-    private _scalar = (typeName _value) in ["SCALAR", "BOOL", "STRING"];
-    if (_public && {_scalar} && {local _unit}) then {
-        private _k = toLowerANSI _var;
-        private _old = _unit getVariable _var;
+    private _k = toLowerANSI _var;
+    private _type = typeName _value;
+    private _fingerprint = if (_type in ["ARRAY", "HASHMAP"]) then {str _value} else {_value};
+
+    if (_public && {local _unit}) then {
+        private _old = _unit getVariable [_var, nil];
         private _published = _cache get _k;
-        if (!isNil "_old" && {!isNil "_published"} && {_old isEqualTo _value} && {_published isEqualTo _value}) exitWith {false};
-        _cache set [_k, _value];
+        private _localSame = false;
+        if (!isNil "_old") then {
+            _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {
+                (str _old) isEqualTo _fingerprint
+            } else {
+                _old isEqualTo _value
+            };
+        };
+        if (_localSame && {!isNil "_published"} && {_published isEqualTo _fingerprint}) exitWith {false};
+        _cache set [_k, _fingerprint];
     } else {
-        _cache deleteAt (toLowerANSI _var);
+        _cache deleteAt _k;
     };
     _unit setVariable [_var, _value, _public];
     true
