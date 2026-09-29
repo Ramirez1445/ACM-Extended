@@ -104,4 +104,7 @@
     _last set ["hypot",_hypotBand];
 
     _u setVariable ["ACME_MC_aarLast",_last,false];
-} forEach (allUnits select {_x getVariable ["ACME_isMegacode",false]});
+} forEach (+(missionNamespace getVariable ["ACME_megacode_units", []]));
+ACME_megacode_units = (missionNamespace getVariable ["ACME_megacode_units", []]) select {
+    !isNull _x && {_x getVariable ["ACME_isMegacode", false]}
+};
