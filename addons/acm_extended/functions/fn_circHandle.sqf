@@ -17,6 +17,25 @@ ACME_circ_activePatients = ACME_circ_activePatients select {!isNull _x && {local
 
 // patients who need a circ tick: anyone with shock, push-dose, a pressor infusion or TBI.
 private _circEnabled = missionNamespace getVariable ["ACME_sys_circ", true];
+
+// A populated state map is not itself an indication for perpetual maintenance. Once created it contains dozens of
+// neutral bookkeeping fields forever. B203 keys enrollment to physiology that still needs to evolve instead.
+private _circStateNeedsTick = {
+    params [["_s", createHashMap, [createHashMap]]];
+    (_s getOrDefault ["shockActive", false])
+        || {abs (_s getOrDefault ["shockDrop", 0]) > 0.01}
+        || {abs (_s getOrDefault ["pressorSupport", 0]) > 0.01}
+        || {abs (_s getOrDefault ["pushDoseSupport", 0]) > 0.01}
+        || {(_s getOrDefault ["ichRisk", 0]) > 0.001}
+        || {(_s getOrDefault ["ionizedCa", 1.15]) < 0.999}
+        || {(_s getOrDefault ["temp", 37]) < 35.99}
+        || {(_s getOrDefault ["salineAcidosis", 0]) > 0.001}
+        || {(_s getOrDefault ["totalAcidosis", 0]) > 0.001}
+        || {(_s getOrDefault ["paCO2", 40]) > 40.1}
+        || {(_s getOrDefault ["respiratoryAcidosisDeficit", 0]) > 0.001}
+        || {(_s getOrDefault ["hyperSpike", 0]) > 0.001};
+};
+
 private _patients = ACME_circ_activePatients + ACME_tbi_activePatients + (missionNamespace getVariable ["ACME_clinical_activePatients", []]);
 {
     if (!isNull _x && {alive _x} && {local _x}) then {_patients pushBackUnique _x};
@@ -45,7 +64,7 @@ private _patients = ACME_circ_activePatients + ACME_tbi_activePatients + (missio
         {count (_u getVariable ["ace_medical_medications", []]) > 0} ||
         {count (_u getVariable ["ACME_yFlushJobs", createHashMap]) > 0} ||
         {_uncon} ||
-        {count _circState > 0} ||
+        {[_circState] call _circStateNeedsTick} ||
         {_u getVariable ["ACME_tbi_HasTBI", false]} ||
         {_rr < (_rrTarget * 0.85)} ||
         {(_u getVariable ["ACME_circ_salineGivenMl", 0]) > 0} ||
@@ -1364,8 +1383,18 @@ private _getMedEffect = {
     };
 
     [_patient, _state] call ACME_fnc_circStateCommit;
-    if (_shockActive || {_inCardiacArrest} || {_offset != 0} || {_hyperSpike > 0} || {(_state getOrDefault ["ichRisk", 0]) > 0} || {_ionizedCa < 1} || {_temp < 36} || {(_state getOrDefault ["salineAcidosis", 0]) > 0} || {_acidosis > 0.001} || {_paCO2 > ((missionNamespace getVariable ["ACME_circ_paCO2Normal", 40]) + 0.1)} || {_respDeficit > 0.001} || {_effMAPpre < _acidThresh}) then {
+    private _keepCirc = _shockActive
+        || {_inCardiacArrest}
+        || {_offset != 0}
+        || {_hyperSpike > 0}
+        || {[_state] call _circStateNeedsTick}
+        || {_effMAPpre < _acidThresh};
+    if (_keepCirc) then {
         ACME_circ_activePatients pushBackUnique _patient;
+    } else {
+        // B203: a recovered casualty must actually leave the 4 Hz circulation registry. Previously the state map
+        // itself kept the patient enrolled forever after its first episode.
+        ACME_circ_activePatients = ACME_circ_activePatients - [_patient];
     };
 
     } else {
