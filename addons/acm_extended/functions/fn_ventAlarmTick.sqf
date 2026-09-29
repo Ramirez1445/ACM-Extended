@@ -180,6 +180,9 @@ if !(_fresh isEqualTo []) then {
     // tell the clients about the freshly raised alarms, so the operating medic can write them into their device
     // logbook. the log lives on the operator, and only they should record the alarms of their own machine. each
     // client filters to the patient their device is actually on.
-    ["ACME_ventAlarmLog", [_patient, _fresh]] call CBA_fnc_globalEvent;
+    private _operator = _patient getVariable ["ACME_vent_operator", objNull];
+    if (!isNull _operator) then {
+        ["ACME_ventAlarmLog", [_patient, _fresh], _operator] call CBA_fnc_targetEvent;
+    };
 };
 [_patient, "ACME_vent_alarmsPrev", _alarms] call ACME_fnc_setVarNet;
