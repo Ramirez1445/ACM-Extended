@@ -15,18 +15,18 @@ switch (toLower _op) do {
         private _depth = _data param [0, _keep];
         private _frame = _data param [1, _keep];
         private _mainstem = _data param [2, _keep];
-        if !(_depth isEqualTo _keep) then {_patient setVariable ["ACME_ETT_Depth", _depth, true];};
-        if !(_frame isEqualTo _keep) then {_patient setVariable ["ACME_ETT_Frame", _frame, true];};
-        if !(_mainstem isEqualTo _keep) then {_patient setVariable ["ACME_ETT_Mainstem", _mainstem, true];};
+        if !(_depth isEqualTo _keep) then {[_patient, "ACME_ETT_Depth", _depth] call ACME_fnc_setVarNet;};
+        if !(_frame isEqualTo _keep) then {[_patient, "ACME_ETT_Frame", _frame] call ACME_fnc_setVarNet;};
+        if !(_mainstem isEqualTo _keep) then {[_patient, "ACME_ETT_Mainstem", _mainstem] call ACME_fnc_setVarNet;};
     };
     case "obstruction": {
         private _active = _data param [0, _keep];
         private _until = _data param [1, _keep];
-        if !(_active isEqualTo _keep) then {_patient setVariable ["ACME_ETT_Obstructing", _active, true];};
-        if !(_until isEqualTo _keep) then {_patient setVariable ["ACME_ETT_ObstructUntil", _until, true];};
+        if !(_active isEqualTo _keep) then {[_patient, "ACME_ETT_Obstructing", _active] call ACME_fnc_setVarNet;};
+        if !(_until isEqualTo _keep) then {[_patient, "ACME_ETT_ObstructUntil", _until] call ACME_fnc_setVarNet;};
     };
     case "tip": {
         private _frac = _data param [0, _keep];
-        if !(_frac isEqualTo _keep) then {_patient setVariable ["ACME_ETT_TipFrac", _frac, true];};
+        if !(_frac isEqualTo _keep) then {[_patient, "ACME_ETT_TipFrac", _frac] call ACME_fnc_setVarNet;};
     };
 };
