@@ -11,7 +11,7 @@ private _anchor = _tgt getVariable ["ACME_bf_anchor", _tgt];
 if (isNull _anchor) exitWith {};
 
 private _last = ACE_player getVariable ["ACME_bf_lastPingT", -1];
-if ((diag_tickTime - _last) < 0.2) exitWith {};
+if ((diag_tickTime - _last) < 0.4) exitWith {};
 
 ACE_player setVariable ["ACME_bf_lastPingT", diag_tickTime];
 ACE_player setVariable ["ACME_bf_lastFridge", _anchor];
