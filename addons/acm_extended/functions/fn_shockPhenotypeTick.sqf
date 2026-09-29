@@ -69,7 +69,7 @@ private _now = CBA_missionTime;
         _circ set ["shockActive",true];
         _circ set ["shockSeverity",_sev];
         if (!_oldActive || {abs (_oldSeverity - _sev) >= 0.005}) then {
-            _u setVariable ["ACME_circ_State",_circ,true];
+            [_u, _circ] call ACME_fnc_circStateCommit;
         } else {
             _u setVariable ["ACME_circ_State",_circ,false];
         };
@@ -84,7 +84,7 @@ private _now = CBA_missionTime;
                 _circ set ["shockActive",false];
                 _circ set ["shockSeverity",0];
                 if (_wasActive || {_wasSeverity != 0}) then {
-                    _u setVariable ["ACME_circ_State",_circ,true];
+                    [_u, _circ] call ACME_fnc_circStateCommit;
                 } else {
                     _u setVariable ["ACME_circ_State",_circ,false];
                 };
