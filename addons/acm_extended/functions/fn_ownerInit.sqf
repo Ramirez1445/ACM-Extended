@@ -3,6 +3,7 @@ if (missionNamespace getVariable ["ACME_NA2_ownerInstalled", false]) exitWith {}
 ACME_NA2_ownerInstalled = true;
 ["ACME_ownerCommand", { isNil { _this call ACME_fnc_ownerDispatch; }; }] call CBA_fnc_addEventHandler;
 ["ACME_netNotice", { _this call ACME_fnc_netNotice; }] call CBA_fnc_addEventHandler;
+["ACME_worldSfx", { if (hasInterface) then {_this call ACME_fnc_remoteSay3D;}; }] call CBA_fnc_addEventHandler;
 ["ACME_seizureGestureSync", { _this call ACME_fnc_seizureGestureSync; }] call CBA_fnc_addEventHandler;
 ["ACME_transfusionRemoveResult", {_this call ACME_fnc_transfusionRemoveBagResult;}] call CBA_fnc_addEventHandler;
 ["ACME_transfusionPullResult", {_this call ACME_fnc_transfusionPullResult;}] call CBA_fnc_addEventHandler;
