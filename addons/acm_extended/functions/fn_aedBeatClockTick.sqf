@@ -68,4 +68,4 @@ private _now = CBA_missionTime;
     _patient setVariable ["ACME_AED_BeatHR", _hr, false];
     _patient setVariable ["ACME_AED_BeatClockActive", true, false];
     _patient setVariable ["ACME_AED_BeatLastTime", _patient getVariable ["ACM_circulation_AED_Pads_LastBeep", _now], false];
-} forEach allUnits;
+} forEach (missionNamespace getVariable ["ACME_clinical_ownedUnits", []]);
