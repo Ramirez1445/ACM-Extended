@@ -25,11 +25,14 @@ if !((_obj getVariable ["ACME_net_cacheOwner", []]) isEqualTo _ownerStamp) then 
     _obj setVariable ["ACME_net_cacheOwner", _ownerStamp, false];
 };
 
+// Type-tag the cache value. This prevents a real string such as "<ACME:NIL>" from colliding with the
+// sentinel for an undefined variable, and prevents cross-type values with the same textual form from suppressing
+// a required publication.
 private _fingerprint = switch (_type) do {
     case "ARRAY";
-    case "HASHMAP": {str _value};
-    case "NIL": {"<ACME:NIL>"};
-    default {_value};
+    case "HASHMAP": {[_type, str _value]};
+    case "NIL": {["NIL"]};
+    default {[_type, _value]};
 };
 
 private _same = false;
