@@ -102,7 +102,7 @@ if (_kind == "medication" && {_same}) then {
 
     private _selectedLimit = ["select", _data, _reserved, _d] call ACME_fnc_vialSession;
     private _size = (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10]) max 0.1;
-    missionNamespace setVariable ["ACM_circulation_SyringeDraw_MaxDose", (_selectedLimit max 0) min _size];
+    [[["syringeDrawMaxDose", (_selectedLimit max 0) min _size]]] call ACM_circulation_fnc_setLocalUiState;
     [_d] call ACME_fnc_skMedicationStockRefresh;
 };
 
