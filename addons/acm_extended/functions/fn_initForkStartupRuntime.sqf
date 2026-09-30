@@ -35,7 +35,7 @@ if (isNil "ACME_dropCarryLyingEH") then {
         private _lying = if (_lyingRaw isEqualType true) then {_lyingRaw} else {_lyingRaw > 0};
 
         if (_unconscious && {!_lying}) then {
-            _target setVariable ["ACM_core_Lying_State", true, true];
+            [_target, true, true] call ACM_core_fnc_setLyingState;
             _lying = true;
         };
 
