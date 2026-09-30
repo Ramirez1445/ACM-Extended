@@ -71,7 +71,7 @@ switch (_mode) do {
 
         uiNamespace setVariable ["ACME_suction_sqT0", diag_tickTime];
         uiNamespace setVariable ["ACME_suction_sqBand", ([_vol] call _fnc_band)];
-        if (!isNull _pat) then { [_pat, (_dev getOrDefault ["sfxSqueeze", "ACME_ManualSuction"])] remoteExec ["ACME_fnc_remoteSay3D", 0]; };
+        if (!isNull _pat) then {[_pat, (_dev getOrDefault ["sfxSqueeze", "ACME_ManualSuction"])] call ACME_fnc_worldSfxNearby;};
 
         if (!_inMouth) exitWith {};
 
