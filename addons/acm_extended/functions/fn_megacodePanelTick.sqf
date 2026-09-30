@@ -8,7 +8,7 @@ private _dummy = uiNamespace getVariable ["ACME_MC_target",objNull];
 if (isNull _display || {isNull _dummy}) exitWith {};
 
 // Keep the LifePak generator pointed at Kelly only while this exclusive dialog is open.
-missionNamespace setVariable ["ACM_circulation_AED_Monitor_Target",_dummy];
+[[["aedMonitorTarget", _dummy]]] call ACM_circulation_fnc_setLocalUiState;
 
 private _nowDiag = diag_tickTime;
 private _lastT = uiNamespace getVariable ["ACME_MC_lastT",_nowDiag];
@@ -36,7 +36,7 @@ if (_ekgHR > 0 && {!(_nativeRhythm in [1,2])}) then {
         _dummy setVariable ["ACME_AED_NextRR",_nextRR,false];
         if (_lastBeat < 0 || {(CBA_missionTime-_lastBeat) > ((_nominalRR max 0.25)*1.5)}) then {
             _lastBeat = CBA_missionTime;
-            _dummy setVariable ["ACM_circulation_AED_Pads_LastBeep",_lastBeat,false];
+            [_dummy, [["aedPadsLastBeep", _lastBeat]], false] call ACM_circulation_fnc_setRuntimeState;
             _dummy setVariable ["ACME_AED_PreviousRR",_nextRR,false];
         };
     };
@@ -45,7 +45,7 @@ if (_ekgHR > 0 && {!(_nativeRhythm in [1,2])}) then {
         private _due = _lastBeat+_nextRR;
         private _late = (CBA_missionTime-_due) max 0;
         private _beatAt = if (_late <= ((_nextRR*0.35) min 0.20)) then {_due} else {CBA_missionTime};
-        _dummy setVariable ["ACM_circulation_AED_Pads_LastBeep",_beatAt,false];
+        [_dummy, [["aedPadsLastBeep", _beatAt]], false] call ACM_circulation_fnc_setRuntimeState;
         _dummy setVariable ["ACME_AED_PreviousRR",_nextRR,false];
         private _newRR = _nominalRR;
         if (_effectiveRhythm in [100,103]) then {
@@ -123,7 +123,7 @@ private _regenerate = {
     private _spacing = if (_ekgHR > 0) then {(60/_ekgHR)*15} else {0};
     private _rhythmArg = if (_cpr) then {-1} else {_nativeRhythm};
     _dummy setVariable ["ACME_AED_MonitorCursorTime",CBA_missionTime,false];
-    _dummy setVariable ["ACM_circulation_AED_UpdateStep",uiNamespace getVariable ["ACME_MC_step",1],false];
+    [_dummy, [["aedUpdateStep", uiNamespace getVariable ["ACME_MC_step",1]]], false] call ACM_circulation_fnc_setRuntimeState;
 
     private _buildTwo = {
         params ["_kind","_rhythm","_spacing","_spo2","_etco2","_rr"];
@@ -235,6 +235,6 @@ for "_n" from 1 to _advance do {
 
     _step = _step+1;
     if (_step > _segmentCount) then {_step=1;};
-    _dummy setVariable ["ACM_circulation_AED_UpdateStep",_step,false];
+    [_dummy, [["aedUpdateStep", _step]], false] call ACM_circulation_fnc_setRuntimeState;
 };
 uiNamespace setVariable ["ACME_MC_step",_step];
