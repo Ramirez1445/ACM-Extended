@@ -8,7 +8,7 @@ private _p = toLower _bodyPart;
 
 // stop the wrap-sfx loop and always play the tie-off when the timer completes.
 [_medic] call ACME_fnc_junctionalWrapSfxStop;
-if (!isNull _medic) then { [_medic, "ACME_JunctionalTie"] remoteExec ["ACME_fnc_remoteSay3D", 0]; };
+if (!isNull _medic) then {[_medic, "ACME_JunctionalTie"] call ACME_fnc_worldSfxNearby;};
 
 // Junctional state, hemostasis and pain mutate durable casualty state and therefore commit on its owner.
 [_patient, "junctionalWrapDone", [_medic, _p]] call ACME_fnc_ownerDispatch;
