@@ -38,8 +38,14 @@ for required in [
     'fn_arrestLocal.sqf','fn_toggleOverResus.sqf','fn_shockLocal.sqf','fn_circHandle.sqf','fn_registerRhythmLifecycleRuntime.sqf',
     'fn_initBlastOverpressureRuntime.sqf','fn_restorePausedFlow.sqf','fn_registerRoscBreathingRuntime.sqf','fn_openFromTransfusionMenu.sqf','fn_ventDriveTick.sqf']:
     assert 'ACM_circulation_fnc_setRuntimeState' in (EXT/required).read_text(),required
-for required in ['fn_selectEJTransfusionSite.sqf','fn_initMedicationRegistry.sqf','fn_restoreMedicationList.sqf','fn_vialHolder.sqf']:
+for required in ['fn_initMedicationRegistry.sqf','fn_restoreMedicationList.sqf','fn_vialHolder.sqf']:
     assert 'ACM_circulation_fnc_setLocalUiState' in (EXT/required).read_text(),required
+
+# EJ is only a thin selector wrapper. The common access selector owns the native circulation UI state.
+ej=(EXT/'fn_selectEJTransfusionSite.sqf').read_text()
+select_access=(EXT/'fn_selectTransfusionAccess.sqf').read_text()
+assert 'ACME_fnc_selectTransfusionAccess' in ej
+assert 'ACM_circulation_fnc_setLocalUiState' in select_access
 for required in ['fn_yFlushTick.sqf','fn_clinicalBagMove.sqf','fn_infusionRemoveLocal.sqf']:
     assert 'ACME_fnc_ivBagsCommit' in (EXT/required).read_text(),required
 print('fork phase 52 circulation state ownership checks: PASS')
