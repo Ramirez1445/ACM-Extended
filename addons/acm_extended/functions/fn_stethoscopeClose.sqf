@@ -86,11 +86,10 @@ if (!isNull _patient && {!_restoreDispatched}) then {
 // abnormal dialog teardown: a dead stethoscope display must never leave ACM_core_ContinuousAction_Active stuck true.
 if (_continuousEpoch >= 0
     && {(missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch",-2]) == _continuousEpoch}) then {
-    ACM_core_ContinuousAction_Active = false;
-    ACM_core_ContinuousAction_IsDialog = false;
+    [_medic, [["active", false], ["isDialog", false]], true] call ACM_core_fnc_setContinuousActionState;
     if (!isNull _medic
         && {(_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _continuousEpoch]}) then {
-        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+        [_medic, [["session", []]], true] call ACM_core_fnc_setContinuousActionState;
     };
 };
 
