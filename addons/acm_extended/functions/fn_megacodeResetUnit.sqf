@@ -31,7 +31,7 @@ _d setVariable ["ACME_MC_dying",false,true];
 _d setVariable ["ACME_AED_ElectricalRateRhythm",-999,false];
 _d setVariable ["ACME_AED_ElectricalRateLastUpdate",-1,false];
 _d setVariable ["ACME_AED_ClockRhythm",-999,false];
-_d setVariable ["ACM_circulation_AED_Pads_LastBeep",CBA_missionTime,false];
+[_d, [["aedPadsLastBeep", CBA_missionTime]], false] call ACM_circulation_fnc_setRuntimeState;
 
 private _scenPFH=_d getVariable ["ACME_MC_scenPFH",-1];
 if (_scenPFH>=0) then {[_scenPFH] call CBA_fnc_removePerFrameHandler;};
