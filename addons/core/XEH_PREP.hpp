@@ -40,6 +40,7 @@ PREP(setTargetVitalsState);
 PREP(setLyingState);
 PREP(setWasTreated);
 PREP(setContinuousActionActive);
+PREP(setContinuousActionState);
 PREP(setAceMedicalState);
 PREP(setDraggingCapability);
 PREP(setCursorInteractionMode);
