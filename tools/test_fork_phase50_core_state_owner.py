@@ -21,8 +21,11 @@ for required in ['fn_megacodeScenarioTick.sqf','fn_megacodeSetVital.sqf','fn_meg
     assert 'ACM_core_fnc_setTargetVitalsState' in (EXT/required).read_text(),required
 for required in ['fn_clearAllAilments.sqf','fn_obtundedApply.sqf','fn_megacodeSpawn.sqf','fn_directPressureFracturePain.sqf']:
     assert 'ACM_core_fnc_setLyingState' in (EXT/required).read_text(),required
-for required in ['fn_measureBPWrap.sqf']:
-    assert 'ACM_core_fnc_setContinuousActionActive' in (EXT/required).read_text(),required
+# Manual BP no longer toggles the shared gate itself. It defers to native ACM measureBP, whose
+# beginContinuousAction path owns the complete controller lifetime.
+bp=(EXT/'fn_measureBPWrap.sqf').read_text()
+assert 'ACM_circulation_fnc_measureBP' in bp
+assert 'ACM_core_ContinuousAction_' not in bp
 # Phase 124: direct pressure is deliberately non-exclusive. It must not own/clear ACM's shared continuous-action lock.
 for forbidden in ['fn_directPressureStop.sqf','fn_directPressureTorso.sqf']:
     assert 'call ACM_core_fnc_setContinuousActionActive' not in (EXT/forbidden).read_text(),forbidden
