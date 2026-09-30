@@ -101,7 +101,7 @@ private _now = CBA_missionTime;
     private _lastAdj = _u getVariable ["ACME_aspiration_lastRRAdj",0];
     private _nativeRR = (_curRR - _lastAdj) max 0;
     private _adj = 14 * _injury;
-    [_u,"ACM_core_TargetVitals_RespirationRate",(_nativeRR + _adj) min 45,0.02,3] call ACME_fnc_setVarNetApprox;
+    [_u, [["respirationRate", (_nativeRR + _adj) min 45, 0.02, 3]], true] call ACM_core_fnc_setTargetVitalsState;
     _u setVariable ["ACME_aspiration_lastRRAdj",_adj,false];
     [_u,"ACME_aspiration_RRDrive",_adj,0.02,5] call ACME_fnc_setVarNetApprox;
     [_u,"ACME_aspiration_shunt",0.30 * _injury,0.0005,5] call ACME_fnc_setVarNetApprox;
