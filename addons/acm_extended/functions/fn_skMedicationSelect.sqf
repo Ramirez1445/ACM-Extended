@@ -34,9 +34,9 @@ if (_infusion && {_currentFill > 0.0005} && {_previousMed != ""} && {_med != _pr
     };
 };
 
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_Medication", _med];
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected_Index", _index];
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_MedicationSelected", true];
+[[["syringeDrawMedication", _med],
+  ["syringeDrawMedicationSelectedIndex", _index],
+  ["syringeDrawMedicationSelected", true]]] call ACM_circulation_fnc_setLocalUiState;
 
 if (_stage in ["compound","draw"] && {uiNamespace getVariable ["ACME_SK_WasteMoving", false]}) exitWith {};
 if (!(_stage in ["compound","draw"]) && {missionNamespace getVariable ["ACM_circulation_SyringeDraw_Moving", false]}) exitWith {};
@@ -80,5 +80,5 @@ private _selectedLimit = if (_previousMed != _med || {!_alreadyBound}) then {
 };
 
 private _size = (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10]) max 0.1;
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_MaxDose", (_selectedLimit max 0) min _size];
+[[["syringeDrawMaxDose", (_selectedLimit max 0) min _size]]] call ACM_circulation_fnc_setLocalUiState;
 [_display] call ACME_fnc_skMedicationStockRefresh;
