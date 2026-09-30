@@ -3,8 +3,8 @@
  * Author: ACM Extended Fork
  * Breathing-owned mutation endpoint for native ACM breathing state touched by Extended systems.
  *
- * The public scalar path retains owner-local publication deduplication. Arrays and object values are forwarded on
- * every request, matching the previous Extended network helper semantics. Unknown field names are ignored.
+ * Public writes retain owner-local publication deduplication for scalar and structured state. Arrays/HashMaps are
+ * fingerprinted by value so mutable session containers cannot force redundant packets. Unknown field names are ignored.
  *
  * Arguments:
  * 0: Patient <OBJECT>
@@ -43,15 +43,20 @@ private _publish = {
         true
     };
 
-    private _scalar = (typeName _value) in ["SCALAR", "BOOL", "STRING"];
-    if (_public && {_scalar} && {local _patient}) then {
-        private _k = toLowerANSI _var;
+    private _k = toLowerANSI _var;
+    private _type = typeName _value;
+    private _fingerprint = if (_type in ["ARRAY", "HASHMAP"]) then {str _value} else {_value};
+    if (_public && {local _patient}) then {
         private _old = _patient getVariable _var;
         private _published = _cache get _k;
-        if (!isNil "_old" && {!isNil "_published"} && {_old isEqualTo _value} && {_published isEqualTo _value}) exitWith {false};
-        _cache set [_k, _value];
+        private _localSame = false;
+        if (!isNil "_old") then {
+            _localSame = if (_type in ["ARRAY", "HASHMAP"]) then {(str _old) isEqualTo _fingerprint} else {_old isEqualTo _value};
+        };
+        if (_localSame && {!isNil "_published"} && {_published isEqualTo _fingerprint}) exitWith {false};
+        _cache set [_k, _fingerprint];
     } else {
-        _cache deleteAt (toLowerANSI _var);
+        _cache deleteAt _k;
     };
     _patient setVariable [_var, _value, _public];
     true
@@ -66,6 +71,11 @@ private _applied = 0;
         switch (_field) do {
             case "respirationRate": { _accepted = [QGVAR(RespirationRate), _value] call _publish; };
             case "bvmProvider": { _accepted = [QGVAR(BVM_provider), _value] call _publish; };
+            case "bvmMedic": { _accepted = [QGVAR(BVM_Medic), _value] call _publish; };
+            case "bvmSession": { _accepted = [QGVAR(BVM_session), _value] call _publish; };
+            case "bvmUsing": { _accepted = [QGVAR(isUsingBVM), _value] call _publish; };
+            case "bvmPatient": { _accepted = [QGVAR(BVM_patient), _value] call _publish; };
+            case "bvmEpoch": { _accepted = [QGVAR(BVM_epoch), _value] call _publish; };
             case "bvmConnectedOxygen": { _accepted = [QGVAR(BVM_ConnectedOxygen), _value] call _publish; };
             case "bvmLastBreath": { _accepted = [QGVAR(BVM_lastBreath), _value] call _publish; };
             case "bvmLastBreathOxygen": { _accepted = [QGVAR(BVM_lastBreathOxygen), _value] call _publish; };
