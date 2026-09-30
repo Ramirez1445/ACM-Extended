@@ -26,8 +26,14 @@ assert not viol,viol
 callers=[p.name for p in EXT.glob('*.sqf') if 'ACM_breathing_fnc_setRuntimeState' in p.read_text()]
 for required in [
     'fn_clinicalReset.sqf','fn_megacodeSetAirway.sqf','fn_megacodeScenarioTick.sqf','fn_megacodeSetVital.sqf',
-    'fn_ventManualBreath.sqf','fn_ventStopHard.sqf','fn_ventSimpleManualBreath.sqf','fn_ventPatientClear.sqf','fn_ventDriveTick.sqf',
+    'fn_ventManualBreathCommit.sqf','fn_ventStopHard.sqf','fn_ventSimpleManualBreath.sqf','fn_ventPatientClear.sqf','fn_ventDriveTick.sqf',
     'fn_thoraMouseDown.sqf','fn_thoraPassiveDrain.sqf','fn_chestSealEffectLocal.sqf','fn_ptxEnsure.sqf','fn_ptxPublish.sqf',
     'fn_toggleOverResus.sqf','fn_megacodeChestInjury.sqf']:
     assert required in callers,(required,callers)
 print('fork phase 51 breathing state ownership checks: PASS')
+
+# Advanced manual breath UI is request-only; the casualty-owner commit owns native breathing mutation.
+manual=(EXT/'fn_ventManualBreath.sqf').read_text()
+commit=(EXT/'fn_ventManualBreathCommit.sqf').read_text()
+assert '[_patient, "ventManualBreath"' in manual and 'ACME_fnc_ownerDispatch' in manual
+assert 'ACM_breathing_fnc_setRuntimeState' in commit
