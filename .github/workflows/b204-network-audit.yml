@@ -39,6 +39,9 @@ jobs:
           chmod +x /tmp/acme-tools/hemtt
           python -m pip install 'pytest==9.0.2' 'numpy==2.3.5' 'Pillow==12.3.0' 'soundfile==0.13.1'
 
+      - name: Native-state ownership diagnostic
+        run: python tools/audit_acme_native_owner_writes.py
+
       - name: Focused networking and ownership gates
         run: |
           set -euo pipefail
