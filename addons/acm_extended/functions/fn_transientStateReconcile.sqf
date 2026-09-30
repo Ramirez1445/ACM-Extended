@@ -87,8 +87,7 @@ if (!isNil "ACM_circulation_fnc_cprSessionValid" && {!isNil "ACM_circulation_fnc
         };
         if (!_released) then {
             _patient setVariable ["ace_medical_CPR_provider", objNull, true];
-            _patient setVariable ["ACM_circulation_CPR_Medic", objNull, true];
-            _patient setVariable ["ACM_circulation_CPR_session", [], true];
+            [_patient, [["cprMedic", objNull], ["cprSession", []]], true] call ACM_circulation_fnc_setRuntimeState;
         };
         "CPR reservation" call _mark;
     };
@@ -259,7 +258,7 @@ private _bags = _patient getVariable ["ACM_circulation_IV_Bags", createHashMap];
 private _hasBags = (_bags isEqualType createHashMap) && {count _bags > 0};
 private _bagsActive = _patient getVariable ["ACM_circulation_IV_Bags_Active", false];
 if (_bagsActive isNotEqualTo _hasBags) then {
-    _patient setVariable ["ACM_circulation_IV_Bags_Active", _hasBags, true];
+    [_patient, [["ivBagsActive", _hasBags]], true] call ACM_circulation_fnc_setRuntimeState;
     "IV_Bags_Active" call _mark;
 };
 
