@@ -25,7 +25,7 @@ private _keep = [];
 _patient setVariable ["ACME_medicationDriveQueue", _keep, false];
 private _driveNow = diag_tickTime;
 private _driveLast = _patient getVariable ["ACME_medicationDriveNetAt", -1];
-if ((count _keep) != (count _queue) || {_driveLast < 0} || {_driveNow - _driveLast >= 1}) then {
+if ((count _keep) != (count _queue) || {_driveLast < 0} || {(_driveNow - _driveLast) >= 1}) then {
     _patient setVariable ["ACME_medicationDriveNetAt", _driveNow, false];
     [_patient, "ACME_medicationDriveQueue", _keep] call ACME_fnc_setVarNet;
 };
