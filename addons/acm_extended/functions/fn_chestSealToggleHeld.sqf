@@ -42,7 +42,7 @@ if (_now isEqualType 0 && {finite _now} && {_now - _lastSfx >= _cooldown}) then 
     uiNamespace setVariable ["ACME_CS_lastApplySfx", _now];
     if (!isNull _patient) then { [_patient, _cooldown] call ACME_fnc_markImportantSfx; };
     if (!isNull _medic) then {
-        [_medic, "ACM_ChestSeal_Apply"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+        [_medic, "ACM_ChestSeal_Apply"] call ACME_fnc_worldSfxNearby;
     } else {
         [] call ACME_fnc_chestSealSnd;
     };
