@@ -22,7 +22,7 @@ switch (_mode) do {
             ["Take the syringe from the tray first.", 2.5] call ace_common_fnc_displayTextStructured;
         };
         uiNamespace setVariable ["ACME_laryngo_deflateT0", diag_tickTime];
-        [_pat, "ACME_SyringeDraw"] remoteExec ["ACME_fnc_remoteSay3D", 0];
+        [_pat, "ACME_SyringeDraw"] call ACME_fnc_worldSfxNearby;
     };
 
     case "tick": {
