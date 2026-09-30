@@ -50,14 +50,18 @@ if (!isNil "ACM_breathing_fnc_bvmSessionValid" && {!isNil "ACM_breathing_fnc_bvm
             _released = [_medic, _patient, _session select 1] call ACM_breathing_fnc_bvmRelease;
         };
         if (!_released) then {
-            _patient setVariable ["ACM_breathing_BVM_provider", objNull, true];
-            _patient setVariable ["ACM_breathing_BVM_Medic", objNull, true];
-            _patient setVariable ["ACM_breathing_BVM_ConnectedOxygen", false, true];
-            _patient setVariable ["ACM_breathing_BVM_session", [], true];
+            [_patient, [
+                ["bvmProvider", objNull],
+                ["bvmMedic", objNull],
+                ["bvmConnectedOxygen", false],
+                ["bvmSession", []]
+            ], true] call ACM_breathing_fnc_setRuntimeState;
             if (!isNull _medic && {(_medic getVariable ["ACM_breathing_BVM_patient", objNull]) isEqualTo _patient}) then {
-                _medic setVariable ["ACM_breathing_isUsingBVM", false, true];
-                _medic setVariable ["ACM_breathing_BVM_patient", objNull, true];
-                _medic setVariable ["ACM_breathing_BVM_epoch", -1, true];
+                [_medic, [
+                    ["bvmUsing", false],
+                    ["bvmPatient", objNull],
+                    ["bvmEpoch", -1]
+                ], true] call ACM_breathing_fnc_setRuntimeState;
             };
         };
         "BVM reservation" call _mark;
