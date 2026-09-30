@@ -10,7 +10,7 @@
  * Arguments:
  * 0: Patient <OBJECT>
  * 1: Changes <ARRAY> of [field,value]
- *    Supported fields: collapse, blood, vomit, vomitCount, vomitGrace
+ *    Supported fields: collapse, blood, vomit, vomitCount, vomitGrace, vomitPFH, recovery, headTilt
  * 2: Public <BOOL> (default true)
  *
  * Return Value:
@@ -52,6 +52,14 @@ private _applied = 0;
             };
             case "vomitPFH": {
                 _patient setVariable [QGVAR(AirwayObstructionVomit_PFH), _value, _public];
+                _applied = _applied + 1;
+            };
+            case "recovery": {
+                _patient setVariable [QGVAR(RecoveryPosition_State), _value, _public];
+                _applied = _applied + 1;
+            };
+            case "headTilt": {
+                _patient setVariable [QGVAR(HeadTilt_State), _value, _public];
                 _applied = _applied + 1;
             };
         };
