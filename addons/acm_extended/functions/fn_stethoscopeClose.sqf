@@ -116,6 +116,6 @@ if (_continuousEpoch >= 0
 };
 
 if ((uiNamespace getVariable ["ACM_breathing_Stethoscope_DLG",displayNull]) isEqualTo _display) then {
-    uiNamespace setVariable ["ACM_breathing_Stethoscope_DLG",displayNull];
+    [[["stethoscopeDisplay", displayNull]]] call ACM_breathing_fnc_setLocalUiState;
 };
 [-1] call ace_hearing_fnc_updateHearingProtection;
