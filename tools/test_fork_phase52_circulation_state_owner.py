@@ -34,7 +34,7 @@ for p in EXT.glob('*.sqf'):
         assert not ('ACM_circulation_IV_Bags' in line and ('setVariable' in line or 'ACME_fnc_setVarNet' in line)),(p.name,line.strip())
 for required in [
     'fn_clearAllAilments.sqf','fn_rhythmThresholdTick.sqf','fn_aedBeatClockTick.sqf','fn_resumeSiteFlow.sqf',
-    'fn_ivEnforceSite.sqf','fn_rhythmSet.sqf','fn_junctionalStartBleed.sqf','fn_edemaSet.sqf','fn_yFlushTick.sqf',
+    'fn_ivEnforceSite.sqf','fn_rhythmSet.sqf','fn_edemaSet.sqf','fn_yFlushTick.sqf',
     'fn_arrestLocal.sqf','fn_toggleOverResus.sqf','fn_shockLocal.sqf','fn_circHandle.sqf','fn_registerRhythmLifecycleRuntime.sqf',
     'fn_initBlastOverpressureRuntime.sqf','fn_restorePausedFlow.sqf','fn_registerRoscBreathingRuntime.sqf','fn_openFromTransfusionMenu.sqf','fn_ventDriveTick.sqf']:
     assert 'ACM_circulation_fnc_setRuntimeState' in (EXT/required).read_text(),required
@@ -43,3 +43,9 @@ for required in ['fn_selectEJTransfusionSite.sqf','fn_initMedicationRegistry.sqf
 for required in ['fn_yFlushTick.sqf','fn_clinicalBagMove.sqf','fn_infusionRemoveLocal.sqf']:
     assert 'ACME_fnc_ivBagsCommit' in (EXT/required).read_text(),required
 print('fork phase 52 circulation state ownership checks: PASS')
+
+# Junctional bleed now publishes only ACME_junctionalBleedLPS. The native circulation integrator consumes that
+# owner-local rate inside getBloodVolumeChange, so this worker must not write native circulation state itself.
+junc=(EXT/'fn_junctionalStartBleed.sqf').read_text()
+assert 'ACME_junctionalBleedLPS' in junc
+assert 'ACM_circulation_fnc_setRuntimeState' not in junc
