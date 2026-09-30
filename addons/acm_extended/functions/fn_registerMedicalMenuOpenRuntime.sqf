@@ -107,8 +107,7 @@
             private _session = _medic getVariable ["ACM_core_ContinuousAction_Session", []];
             private _lastSeen = _medic getVariable ["ACM_core_ContinuousAction_LastSeen", -1e6];
             if ((count _session) < 2 || {(CBA_missionTime - _lastSeen) > 4}) then {
-                missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
-                _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+                [_medic, [["active", false], ["session", []]], true] call ACM_core_fnc_setContinuousActionState;
             };
         };
 
@@ -142,7 +141,7 @@
                 && {(_manualHold param [1, ""]) != ""};
 
             if (_ownsHeadTilt || {_ownsManualSemiFowler}) then {
-                missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
+                [_medic, [["active", false]], true] call ACM_core_fnc_setContinuousActionState;
                 _cancelledHandsOn = true;
             };
         };
