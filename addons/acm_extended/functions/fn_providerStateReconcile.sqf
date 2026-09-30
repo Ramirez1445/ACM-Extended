@@ -49,11 +49,13 @@ if (_active) then {
                         "ACM_core_ContinuousAction_OpenMedicalMenu_ID"
                     ];
 
-                    missionNamespace setVariable ["ACM_core_ContinuousAction_Active", false];
-                    missionNamespace setVariable ["ACM_core_ContinuousAction_PFH", -1];
-                    missionNamespace setVariable ["ACM_core_ContinuousAction_ShouldReopen", false];
-                    missionNamespace setVariable ["ACM_core_ContinuousAction_IsDialog", false];
-                    _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+                    [_medic, [
+                        ["active", false],
+                        ["pfh", -1],
+                        ["shouldReopen", false],
+                        ["isDialog", false],
+                        ["session", []]
+                    ], true] call ACM_core_fnc_setContinuousActionState;
 
                     "ACM_UseBVM" cutText ["", "PLAIN", 0, false];
                     "ACM_HeadTilt" cutText ["", "PLAIN", 0, false];
