@@ -21,7 +21,7 @@ if ((uiNamespace getVariable ["ACME_SK_WasteStage", ""]) != "") then {
 };
 uiNamespace setVariable ["ACME_SK_WasteStage", ""];
 uiNamespace setVariable ["ACME_SK_WasteMoving", false];
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_Moving", false];
+[[["syringeDrawMoving", false]]] call ACM_circulation_fnc_setLocalUiState;
 
 private _nativePlunger = _display displayCtrl 84009;
 if (!isNull _nativePlunger) then {
