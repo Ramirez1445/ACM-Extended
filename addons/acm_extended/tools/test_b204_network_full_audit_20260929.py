@@ -169,8 +169,8 @@ def test_thoracostomy_painting_never_publishes_a_growing_array_per_frame():
     owner = function("ownerDispatch")
     side = function("thoraSideStateCommit")
 
-    paint = tick.split('if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) then {', 1)[1]
-    paint = paint.split("// tool cursor", 1)[0]
+    paint = tick.split('if (uiNamespace getVariable ["ACME_Thora_Prepping", false]) exitWith {', 1)[1]
+    paint = paint.split('if !(uiNamespace getVariable ["ACME_Thora_Palpating", false])', 1)[0]
     assert "ACME_Thora_PrepLocal" in paint
     assert "ACME_fnc_setVarNet" not in paint
     assert "setVariable [_key" not in paint
