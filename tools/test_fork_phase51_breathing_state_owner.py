@@ -26,7 +26,7 @@ assert not viol,viol
 callers=[p.name for p in EXT.glob('*.sqf') if 'ACM_breathing_fnc_setRuntimeState' in p.read_text()]
 for required in [
     'fn_clinicalReset.sqf','fn_megacodeSetAirway.sqf','fn_megacodeScenarioTick.sqf','fn_megacodeSetVital.sqf',
-    'fn_ventManualBreathCommit.sqf','fn_ventStopHard.sqf','fn_ventSimpleManualBreath.sqf','fn_ventPatientClear.sqf','fn_ventDriveTick.sqf',
+    'fn_ventManualBreathCommit.sqf','fn_ventHardStopCommit.sqf','fn_ventSimpleManualBreath.sqf','fn_ventPatientClear.sqf','fn_ventDriveTick.sqf',
     'fn_thoraMouseDown.sqf','fn_thoraPassiveDrain.sqf','fn_chestSealEffectLocal.sqf','fn_ptxEnsure.sqf','fn_ptxPublish.sqf',
     'fn_toggleOverResus.sqf','fn_megacodeChestInjury.sqf']:
     assert required in callers,(required,callers)
@@ -37,3 +37,9 @@ manual=(EXT/'fn_ventManualBreath.sqf').read_text()
 commit=(EXT/'fn_ventManualBreathCommit.sqf').read_text()
 assert '[_patient, "ventManualBreath"' in manual and 'ACME_fnc_ownerDispatch' in manual
 assert 'ACM_breathing_fnc_setRuntimeState' in commit
+
+# Hard-stop UI is request/presentation; the patient-owner commit releases native BVM support.
+hard_ui=(EXT/'fn_ventStopHard.sqf').read_text()
+hard_commit=(EXT/'fn_ventHardStopCommit.sqf').read_text()
+assert 'ventHardStop' in hard_ui and 'ACME_fnc_ownerDispatch' in hard_ui
+assert 'ACM_breathing_fnc_setRuntimeState' in hard_commit
