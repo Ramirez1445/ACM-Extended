@@ -15,7 +15,7 @@ uiNamespace setVariable ["ACME_MC_contentCtrls",[]];
 private _dummy=uiNamespace getVariable ["ACME_MC_target",objNull];
 private _previous=uiNamespace getVariable ["ACME_MC_previousAEDTarget",objNull];
 if ((missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target",objNull]) isEqualTo _dummy) then {
-    missionNamespace setVariable ["ACM_circulation_AED_Monitor_Target",_previous];
+    [[["aedMonitorTarget", _previous]]] call ACM_circulation_fnc_setLocalUiState;
 };
 uiNamespace setVariable ["ACME_MC_previousAEDTarget",objNull];
 uiNamespace setVariable ["ACME_Megacode_DLG",displayNull];
