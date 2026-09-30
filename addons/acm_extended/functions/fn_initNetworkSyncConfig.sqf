@@ -5,4 +5,5 @@ ACME_net_epsilon = 0.005;
 // while remote/JIP snapshots are capped to this cadence unless a coarse critical-state signature changes.
 ACME_circ_stateNetInterval = 2.0;
 
-// B204: TBI owner-local integration stays 4 Hz; remote full-state snapshots are capped here.\nACME_tbi_stateNetInterval = 1.0;\n
+// B204: TBI owner-local integration stays 4 Hz; remote full-state snapshots are capped here.
+ACME_tbi_stateNetInterval = 1.0;
