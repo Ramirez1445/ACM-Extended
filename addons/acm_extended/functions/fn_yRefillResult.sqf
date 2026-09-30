@@ -55,10 +55,10 @@ if (_stage == "claim") then {
         };
     };
 
-    missionNamespace setVariable ["ACM_circulation_TransfusionMenu_Selected_BodyPart",_part];
-    missionNamespace setVariable ["ACM_circulation_TransfusionMenu_SelectIV",_iv];
-    missionNamespace setVariable ["ACM_circulation_TransfusionMenu_Selected_AccessSite",_site];
-    missionNamespace setVariable ["ACM_circulation_TransfusionMenu_Selected_Inventory",_inventoryMode];
+    [[["transfusionSelectedBodyPart", _part],
+      ["transfusionSelectIV", _iv],
+      ["transfusionSelectedAccessSite", _site],
+      ["transfusionSelectedInventory", _inventoryMode]]] call ACM_circulation_fnc_setLocalUiState;
 
     private _right = _display displayCtrl 86005;
     private _row = -1;
