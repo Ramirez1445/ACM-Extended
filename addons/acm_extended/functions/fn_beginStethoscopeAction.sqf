@@ -14,18 +14,15 @@ if (ACM_core_ContinuousAction_Active) exitWith {};
 // global Active flag, so an interrupted scope could survive long enough to see a later maneuver set Active=true and
 // then close/cancel that newer maneuver. Each scope now owns one immutable generation.
 private _epoch = (missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", 0]) + 1;
-missionNamespace setVariable ["ACM_core_ContinuousAction_Epoch", _epoch];
+[_medic, [["epoch", _epoch]], false] call ACM_core_fnc_setContinuousActionState;
 
 // Match the core continuous-action ownership contract. Provider reconciliation treats an active controller
 // without a matching session/heartbeat as stale; the stethoscope used to omit both and was therefore torn down
 // about a second after opening even though its dialog was healthy.
-_medic setVariable ["ACM_core_ContinuousAction_Session", [_patient, _epoch], true];
-_medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
+[_medic, [["session", [_patient, _epoch]], ["lastSeen", CBA_missionTime]], true] call ACM_core_fnc_setContinuousActionState;
 
 private _isDialog = (_dialogID != -1);
-ACM_core_ContinuousAction_IsDialog = _isDialog;
-ACM_core_ContinuousAction_Active = true;
-ACM_core_ContinuousAction_ShouldReopen = false;
+[_medic, [["isDialog", _isDialog], ["active", true], ["shouldReopen", false]], false] call ACM_core_fnc_setContinuousActionState;
 ace_medical_gui_pendingReopen = false;
 
 // Remove generic continuous-action key handlers left by an interrupted older generation. The stethoscope dialog
@@ -34,8 +31,7 @@ private _oldOpenID = missionNamespace getVariable ["ACM_core_ContinuousAction_Op
 if (!(_oldOpenID isEqualTo -1) && {!(_oldOpenID isEqualTo "")}) then {[_oldOpenID, "keydown"] call CBA_fnc_removeKeyHandler;};
 private _oldEscapeID = missionNamespace getVariable ["ACM_core_ContinuousAction_Cancel_EscapeID", -1];
 if (!(_oldEscapeID isEqualTo -1) && {!(_oldEscapeID isEqualTo "")}) then {[_oldEscapeID, "keydown"] call CBA_fnc_removeKeyHandler;};
-missionNamespace setVariable ["ACM_core_ContinuousAction_OpenMedicalMenu_ID", -1];
-missionNamespace setVariable ["ACM_core_ContinuousAction_Cancel_EscapeID", -1];
+[_medic, [["openMedicalMenuID", -1], ["cancelEscapeID", -1]], false] call ACM_core_fnc_setContinuousActionState;
 
 if (dialog) then {closeDialog 0;};
 
@@ -50,10 +46,9 @@ _args call _onStart;
 
 private _scopeDisplay = if (_isDialog) then {findDisplay _dialogID} else {displayNull};
 if (_isDialog && {isNull _scopeDisplay}) exitWith {
-    ACM_core_ContinuousAction_Active = false;
-    ACM_core_ContinuousAction_IsDialog = false;
+    [_medic, [["active", false], ["isDialog", false]], false] call ACM_core_fnc_setContinuousActionState;
     if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
-        _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+        [_medic, [["session", []]], true] call ACM_core_fnc_setContinuousActionState;
     };
 };
 
@@ -76,8 +71,7 @@ if (_isDialog) then {
             if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -2]) != _epoch) exitWith {false};
             // DIK_ESCAPE. Consume the native close and let the controller run one clean cancellation/reopen path.
             if (_key == 0x01) exitWith {
-                ACM_core_ContinuousAction_ShouldReopen = true;
-                ACM_core_ContinuousAction_Active = false;
+                [_display getVariable ["ACME_stethMedic", objNull], [["shouldReopen", true], ["active", false]], false] call ACM_core_fnc_setContinuousActionState;
                 true
             };
             // DIK_H. The medical-menu hotkey must not replace a live stethoscope minigame.
@@ -87,11 +81,11 @@ if (_isDialog) then {
     };
 } else {
     private _keyCode = compile format [
-        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -1]) == %1) then {missionNamespace setVariable ['ACM_core_ContinuousAction_ShouldReopen', true]; missionNamespace setVariable ['ACM_core_ContinuousAction_Active', false];}; false",
+        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch', -1]) == %1) then {[objNull, [['shouldReopen', true], ['active', false]], false] call ACM_core_fnc_setContinuousActionState;}; false",
         _epoch
     ];
     _keyID = [0x01, [false, false, false], _keyCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
-    ACM_core_ContinuousAction_Cancel_EscapeID = _keyID;
+    [_medic, [["cancelEscapeID", _keyID]], false] call ACM_core_fnc_setContinuousActionState;
 };
 
 private _pfh = [{
@@ -133,7 +127,7 @@ private _pfh = [{
         } else {
             if (!(_keyID isEqualTo -1) && {!(_keyID isEqualTo "")}) then {[_keyID, "keydown"] call CBA_fnc_removeKeyHandler;};
             if ((missionNamespace getVariable ["ACM_core_ContinuousAction_Cancel_EscapeID", -1]) == _keyID) then {
-                missionNamespace setVariable ["ACM_core_ContinuousAction_Cancel_EscapeID", -1];
+                [_medic, [["cancelEscapeID", -1]], false] call ACM_core_fnc_setContinuousActionState;
             };
         };
 
@@ -142,10 +136,9 @@ private _pfh = [{
         private _returnToMenu = (ACM_core_ContinuousAction_ShouldReopen || {_dialogCondition})
             && {!_patientCondition} && {!_medicCondition};
 
-        ACM_core_ContinuousAction_Active = false;
-        ACM_core_ContinuousAction_IsDialog = false;
+        [_medic, [["active", false], ["isDialog", false]], false] call ACM_core_fnc_setContinuousActionState;
         if ((_medic getVariable ["ACM_core_ContinuousAction_Session", []]) isEqualTo [_patient, _epoch]) then {
-            _medic setVariable ["ACM_core_ContinuousAction_Session", [], true];
+            [_medic, [["session", []]], true] call ACM_core_fnc_setContinuousActionState;
         };
         [_medic, "stethoscope", _poseEpoch, true] call ACME_fnc_treatmentPoseStop;
         [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle] call _onCancel;
@@ -158,10 +151,10 @@ private _pfh = [{
     };
 
     if (CBA_missionTime - (_medic getVariable ["ACM_core_ContinuousAction_LastSeen", -100]) >= 2) then {
-        _medic setVariable ["ACM_core_ContinuousAction_LastSeen", CBA_missionTime, true];
+        [_medic, [["lastSeen", CBA_missionTime]], true] call ACM_core_fnc_setContinuousActionState;
     };
 
     _args call _perFrame;
 }, 0, [_medic, _patient, _bodyPart, _extraArgs, _notInVehicle, _poseEpoch, _perFrame, _onCancel, _dialogID, _dialogKeyEH, _scopeDisplay, _keyID, _isDialog, _epoch]] call CBA_fnc_addPerFrameHandler;
 
-missionNamespace setVariable ["ACM_core_ContinuousAction_PFH", _pfh];
+[_medic, [["pfh", _pfh]], false] call ACM_core_fnc_setContinuousActionState;
