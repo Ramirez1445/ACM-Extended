@@ -13,9 +13,9 @@ if (isNull _display || {!finite _amount}) exitWith {false};
 
 private _size = (missionNamespace getVariable ["ACM_circulation_SyringeDraw_Size", 10]) max 0.1;
 _amount = (_amount max 0) min _size;
-missionNamespace setVariable ["ACM_circulation_SyringeDraw_DrawnAmount", _amount];
+[[["syringeDrawDrawnAmount", _amount]]] call ACM_circulation_fnc_setLocalUiState;
 if (_stopMoving) then {
-    missionNamespace setVariable ["ACM_circulation_SyringeDraw_Moving", false];
+    [[["syringeDrawMoving", false]]] call ACM_circulation_fnc_setLocalUiState;
 };
 
 private _top = missionNamespace getVariable ["ACM_circulation_SyringeDraw_Ctrl_LimitTop", -1];
