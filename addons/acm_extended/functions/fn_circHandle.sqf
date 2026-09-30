@@ -1183,7 +1183,7 @@ private _getMedEffect = {
     // per patient and runs only for patients carrying a drug or a rhythm. it dumps the exact engine values behind
     // the esmolol, push-epi, dirty-epi, norepi and lidocaine reports, so each root can be fixed precisely. remove
     // it after triage.
-    if (missionNamespace getVariable ["ACME_circ_debugVitals", true]) then {
+    if (missionNamespace getVariable ["ACME_circ_debugVitals", false]) then {
         private _hasDrug = (count (_patient getVariable ["ACME_infusion_BagMedications", []]) > 0)
             || {_pushDose > 0} || {_pressorDrive > 0}
             || {(_patient getVariable ["ACME_rhythm_active", 0]) != 0}
