@@ -36,7 +36,7 @@ if (isNull _dummy || {!(_dummy getVariable ["ACME_isMegacode", false])}) exitWit
 // Save whatever AED target this client had before the panel and temporarily make Kelly the monitor target.
 // The LifePak generators intentionally read this target when resolving custom rhythms and their exact beat clock.
 uiNamespace setVariable ["ACME_MC_previousAEDTarget", missionNamespace getVariable ["ACM_circulation_AED_Monitor_Target", objNull]];
-missionNamespace setVariable ["ACM_circulation_AED_Monitor_Target", _dummy];
+[[["aedMonitorTarget", _dummy]]] call ACM_circulation_fnc_setLocalUiState;
 
 // One fit-inside geometry calculation. ACME_fnc_uiCanvas keeps ultrawide authored at 16:9; this additional
 // width clamp is what fixes narrower displays, where the old height-only width calculation ran off-screen.
@@ -211,11 +211,11 @@ uiNamespace setVariable ["ACME_MC_vitalCtrls", _vitalCtrls];
 
 // AED-compatible clock and buffer state. The generator itself owns morphology; Kelly only owns this consumer's
 // sweep position and beat epoch so opening the instructor panel does not require physical LifePak pads.
-_dummy setVariable ["ACM_circulation_AED_UpdateStep",1,false];
+[_dummy, [["aedUpdateStep", 1]], false] call ACM_circulation_fnc_setRuntimeState;
 _dummy setVariable ["ACME_AED_MonitorCursorTime",CBA_missionTime,false];
 private _initialRate = [_dummy] call ACM_circulation_fnc_updateEKGHeartRate;
 private _rr0 = if (_initialRate > 0) then {60/_initialRate} else {0.75};
-_dummy setVariable ["ACM_circulation_AED_Pads_LastBeep",CBA_missionTime,false];
+[_dummy, [["aedPadsLastBeep", CBA_missionTime]], false] call ACM_circulation_fnc_setRuntimeState;
 _dummy setVariable ["ACME_AED_PreviousRR",_rr0,false];
 _dummy setVariable ["ACME_AED_NextRR",_rr0,false];
 _dummy setVariable ["ACME_AED_BeatSerial",0,false];
