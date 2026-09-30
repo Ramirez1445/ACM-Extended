@@ -58,7 +58,7 @@ private _started = [[ _medic, _patient, _bodyPart, [_token] ], {
     };
     private _continuousEpoch = missionNamespace getVariable ["ACM_core_ContinuousAction_Epoch", -1];
     private _cancelCode = compile format [
-        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch',-2]) == %1) then {missionNamespace setVariable ['ACM_core_ContinuousAction_Active',false];}; false",
+        "if ((missionNamespace getVariable ['ACM_core_ContinuousAction_Epoch',-2]) == %1) then {[objNull, [['active', false]], false] call ACM_core_fnc_setContinuousActionState;}; false",
         _continuousEpoch
     ];
     private _cancelID = [0xF0, [false,false,false], _cancelCode, "keydown", "", false, 0] call CBA_fnc_addKeyHandler;
